@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Interactive 42U Data Center Rack — Rack to Runtime</title>
+<style>
+  :root{
+    --bg:#0a0e14; --panel:#121823; --line:#1f2a3a; --ink:#e6edf6; --muted:#8aa0b8;
+    --accent:#36c2ff; --a:#ff8c32; --b:#36c2ff; --ok:#39d98a; --warn:#ffd23f; --blank:#2a3445;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;overflow:hidden}
+  #app{position:fixed;inset:0}
+  canvas{display:block}
+  /* HUD */
+  .hud{position:absolute;pointer-events:none}
+  #title{top:16px;left:18px;max-width:60%}
+  #title h1{font-size:16px;margin:0;letter-spacing:.3px}
+  #title p{margin:3px 0 0;font-size:12px;color:var(--muted)}
+  #controls{top:14px;right:14px;display:flex;flex-direction:column;gap:8px;pointer-events:auto;width:208px}
+  .btn{background:var(--panel);border:1px solid var(--line);color:var(--ink);
+    padding:9px 11px;border-radius:9px;font-size:12.5px;cursor:pointer;text-align:left;
+    transition:.15s;display:flex;align-items:center;gap:8px}
+  .btn:hover{border-color:var(--accent);background:#16202e}
+  .btn.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;color:#fff}
+  .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  #legend{bottom:16px;left:18px;background:rgba(18,24,35,.86);border:1px solid var(--line);
+    border-radius:11px;padding:12px 14px;font-size:12px;pointer-events:auto;backdrop-filter:blur(4px)}
+  #legend h2{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:0 0 8px}
+  .lg{display:flex;align-items:center;gap:8px;margin:5px 0}
+  .lg .sw{width:13px;height:13px;border-radius:3px;flex:0 0 auto}
+  #info{bottom:16px;right:14px;width:268px;background:rgba(18,24,35,.92);border:1px solid var(--line);
+    border-radius:11px;padding:13px 15px;font-size:12.5px;pointer-events:auto;backdrop-filter:blur(4px)}
+  #info h3{margin:0 0 4px;font-size:13.5px;color:#fff}
+  #info .u{color:var(--accent);font-weight:600}
+  #info p{margin:7px 0 0;color:var(--muted);line-height:1.5}
+  #info .tag{display:inline-block;font-size:10.5px;padding:2px 7px;border-radius:20px;
+    border:1px solid var(--line);color:var(--muted);margin-top:8px}
+  .lbl{position:absolute;transform:translate(-50%,-50%);font-size:10.5px;color:var(--ink);
+    background:rgba(10,14,20,.78);border:1px solid var(--line);padding:2px 6px;border-radius:5px;
+    pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .2s}
+  .uruler{position:absolute;transform:translate(-50%,-50%);font-size:9.5px;color:var(--muted);
+    pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .2s}
+  #hint{bottom:16px;left:50%;transform:translateX(-50%);font-size:11.5px;color:var(--muted);
+    background:rgba(18,24,35,.7);padding:6px 12px;border-radius:20px;border:1px solid var(--line)}
+  #err{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+    color:var(--muted);font-size:13px;text-align:center;padding:40px}
+  @media (max-width:640px){#title{max-width:90%}#controls{width:160px}#info{width:200px}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<div id="title" class="hud">
+  <h1>Interactive 42U Data Center Rack</h1>
+  <p>Drag to orbit · scroll to zoom · click any component. Specs per EIA-310-D / ASHRAE TC9.9.</p>
+</div>
+
+<div id="controls" class="hud">
+  <button class="btn active" id="btnRotate"><span class="dot" style="background:var(--ok)"></span>Auto-rotate: ON</button>
+  <button class="btn" id="btnPower"><span class="dot" style="background:var(--a)"></span>Power view (A/B feeds)</button>
+  <button class="btn" id="btnAir"><span class="dot" style="background:var(--warn)"></span>Airflow view (blanking)</button>
+  <button class="btn" id="btnLabels"><span class="dot" style="background:var(--accent)"></span>Component labels</button>
+  <button class="btn" id="btnU"><span class="dot" style="background:var(--muted)"></span>U-position ruler</button>
+  <button class="btn" id="btnReset"><span class="dot" style="background:#fff"></span>Reset view</button>
+</div>
+
+<div id="legend" class="hud">
+  <h2>Rack contents</h2>
+  <div class="lg"><span class="sw" style="background:#3aa0e6"></span>Server (compute)</div>
+  <div class="lg"><span class="sw" style="background:#39d98a"></span>Top-of-Rack switch</div>
+  <div class="lg"><span class="sw" style="background:#b06bff"></span>Storage / UPS</div>
+  <div class="lg"><span class="sw" style="background:var(--blank)"></span>Blanking panel (empty U)</div>
+  <div class="lg"><span class="sw" style="background:var(--a)"></span>rPDU A-feed &nbsp;<span class="sw" style="background:var(--b)"></span>B-feed</div>
+</div>
+
+<div id="info" class="hud">
+  <h3 id="iName">Click a component</h3>
+  <div id="iU"></div>
+  <p id="iDesc">Rotate the rack and click any device, PDU, or blanking panel to read its spec and why it's there. Use the buttons to switch to Power or Airflow views.</p>
+  <span class="tag" id="iTag">42U · 19-in · EIA-310-D</span>
+</div>
+
+<div id="hint" class="hud">1U = 1.75 in (44.45 mm) · 42U = 73.5 in (1867 mm) · inlet target 18–27 °C</div>
+<div id="err">Couldn't load the 3D engine (needs internet for the Three.js CDN). The component list and specs are in the course build pack.</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  if(!window.THREE){document.getElementById('err').style.display='flex';return;}
+  const THREE = window.THREE;
+  const app = document.getElementById('app');
+
+  // ---------- Scene ----------
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0a0e14);
+  scene.fog = new THREE.Fog(0x0a0e14, 38, 70);
+
+  const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 200);
+  const renderer = new THREE.WebGLRenderer({antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  app.appendChild(renderer.domElement);
+
+  // ---------- Lights ----------
+  scene.add(new THREE.HemisphereLight(0x9fc4ff, 0x0a0e14, 0.65));
+  const key = new THREE.DirectionalLight(0xffffff, 1.05);
+  key.position.set(14,22,16); key.castShadow=true;
+  key.shadow.mapSize.set(1024,1024); key.shadow.camera.near=1; key.shadow.camera.far=80;
+  scene.add(key);
+  const rim = new THREE.DirectionalLight(0x36c2ff, 0.5); rim.position.set(-12,8,-10); scene.add(rim);
+  const cold = new THREE.PointLight(0x36c2ff, 0.6, 60); cold.position.set(0,6,14); scene.add(cold);
+
+  // ---------- Dimensions (world units) ----------
+  const U = 0.4;                 // one rack unit
+  const UNITS = 42;
+  const RACK_H = U*UNITS;        // 16.8
+  const RACK_W = 6.2;
+  const RACK_D = 7.6;
+  const POST = 0.28;
+  const innerW = RACK_W - POST*2;
+  const baseY = -RACK_H/2;       // bottom of usable U area
+
+  const rackGroup = new THREE.Group();
+  scene.add(rackGroup);
+
+  const clickable = [];          // meshes that respond to click
+  const labelData = [];          // {obj3d, text, el}
+  const uTicks = [];             // {y, text, el}
+
+  // ---------- Floor ----------
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(60,60),
+    new THREE.MeshStandardMaterial({color:0x0c121b, roughness:.95, metalness:.05})
+  );
+  floor.rotation.x = -Math.PI/2; floor.position.y = baseY-0.6; floor.receiveShadow=true;
+  scene.add(floor);
+  const grid = new THREE.GridHelper(60,30,0x1f2a3a,0x141c28);
+  grid.position.y = baseY-0.59; scene.add(grid);
+
+  // ---------- Rack frame ----------
+  const frameMat = new THREE.MeshStandardMaterial({color:0x2b3340, roughness:.6, metalness:.55});
+  function box(w,h,d,mat){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.castShadow=true;m.receiveShadow=true;return m;}
+  const postPos = [[-(RACK_W/2-POST/2),  RACK_D/2-POST/2],
+                   [ (RACK_W/2-POST/2),  RACK_D/2-POST/2],
+                   [-(RACK_W/2-POST/2), -(RACK_D/2-POST/2)],
+                   [ (RACK_W/2-POST/2), -(RACK_D/2-POST/2)]];
+  postPos.forEach(p=>{const m=box(POST,RACK_H+1.0,POST,frameMat);m.position.set(p[0],0,p[1]);rackGroup.add(m);});
+  // top & bottom plates
+  [RACK_H/2+0.5, -RACK_H/2-0.5].forEach(y=>{const m=box(RACK_W,0.32,RACK_D,frameMat);m.position.y=y;rackGroup.add(m);});
+  // rear panel (subtle)
+  const rear = box(RACK_W-0.2, RACK_H+0.9, 0.12, new THREE.MeshStandardMaterial({color:0x161d28,roughness:.9,metalness:.2}));
+  rear.position.set(0,0,-(RACK_D/2-POST/2)); rackGroup.add(rear);
+
+  // ---------- Materials for devices ----------
+  function devMat(hex){return new THREE.MeshStandardMaterial({color:hex,roughness:.45,metalness:.5});}
+  const MAT = {
+    server: 0x3aa0e6, switch: 0x39d98a, storage: 0xb06bff, ups: 0xb06bff, blank: 0x2a3445
+  };
+
+  // ---------- Equipment list (startU is bottom-most U of the device; U1 at bottom) ----------
+  const equip = [
+    {u:42,h:1,type:'switch', name:'Top-of-Rack Switch', desc:'Network uplink for the rack. Mounted at the top for clean fiber/copper runs to the patch panel just below; both ends labeled per the cabling plan (TIA-942 EDA).', tag:'1U · ToR · structured cabling'},
+    {u:41,h:1,type:'switch', name:'Patch Panel', desc:'Terminates structured cabling into the rack (Cat 6A / OM4). Adjacent to the switch to minimize cross-rack jumpers.', tag:'1U · patch · Cat6A/OM4'},
+    {u:38,h:2,type:'server', name:'2U Compute Server', desc:'Dual-PSU server: one PSU on the A-feed rPDU, one on the B-feed. Lose a feed, the box stays up.', tag:'2U · dual-PSU · A+B'},
+    {u:36,h:2,type:'server', name:'2U Compute Server', desc:'Dual-PSU server, A+B powered. Cold-aisle intake (front), hot exhaust to the rear hot aisle.', tag:'2U · dual-PSU'},
+    {u:33,h:2,type:'server', name:'2U GPU Server', desc:'High-density GPU node. Modern AI racks push 120–132 kW total and increasingly need direct-to-chip liquid cooling — far beyond air-cooled 6–15 kW racks.', tag:'2U · GPU · high-density'},
+    {u:28,h:4,type:'storage',name:'4U Storage Array', desc:'Heavy device mounted LOW to keep the rack center of gravity down and within the ~1588 kg (3500 lb) static load limit.', tag:'4U · storage · mount low'},
+    {u:25,h:1,type:'server', name:'1U Server', desc:'1U = 1.75 in (44.45 mm). Torqued to spec on square-hole rails with cage nuts.', tag:'1U · cage-nut mount'},
+    {u:24,h:1,type:'server', name:'1U Server', desc:'1U compute node, A+B powered, both cable ends labeled.', tag:'1U · dual-PSU'},
+    {u:20,h:2,type:'server', name:'2U Compute Server', desc:'Dual-PSU server. The A/B PSU split is what turns two feeds into real redundancy.', tag:'2U · dual-PSU'},
+    {u:6,h:3,type:'ups',     name:'3U UPS / Battery', desc:'Local ride-through power. Heaviest unit, mounted lowest. Verify redundancy (N+1 / 2N) before energizing IT.', tag:'3U · UPS · mount lowest'}
+  ];
+
+  // mark occupied U
+  const occupied = new Array(UNITS+1).fill(false);
+  equip.forEach(e=>{for(let i=0;i<e.h;i++) occupied[e.u-i]=true;});
+
+  // helper: y-center for a device occupying [u .. u-h+1]
+  function yForBlock(topU, h){
+    // U index 1 at bottom. center of block spanning topU down to topU-h+1
+    const topEdge = baseY + topU*U;
+    return topEdge - (h*U)/2;
+  }
+
+  // ---------- Build equipment ----------
+  function faceVents(mesh,w,h){
+    // thin front bezel detail
+    const vent = new THREE.Mesh(new THREE.BoxGeometry(w*0.82,h*0.5,0.04),
+      new THREE.MeshStandardMaterial({color:0x0c1118,roughness:.8,metalness:.3}));
+    vent.position.set(0,0,RACK_D/2-0.02); mesh.add(vent);
+  }
+  equip.forEach(e=>{
+    const w = innerW-0.25, h = e.h*U-0.08, d = RACK_D-0.7;
+    const m = box(w,h,d, devMat(MAT[e.type]));
+    m.position.set(0, yForBlock(e.u,e.h), 0.18);
+    faceVents(m,w,h);
+    m.userData = {kind:'equip', ...e, baseColor:MAT[e.type]};
+    rackGroup.add(m); clickable.push(m);
+    labelData.push({obj:m, text:e.name});
+  });
+
+  // ---------- Blanking panels for empty U ----------
+  const blanks=[];
+  for(let u=1;u<=UNITS;u++){
+    if(occupied[u]) continue;
+    const w=innerW-0.25, h=U-0.06, d=0.2;
+    const m=box(w,h,d, devMat(MAT.blank));
+    m.position.set(0, yForBlock(u,1), RACK_D/2-0.45);
+    m.userData={kind:'blank', u, name:'Blanking Panel', h:1,
+      desc:'Fills an empty U so hot exhaust can’t recirculate to the cold-aisle intake. Every empty U gets one — the cheapest airflow win in the hall (containment can save up to ~30% cooling energy).',
+      tag:'1U · airflow · ASHRAE', baseColor:MAT.blank};
+    rackGroup.add(m); clickable.push(m); blanks.push(m);
+  }
+
+  // ---------- rPDUs (zero-U, vertical, rear corners) ----------
+  function pdu(xside, color, name, feed){
+    const m = box(0.34, RACK_H-0.4, 0.34, new THREE.MeshStandardMaterial({color,roughness:.4,metalness:.6,emissive:color,emissiveIntensity:.12}));
+    m.position.set(xside*(innerW/2-0.05), 0, -(RACK_D/2-0.75));
+    m.userData={kind:'pdu', feed, name, baseColor:color,
+      desc:'Rack PDU on the '+feed+'-feed. Independent power path to the rack; each server’s dual PSUs take one feed each. Keep each feed loaded low enough that, on failover, the surviving feed carries the FULL load without tripping its breaker.',
+      tag:'0U rPDU · '+feed+'-feed'};
+    rackGroup.add(m); clickable.push(m);
+    labelData.push({obj:m, text:feed+'-feed rPDU'});
+    return m;
+  }
+  const pduA = pdu(-1, 0xff8c32, 'rPDU — A-feed', 'A');
+  const pduB = pdu( 1, 0x36c2ff, 'rPDU — B-feed', 'B');
+
+  // ---------- HTML labels & U ruler ----------
+  const appEl = document.getElementById('app');
+  labelData.forEach(L=>{const el=document.createElement('div');el.className='lbl';el.textContent=L.text;appEl.appendChild(el);L.el=el;});
+  for(let u=1;u<=UNITS;u++){ if(u===1||u%5===0||u===UNITS){
+    const el=document.createElement('div');el.className='uruler';el.textContent='U'+u;appEl.appendChild(el);
+    uTicks.push({y:yForBlock(u,1), x:-(RACK_W/2)-0.2, el});
+  }}
+
+  // ---------- Camera orbit (custom, no external controls) ----------
+  let theta=0.7, phi=1.15, radius=30, targetRadius=30;
+  const target=new THREE.Vector3(0,0,0);
+  function applyCamera(){
+    radius += (targetRadius-radius)*0.12;
+    camera.position.x = target.x + radius*Math.sin(phi)*Math.sin(theta);
+    camera.position.y = target.y + radius*Math.cos(phi);
+    camera.position.z = target.z + radius*Math.sin(phi)*Math.cos(theta);
+    camera.lookAt(target);
+  }
+  let dragging=false, px=0, py=0;
+  renderer.domElement.addEventListener('pointerdown',e=>{dragging=true;px=e.clientX;py=e.clientY;autoRotate=false;syncRotateBtn();});
+  window.addEventListener('pointerup',()=>dragging=false);
+  window.addEventListener('pointermove',e=>{
+    if(!dragging)return;
+    theta -= (e.clientX-px)*0.008; phi -= (e.clientY-py)*0.006;
+    phi=Math.max(0.25,Math.min(Math.PI-0.25,phi));
+    px=e.clientX; py=e.clientY;
+  });
+  renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();targetRadius=Math.max(12,Math.min(55,targetRadius+e.deltaY*0.02));},{passive:false});
+
+  // ---------- Raycast click ----------
+  const ray=new THREE.Raycaster(); const mouse=new THREE.Vector2(); let selected=null;
+  function setInfo(o){
+    const d=o.userData;
+    document.getElementById('iName').textContent=d.name;
+    document.getElementById('iU').innerHTML = d.u? ('<span class="u">U'+(d.h>1?(d.u-d.h+1)+'–'+d.u:d.u)+'</span>') : (d.feed? '<span class="u">'+d.feed+'-feed</span>':'');
+    document.getElementById('iDesc').textContent=d.desc||'';
+    document.getElementById('iTag').textContent=d.tag||'';
+  }
+  function clearSelect(){ if(selected){selected.material.emissive.setHex(selected.userData.kind==='pdu'?selected.userData.baseColor:0x000000);selected.material.emissiveIntensity=selected.userData.kind==='pdu'?.12:0;selected=null;} }
+  renderer.domElement.addEventListener('click',e=>{
+    mouse.x=(e.clientX/window.innerWidth)*2-1; mouse.y=-(e.clientY/window.innerHeight)*2+1;
+    ray.setFromCamera(mouse,camera);
+    const hit=ray.intersectObjects(clickable,false);
+    clearSelect();
+    if(hit.length){ selected=hit[0].object; selected.material.emissive.setHex(0xffffff); selected.material.emissiveIntensity=.35; setInfo(selected); }
+  });
+
+  // ---------- View modes ----------
+  let autoRotate=true, showLabels=false, showU=false, mode='all';
+  const btnRotate=document.getElementById('btnRotate'),btnPower=document.getElementById('btnPower'),
+        btnAir=document.getElementById('btnAir'),btnLabels=document.getElementById('btnLabels'),
+        btnU=document.getElementById('btnU'),btnReset=document.getElementById('btnReset');
+  function syncRotateBtn(){btnRotate.classList.toggle('active',autoRotate);btnRotate.innerHTML='<span class="dot" style="background:var(--ok)"></span>Auto-rotate: '+(autoRotate?'ON':'OFF');}
+  function dim(o,on){ o.material.opacity = on?1:0.12; o.material.transparent=!on; }
+  function setMode(m){
+    mode = (mode===m)?'all':m;
+    btnPower.classList.toggle('active',mode==='power');
+    btnAir.classList.toggle('active',mode==='air');
+    clickable.forEach(o=>{
+      if(mode==='all'){dim(o,true);}
+      else if(mode==='power'){dim(o, o.userData.kind==='pdu');}
+      else if(mode==='air'){dim(o, o.userData.kind==='blank');}
+    });
+    const info={power:{name:'Power view — A/B feeds',desc:'Two independent power paths (A=orange, B=cyan). Every server’s dual PSUs split one per feed. Redundancy is judged at FAILOVER: each feed must carry the whole load alone without tripping. That’s the 2N promise (Tier IV / Rated 4).',tag:'A+B · 2N · N+1'},
+                air:{name:'Airflow view — blanking',desc:'Highlighted panels fill every empty U. They stop hot exhaust from recirculating into the cold-aisle intake. With aisle containment this saves up to ~30% cooling energy and helps hold the ASHRAE 18–27 °C inlet target.',tag:'blanking · containment · ASHRAE'}};
+    if(mode!=='all'){const i=info[mode];document.getElementById('iName').textContent=i.name;document.getElementById('iU').innerHTML='';document.getElementById('iDesc').textContent=i.desc;document.getElementById('iTag').textContent=i.tag;}
+  }
+  btnRotate.onclick=()=>{autoRotate=!autoRotate;syncRotateBtn();};
+  btnPower.onclick=()=>setMode('power');
+  btnAir.onclick=()=>setMode('air');
+  btnLabels.onclick=()=>{showLabels=!showLabels;btnLabels.classList.toggle('active',showLabels);};
+  btnU.onclick=()=>{showU=!showU;btnU.classList.toggle('active',showU);};
+  btnReset.onclick=()=>{theta=0.7;phi=1.15;targetRadius=30;autoRotate=true;mode='all';showLabels=false;showU=false;
+    btnLabels.classList.remove('active');btnU.classList.remove('active');btnPower.classList.remove('active');btnAir.classList.remove('active');
+    syncRotateBtn();clickable.forEach(o=>dim(o,true));clearSelect();
+    document.getElementById('iName').textContent='Click a component';document.getElementById('iU').innerHTML='';
+    document.getElementById('iDesc').textContent='Rotate the rack and click any device, PDU, or blanking panel.';document.getElementById('iTag').textContent='42U · 19-in · EIA-310-D';};
+
+  // ---------- Label projection ----------
+  const v=new THREE.Vector3();
+  function updateLabels(){
+    labelData.forEach(L=>{
+      if(!showLabels){L.el.style.opacity=0;return;}
+      L.obj.getWorldPosition(v); v.x-=2.0; v.project(camera);
+      const onscreen=v.z<1;
+      L.el.style.opacity=onscreen?1:0;
+      L.el.style.left=((v.x*0.5+0.5)*window.innerWidth)+'px';
+      L.el.style.top=((-v.y*0.5+0.5)*window.innerHeight)+'px';
+    });
+    uTicks.forEach(t=>{
+      if(!showU){t.el.style.opacity=0;return;}
+      v.set(t.x,t.y,RACK_D/2-0.4); rackGroup.localToWorld(v); v.project(camera);
+      t.el.style.opacity=(v.z<1)?0.95:0;
+      t.el.style.left=((v.x*0.5+0.5)*window.innerWidth)+'px';
+      t.el.style.top=((-v.y*0.5+0.5)*window.innerHeight)+'px';
+    });
+  }
+
+  // ---------- Resize ----------
+  window.addEventListener('resize',()=>{
+    camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth,window.innerHeight);
+  });
+
+  // ---------- Animate ----------
+  function tick(){
+    requestAnimationFrame(tick);
+    if(autoRotate && !dragging) theta+=0.0025;
+    applyCamera();
+    try{updateLabels();}catch(e){}
+    renderer.render(scene,camera);
+  }
+  syncRotateBtn(); applyCamera(); tick();
+})();
+</script>
+</body>
+</html>
