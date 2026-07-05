@@ -2,7 +2,7 @@
 
 A self-contained, browser-based **interactive 3D server rack** built for technical upskilling courseware. Rotate, zoom, and click any component to read its spec. Toggle **Power view** (A/B feeds) and **Airflow view** (blanking panels).
 
-**▶ Live demo:** https://akhildhruva.github.io/Data-Center-HMI-Training-/
+**▶ Live demo:** https://data-center-training.vercel.app
 
 ## What it shows
 - A 42U rack built to **EIA-310-D** dimensions (1U = 1.75 in / 44.45 mm; 42U = 73.5 in / 1867 mm; 19-in / 482.6 mm mounting).
