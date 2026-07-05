@@ -97,7 +97,11 @@
   #tabs{display:flex;gap:20px;padding:6px 18px 0;border-bottom:1px solid var(--line);flex:0 0 auto}
   .tab{background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);font-size:13px;
     padding:9px 2px;cursor:pointer}
+  .tab{transition:color .15s}
   .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .ctl{transition:background .15s,border-color .15s}
+  #stepper .step.active .num{box-shadow:0 0 10px rgba(47,210,245,.45)}
+  #rackList li{transition:background .15s,border-color .15s}
   #cardBody{padding:14px 18px 20px;overflow-y:auto;flex:1 1 auto;font-size:12.8px;line-height:1.55}
   #cardBody h4{margin:16px 0 7px;font-size:10.8px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
   #cardBody h4:first-child{margin-top:0}
@@ -113,16 +117,19 @@
   #cardBody .dep .op.op-meta{color:#8b9bff}#cardBody .dep .op.op-goog{color:#ffd23f}
   #cardBody .dep .op.op-aws{color:#ff8c32}#cardBody .dep .op.op-x{color:#e6edf6}#cardBody .dep .op.op-oai{color:#39d98a}
   #cardBody .dep .t{color:#cdd8e6;font-size:11.8px}
-  .ig{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-  .ic{background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:10px;display:flex;
-    flex-direction:column;gap:6px}
-  .ic .th{height:44px;border-radius:8px;background:#0a1119;display:flex;align-items:center;justify-content:center;
-    font-size:21px;letter-spacing:2px}
-  .ic .n{font-size:12.3px;color:#fff;font-weight:600;line-height:1.25}
-  .ic .d{font-size:10.8px;color:var(--muted);line-height:1.4;flex:1}
+  .ig{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+  .ic{background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:9px;display:flex;
+    flex-direction:column;gap:6px;transition:border-color .15s,transform .15s}
+  .ic:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .ich{display:flex;align-items:center;gap:8px}
+  .ic .th{width:30px;height:30px;border-radius:7px;background:#0a1119;display:flex;align-items:center;
+    justify-content:center;font-size:13px;letter-spacing:1px;flex:0 0 auto}
+  .ic .n{font-size:12px;color:#fff;font-weight:600;line-height:1.25}
+  .ic .d{font-size:10.6px;color:var(--muted);line-height:1.4;flex:1;display:-webkit-box;-webkit-line-clamp:2;
+    -webkit-box-orient:vertical;overflow:hidden}
   .ic button{background:#0d1722;border:1px solid var(--line2);color:var(--accent);border-radius:8px;padding:6px;
-    font-size:11.3px;cursor:pointer;display:flex;gap:6px;align-items:center;justify-content:center}
-  .ic button:hover{border-color:var(--accent)}
+    font-size:11.3px;cursor:pointer;display:flex;gap:6px;align-items:center;justify-content:center;transition:.15s}
+  .ic button:hover{border-color:var(--accent);background:#10222c}
   .why{margin-top:14px;background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px}
   .why h5{margin:0 0 6px;font-size:10.3px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;
     display:flex;justify-content:space-between;align-items:center}
@@ -184,22 +191,29 @@
     padding:10px 18px;cursor:pointer;font-size:13px}
   #helpBox ul{margin:0;padding-left:18px;font-size:13px;line-height:1.8;color:#cdd8e6}
   /* ---------- responsive ---------- */
-  @media (max-width:1500px){#stepper .step span.txt{display:none}#stepper{gap:6px}}
-  @media (max-width:1180px){#sidebar{display:none}#controls{right:16px;top:80px;width:190px}
-    #card{top:auto;height:52vh;left:16px;width:auto;bottom:16px}
-    #bottombar{display:none}#brand p{display:none}#stepper{display:none}}
+  /* Desktop: sidebar + viewport + controls + inspector */
+  @media (max-width:1560px){#stepper .step .txt{display:none}#stepper{gap:6px;padding:7px 12px}}
+  @media (max-width:1440px){#sidebar{display:none}}
+  /* Tablet / iPad: viewport dominant, icon control dock, inspector docks bottom */
+  @media (max-width:1100px){
+    #controls{right:16px;top:80px;width:56px;padding:7px;gap:6px}
+    #controls .ctl{justify-content:center;padding:10px 0;font-size:0}
+    #controls .ctl .end,#controls .ctl .switch{display:none}
+    #card{top:auto;left:16px;right:16px;width:auto;height:44vh;bottom:16px}
+    #bottombar{display:none}#brand p{display:none}
+  }
 </style>
 </head>
 <body>
-<div id="app"></div>
+<div id="app" data-component="ThreeDViewport"></div><!-- AppShell: absolute HUD panels over the viewport -->
 
-<header id="topbar" class="hud">
+<header id="topbar" class="hud" data-component="TopHeader">
   <button class="iconbtn sq" id="menuBtn" title="Toggle rack contents"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
   <div id="brand">
     <div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 7l8-4 8 4-8 4-8-4z"/><path d="M4 12l8 4 8-4"/><path d="M4 17l8 4 8-4"/></svg></div>
     <div><h1>Interactive 42U AI Data Center Rack</h1><p>Vendor &amp; Deployment Training · Critical Component Dissection</p></div>
   </div>
-  <ol id="stepper">
+  <ol id="stepper" data-component="DissectionStepper">
     <li class="step s1 active"><span class="num">1</span><span class="txt">Select component</span></li><li class="chev">›</li>
     <li class="step s2"><span class="num">2</span><span class="txt">Pull out</span></li><li class="chev">›</li>
     <li class="step s3"><span class="num">3</span><span class="txt">Open chassis</span></li><li class="chev">›</li>
@@ -212,13 +226,13 @@
   </div>
 </header>
 
-<aside id="sidebar" class="hud">
+<aside id="sidebar" class="hud" data-component="RackContentsSidebar">
   <h2>Rack contents</h2>
   <ul id="rackList"></ul>
   <button id="btnFullRack">⤢&nbsp; View full rack</button>
 </aside>
 
-<div id="controls" class="hud">
+<div id="controls" class="hud" data-component="ViewportControlsDock">
   <div class="ctl on" id="btnRotate"><span class="dot" style="background:var(--ok)"></span>Auto-rotate<span class="switch"></span></div>
   <div class="ctl" id="btnPower"><span class="dot" style="background:var(--a)"></span>Power view<span class="end">A/B feeds</span></div>
   <div class="ctl" id="btnAir"><span class="dot" style="background:var(--warn)"></span>Airflow view<span class="end">(blanking)</span></div>
@@ -228,7 +242,7 @@
   <div class="ctl reset" id="btnReset"><span class="dot" style="background:#fff"></span>Reset view</div>
 </div>
 
-<aside id="card" class="hud">
+<aside id="card" class="hud" data-component="ComponentInspectorPanel">
   <div id="cardHead">
     <button id="cardBack">◄ <span id="cardBackTxt">Back</span></button>
     <h3 id="cardName">—</h3>
@@ -245,7 +259,7 @@
   <div id="cardBody"></div>
 </aside>
 
-<footer id="bottombar" class="hud">
+<footer id="bottombar" class="hud" data-component="BottomMetricsBar">
   <div class="bb"><div id="bbIcon">▦</div><div style="min-width:0"><div class="v" id="bbName">42U Rack</div><div class="k">Position: <span id="bbPos">—</span></div></div></div>
   <div class="bb"><div class="k">U Position</div><div class="v" id="bbU">—</div></div>
   <div class="bb"><div class="k">Size</div><div class="v" id="bbSize">—</div></div>
@@ -694,13 +708,14 @@
       const rx=(n>1? (-0.34 + (i/(n-1))*0.68):0)*w;
       const rz=(i%2? -0.14:0.14)*d;
       pg.position.set(rx, hubY, rz);
-      // exploded position: schematic grid in front-left of the rack (mockup layout)
+      // exploded position: parts rest ON a tray apron plane pulled out of the rack
       const cols=Math.max(1,Math.ceil(n/2));
       const gx=i%cols, gy=Math.floor(i/cols);
-      const sp=1.85;
-      const ex=(gx-(cols-1)/2)*sp - 1.1;
-      const ey=hubY + (gy? -1.15:0.85);
-      const ez=d/2 + 2.4 + gy*1.0;
+      const sp=1.9;
+      const trayY=-h*0.32+0.55;
+      const ex=(gx-(cols-1)/2)*sp - 0.9;
+      const ey=trayY;
+      const ez=d/2 + 1.5 + gy*1.7;
       pg.userData.pick={type:'peri',comp,peri:p};
       pg.traverse(o=>{if(o.isMesh){o.userData.pick={type:'peri',comp,peri:p};o.castShadow=true;pickable.push(o);}});
       pg.visible=false;
@@ -709,13 +724,21 @@
       // connector line hub->part
       const geom=new THREE.BufferGeometry();
       geom.setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3));
-      const line=new THREE.Line(geom,new THREE.LineBasicMaterial({color:0x36c2ff,transparent:true,opacity:0}));
+      const line=new THREE.Line(geom,new THREE.LineDashedMaterial({color:0x36c2ff,transparent:true,opacity:0,dashSize:0.22,gapSize:0.14}));
       pivot.add(line); comp._lines.push({line,peri:pg});
       // floating peri label
       const el=document.createElement('div'); el.className='peri-lbl'; el.textContent=p.name;
       app.appendChild(el); comp._peris[comp._peris.length-1].el=el;
     });
 
+    if(n){ // TrayApron: translucent sled plane the internals sit on when exploded
+      const rows=(n>Math.ceil(n/2))?2:1, colsA=Math.max(1,Math.ceil(n/2));
+      const apron=new THREE.Mesh(new THREE.BoxGeometry(colsA*1.9+1.4,0.06,rows*1.7+2.4),
+        new THREE.MeshStandardMaterial({color:0x123244,transparent:true,opacity:0,roughness:.35,metalness:.6,
+          emissive:0x0a2b3a,emissiveIntensity:.5}));
+      apron.position.set(-0.9, -h*0.32+0.12, d/2+1.5+(rows-1)*0.85);
+      pivot.add(apron); comp._apron=apron;
+    }
     rackGroup.add(comp);
     labelData.push({obj:comp, text:e.name, crit:e.critical});
     return comp;
@@ -754,7 +777,7 @@
       comp._peris.push({g:pg,def:p,rest:pg.position.clone(),
         expl:new THREE.Vector3(pd.side*(1.6+Math.abs(ang)*0.6), ry+Math.sin(ang)*1.0, d/2+Math.cos(ang)*R*0.4+1.0)});
       const geom=new THREE.BufferGeometry();geom.setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3));
-      const line=new THREE.Line(geom,new THREE.LineBasicMaterial({color:pd.color,transparent:true,opacity:0}));
+      const line=new THREE.Line(geom,new THREE.LineDashedMaterial({color:pd.color,transparent:true,opacity:0,dashSize:0.22,gapSize:0.14}));
       pivot.add(line); comp._lines.push({line,peri:pg});
       const el=document.createElement('div');el.className='peri-lbl';el.textContent=p.name;app.appendChild(el);
       comp._peris[comp._peris.length-1].el=el;
@@ -864,6 +887,9 @@
     GROUPS.forEach(g=>{ const on=def? (g.blank? def.cat==='blank' : !!(g.match&&g.match(def))) : false;
       if(g.el) g.el.classList.toggle('active',on); });
   }
+  function setGlow(c,on){ if(!c._parts || (c.userData.def&&c.userData.def.feed)) return;
+    c._parts.forEach(pt=>{ if(pt.m.material&&pt.m.material.emissive){
+      pt.m.material.emissive.setHex(on?0x36c2ff:0x000000); pt.m.material.emissiveIntensity=on?0.16:0; } }); }
   function closeCardFlow(){ collapseAll(); renderRackOverview(); }
   function toast(msg){ toastEl.textContent=msg; toastEl.classList.add('show');
     clearTimeout(toastEl._t); toastEl._t=setTimeout(()=>toastEl.classList.remove('show'),2600); }
@@ -946,6 +972,7 @@
     const e=comp.userData.def;
     if(active && active!==comp){ setExplode(active,0); }
     active=comp; selectedPeri=null;
+    components.forEach(c=>setGlow(c,false)); setGlow(comp,true);
     const hasDis=(comp._peris&&comp._peris.length);
     if(hasDis){ setExplode(comp,1); focusOn(comp,true); stage.intensity=0.55; btnExit.style.display='flex'; }
     else { focusOn(comp,false); btnExit.style.display= (active&&active._peris.length)?'flex':'none'; }
@@ -956,6 +983,7 @@
   }
   function collapseAll(){
     if(active){ setExplode(active,0); }
+    components.forEach(c=>setGlow(c,false));
     active=null; selectedPeri=null; stage.intensity=0.0; btnExit.style.display='none';
     defaultView(); setStep(1); markSidebar(null);
   }
@@ -1016,12 +1044,12 @@
   function internalsGrid(r){
     if(!r.peris||!r.peris.length)
       return '<p style="color:var(--muted)">No internal peripherals are modeled for this part. Pick a ★ critical component (GPU node, UPS, ToR switch, storage, rPDU) to dissect internals.</p>';
-    let h='<p style="margin:0 0 2px;color:#fff;font-weight:600">Internal components ('+r.peris.length+')</p>'+
+    let h='<p style="margin:0 0 2px;color:#fff;font-weight:600" data-component="InternalsGrid">Internal components ('+r.peris.length+')</p>'+
       '<p style="color:var(--muted);font-size:11.5px;margin:0 0 4px">Click a component to focus it in 3D and learn more.</p><div class="ig">';
     r.peris.forEach((p,i)=>{
       const blurb=(p.desc||'').split('. ')[0]; const g=GLYPH[p.kind]||'▣';
-      h+='<div class="ic"><div class="th" style="color:'+hex(p.color)+'">'+g+'</div>'+
-         '<div class="n">'+p.name+'</div><div class="d">'+blurb.slice(0,76)+(blurb.length>76?'…':'')+'</div>'+
+      h+='<div class="ic"><div class="ich"><div class="th" style="color:'+hex(p.color)+'">'+g+'</div>'+
+         '<div class="n">'+p.name+'</div></div><div class="d">'+blurb.slice(0,64)+(blurb.length>64?'…':'')+'</div>'+
          '<button data-peri="'+i+'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg> Inspect</button></div>';
     });
     return h+'</div>';
@@ -1157,49 +1185,51 @@
   ==========================================================================*/
   const _v=new THREE.Vector3(), _a=new THREE.Vector3(), _b=new THREE.Vector3();
   function ease(t){return t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2;}
+  // Dissection state machine: select -> pullout -> open -> inspect (phased, cinematic)
   function animateComponents(){
+    const dt=Math.min(0.2,Math.max(0,nowT-(animateComponents._last||nowT))); animateComponents._last=nowT;
     components.forEach(comp=>{
-      const d=Math.abs(comp._goal-comp._t);
-      if(d>0.001){ comp._t += (comp._goal-comp._t)*(REDUCED?1:0.12); }
-      else comp._t=comp._goal;
-      const t=comp._t, et=ease(t);
-      // pivot slide-out
-      comp._pivot.position.lerpVectors(new THREE.Vector3(0,0,0), comp._pivotExpl, et);
-      comp._pivot.rotation.y=(comp._yaw||0)*et;
-      // casing parts (fade to a translucent "ghost" so internals read through)
-      comp._parts.forEach(pt=>{ pt.m.position.lerpVectors(pt.rest,pt.expl,et);
-        if(pt.cas && pt.m.material){ pt.m.material.opacity = 1 - 0.78*et; } });
-      // peripherals
+      if(REDUCED){ comp._t=comp._goal; }
+      else if(comp._t!==comp._goal){
+        const dir=Math.sign(comp._goal-comp._t);
+        comp._t=Math.max(0,Math.min(1, comp._t + dir*dt/2.2)); // fixed 2.2s cinematic sequence
+        if(dir>0? comp._t>comp._goal : comp._t<comp._goal) comp._t=comp._goal;
+      }
+      const t=comp._t;
+      const pull  =ease(Math.min(1, t/0.42));                      // stage 2: chassis slides out
+      const open  =ease(Math.max(0,Math.min(1,(t-0.36)/0.40)));    // stage 3: casing lifts/fades
+      const spread=ease(Math.max(0,Math.min(1,(t-0.60)/0.40)));    // stage 4: internals separate
+      comp._pivot.position.lerpVectors(new THREE.Vector3(0,0,0), comp._pivotExpl, pull);
+      comp._pivot.rotation.y=(comp._yaw||0)*pull;
+      comp._parts.forEach(pt=>{ pt.m.position.lerpVectors(pt.rest,pt.expl,open);
+        if(pt.cas && pt.m.material){ pt.m.material.opacity = 1 - 0.85*open; } });
+      if(comp._apron && comp._apron.material){ comp._apron.material.opacity = 0.22*spread; }
       comp._peris.forEach(pr=>{
-        pr.g.visible = t>0.02;
-        pr.g.position.lerpVectors(pr.rest,pr.expl,et);
-        if(pr.g.visible){ pr.g.rotation.y += (comp===active?0.004:0); }
-        // highlight selected peri
+        pr.g.visible = t>0.55;
+        pr.g.position.lerpVectors(pr.rest,pr.expl,spread);
         const sel=(comp===active && selectedPeri===pr.def);
         pr.g.traverse(o=>{if(o.isMesh&&o.material&&o.material.emissive){
           if(sel){o.material.emissiveIntensity=0.6;} }});
       });
-      // connector lines
       comp._lines.forEach(ln=>{
-        const on = t>0.5;
-        ln.line.material.opacity = on? 0.5*et : 0;
+        const on = t>0.6;
+        ln.line.material.opacity = on? 0.45*spread : 0;
         if(on){
           const g=ln.line.geometry.attributes.position;
           g.setXYZ(0, 0, 0, 0);
           g.setXYZ(1, ln.peri.position.x, ln.peri.position.y, ln.peri.position.z);
-          g.needsUpdate=true;
+          g.needsUpdate=true; ln.line.computeLineDistances();
         }
       });
-      // critical LED pulse
       if(comp._led){ comp._led.material.emissiveIntensity = 0.6 + 0.4*Math.sin(nowT*3 + comp.position.y); }
     });
-    if(active && active._goal>0){ const t=active._t, s=t<0.45?2:(t<0.92?3:(selectedPeri?4:4)); if(s!==curStep) setStep(s); }
+    if(active && active._goal>0){ const t=active._t, s=t<0.42?2:(t<0.80?3:4); if(s!==curStep) setStep(s); }
   }
 
   /* label projection */
   function updateLabels(){
     labelData.forEach(L=>{
-      const showComp = showLabels && (!active || active===L.obj || L.obj._goal<0.5);
+      const showComp = showLabels && (active? active===L.obj : true); // dissection: selected label only
       if(!showComp){L.el.style.opacity=0;}
       else{
         L.obj.getWorldPosition(_v); _v.x-=2.2; _v.project(camera);
@@ -1211,7 +1241,7 @@
     });
     // peripheral labels (only for active exploded comp)
     components.forEach(comp=>{
-      const showP = comp===active && comp._t>0.6;
+      const showP = comp===active && comp._t>0.78; // internals label only once spread settles
       comp._peris.forEach(pr=>{
         if(!pr.el)return;
         if(!showP){pr.el.style.opacity=0;return;}
@@ -1224,7 +1254,7 @@
       });
     });
     uTicks.forEach(t=>{
-      if(!showU){t.el.style.opacity=0;return;}
+      if(!showU || active){t.el.style.opacity=0;return;} // ruler auto-hides during dissection
       _v.set(t.x,t.y,RACK_D/2-0.4); rackGroup.localToWorld(_v); _v.project(camera);
       t.el.style.opacity=(_v.z<1)?0.95:0;
       t.el.style.left=((_v.x*0.5+0.5)*window.innerWidth)+'px';
