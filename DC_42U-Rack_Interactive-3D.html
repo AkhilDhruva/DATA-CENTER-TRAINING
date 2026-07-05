@@ -570,9 +570,9 @@
     // front bezel (with vent) — opens toward front (+z)
     const bezel=box(w,h,0.12,mat(0x0c1118,{roughness:.8,metalness:.3}));
     bezel.position.z=d/2; bezel.userData.pick={type:'comp',comp}; pivot.add(bezel); pickable.push(bezel);
-    const vent=box(w*0.8,h*0.55,0.05,mat(0x05080d)); vent.position.z=d/2+0.05; bezel.add(vent);
+    const vent=box(w*0.8,h*0.55,0.05,mat(0x05080d)); vent.position.z=0.08; bezel.add(vent); // child of bezel → small offset, not d/2
     // critical status LED on bezel
-    if(e.critical){const led=box(0.14,0.14,0.06,mat(0xff5470,{emissive:0xff5470,emissiveIntensity:1}));led.position.set(w/2-0.3,h/2-0.28,d/2+0.05);bezel.add(led);comp._led=led;}
+    if(e.critical){const led=box(0.14,0.14,0.06,mat(0xff5470,{emissive:0xff5470,emissiveIntensity:1}));led.position.set(w/2-0.3,h/2-0.28,0.09);bezel.add(led);comp._led=led;}
     // top cover — lifts up
     const top=box(w,h*0.14,d,mat(bodyCol,{metalness:.6,roughness:.38,transparent:true}));
     top.position.y=h*0.42; top.userData.pick={type:'comp',comp}; pivot.add(top); pickable.push(top);
