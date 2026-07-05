@@ -6,8 +6,10 @@
 <title>Interactive 42U AI Data Center Rack — Rack to Runtime</title>
 <style>
   :root{
-    --bg:#0a0e14; --panel:#121823; --panel2:#0f1520; --line:#1f2a3a; --ink:#e6edf6; --muted:#8aa0b8;
-    --accent:#36c2ff; --a:#ff8c32; --b:#36c2ff; --ok:#39d98a; --warn:#ffd23f; --crit:#ff5470; --blank:#2a3445;
+    --bg:#070b12; --panel:#0d131d; --panel2:#111927; --line:#1e2a3b; --line2:#27364a;
+    --ink:#e8eef7; --muted:#8aa0b8; --accent:#2fd2f5; --accentD:#0e2b36;
+    --a:#ff8c32; --b:#36c2ff; --ok:#39d98a; --warn:#ffd23f; --crit:#ff5470; --purp:#b06bff;
+    --blank:#2a3445; --rad:14px;
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
@@ -16,52 +18,88 @@
   canvas{display:block}
   a{color:var(--accent)}
   .hud{position:absolute}
-  #title{top:16px;left:18px;max-width:46%;pointer-events:none}
-  #title h1{font-size:16px;margin:0;letter-spacing:.3px}
-  #title p{margin:3px 0 0;font-size:12px;color:var(--muted);line-height:1.45}
-  #title .badge{display:inline-block;margin-top:7px;font-size:10.5px;letter-spacing:.06em;
-    text-transform:uppercase;color:var(--crit);border:1px solid rgba(255,84,112,.5);
-    border-radius:20px;padding:2px 9px}
-  /* controls */
-  #controls{top:14px;right:14px;display:flex;flex-direction:column;gap:7px;width:210px;z-index:6;transition:right .34s cubic-bezier(.22,.61,.36,1)}
-  body.card-open #controls{right:372px}
-  .btn{background:var(--panel);border:1px solid var(--line);color:var(--ink);
-    padding:8px 11px;border-radius:9px;font-size:12.5px;cursor:pointer;text-align:left;
-    transition:.15s;display:flex;align-items:center;gap:8px;width:100%}
-  .btn:hover{border-color:var(--accent);background:#16202e}
-  .btn.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;color:#fff}
-  .btn.crit{border-color:rgba(255,84,112,.6)}
-  .btn.crit:hover{background:#1c141b}
-  .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
-  /* legend */
-  #legend{bottom:16px;left:18px;background:rgba(18,24,35,.86);border:1px solid var(--line);
-    border-radius:11px;padding:11px 13px;font-size:11.5px;backdrop-filter:blur(4px);max-width:230px}
-  #legend h2{font-size:10.5px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:0 0 7px}
-  .lg{display:flex;align-items:center;gap:8px;margin:4px 0}
-  .lg .sw{width:12px;height:12px;border-radius:3px;flex:0 0 auto}
-  .lg .star{color:var(--crit);font-size:13px;line-height:1}
-  /* report card */
-  #card{position:absolute;top:0;right:0;height:100%;width:360px;max-width:92vw;background:rgba(13,18,27,.96);
-    border-left:1px solid var(--line);transform:translateX(100%);transition:transform .38s cubic-bezier(.22,.61,.36,1);
-    display:flex;flex-direction:column;z-index:8;backdrop-filter:blur(6px)}
-  #card.open{transform:translateX(0)}
-  #cardHead{padding:16px 18px 12px;border-bottom:1px solid var(--line);position:relative}
-  #cardClass{font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin:0 0 4px}
-  #cardClass.crit{color:var(--crit)}
-  #cardName{margin:0;font-size:17px;line-height:1.2;color:#fff;padding-right:26px}
-  #cardU{font-size:11.5px;color:var(--muted);margin-top:5px}
+  /* ---------- top bar ---------- */
+  #topbar{top:0;left:0;right:0;height:64px;display:flex;align-items:center;gap:16px;padding:0 14px;
+    background:linear-gradient(180deg,rgba(7,11,18,.94),rgba(7,11,18,.78));border-bottom:1px solid var(--line);
+    backdrop-filter:blur(8px);z-index:12}
+  .iconbtn{background:var(--panel);border:1px solid var(--line2);color:var(--ink);border-radius:12px;height:40px;
+    min-width:40px;padding:0 14px;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:7px;white-space:nowrap}
+  .iconbtn:hover{border-color:var(--accent)}
+  .iconbtn.sq{padding:0;justify-content:center}
+  #brand{display:flex;align-items:center;gap:12px;min-width:0}
+  #brand .logo{width:38px;height:38px;border-radius:10px;flex:0 0 auto;background:linear-gradient(135deg,#0e2b36,#122033);
+    border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;color:var(--accent)}
+  #brand h1{font-size:16px;margin:0;white-space:nowrap}
+  #brand p{margin:2px 0 0;font-size:11px;color:var(--muted);white-space:nowrap}
+  #stepper{display:flex;align-items:center;gap:9px;list-style:none;margin:0 auto;padding:7px 16px;
+    background:rgba(13,19,28,.72);border:1px solid var(--line);border-radius:999px}
+  #stepper .step{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);white-space:nowrap}
+  #stepper .num{width:24px;height:24px;border-radius:50%;background:#141d2b;border:1px solid var(--line2);
+    display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);flex:0 0 auto}
+  #stepper .step.done .num{border-color:var(--accent);color:var(--accent)}
+  #stepper .step.active{color:var(--accent)}
+  #stepper .step.active .num{background:var(--accent);border-color:var(--accent);color:#04222e;font-weight:700}
+  #stepper .chev{color:#33465e;font-size:14px}
+  #topActions{display:flex;gap:9px;margin-left:auto}
+  #btnTraining.active,#btnHelp.active{border-color:var(--accent);color:#fff}
+  /* ---------- sidebar ---------- */
+  #sidebar{top:80px;left:16px;width:252px;background:rgba(13,19,28,.92);border:1px solid var(--line);
+    border-radius:var(--rad);padding:14px;z-index:8;backdrop-filter:blur(6px)}
+  #sidebar.hide{display:none}
+  #sidebar h2{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:2px 0 10px}
+  #rackList{list-style:none;margin:0;padding:0}
+  #rackList li{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:10px;border:1px solid transparent;
+    cursor:pointer;font-size:12.3px;color:#cdd8e6;line-height:1.3}
+  #rackList li:hover{background:#141d2b}
+  #rackList li.active{border-color:var(--accent);background:#10222c;color:#fff}
+  #rackList .sw{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
+  #rackList .cnt{margin-left:auto;background:#16202e;border:1px solid var(--line2);border-radius:7px;
+    min-width:26px;text-align:center;font-size:11px;color:var(--muted);padding:2px 5px;flex:0 0 auto}
+  #btnFullRack{width:100%;margin-top:10px;background:var(--panel2);border:1px solid var(--line2);color:var(--ink);
+    border-radius:10px;padding:10px;font-size:12.3px;cursor:pointer}
+  #btnFullRack:hover{border-color:var(--accent)}
+  /* ---------- controls ---------- */
+  #controls{top:80px;right:472px;width:220px;display:flex;flex-direction:column;gap:4px;
+    background:rgba(13,19,28,.92);border:1px solid var(--line);border-radius:var(--rad);padding:9px;z-index:8;backdrop-filter:blur(6px)}
+  .ctl{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:10px;cursor:pointer;font-size:12.3px;
+    color:#cdd8e6;border:1px solid transparent;user-select:none}
+  .ctl:hover{background:#141d2b}
+  .ctl.active{border-color:var(--accent);background:#10222c;color:#fff}
+  .ctl .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .ctl .end{margin-left:auto;font-size:10.5px;color:var(--muted)}
+  .switch{margin-left:auto;width:34px;height:18px;border-radius:999px;background:#1a2534;border:1px solid var(--line2);
+    position:relative;transition:.18s;flex:0 0 auto}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;
+    background:#8aa0b8;transition:.18s}
+  .ctl.on .switch{background:var(--accentD);border-color:var(--accent)}
+  .ctl.on .switch::after{left:18px;background:var(--accent)}
+  .ctl.reset{border-top:1px solid var(--line);border-radius:0;margin-top:4px;padding-top:11px}
+  #btnExit{color:var(--crit)}
+  /* ---------- report card ---------- */
+  #card{top:80px;right:16px;bottom:16px;width:440px;background:rgba(13,19,28,.94);border:1px solid var(--line);
+    border-radius:var(--rad);display:flex;flex-direction:column;z-index:9;backdrop-filter:blur(8px);overflow:hidden}
+  #cardHead{padding:16px 18px 0;position:relative}
   #cardBack{display:none;background:none;border:0;color:var(--accent);font-size:11.5px;cursor:pointer;
     padding:0;margin:0 0 8px;align-items:center;gap:5px}
   #cardBack.show{display:inline-flex}
-  #cardClose{position:absolute;top:14px;right:14px;background:none;border:1px solid var(--line);color:var(--muted);
-    width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:15px;line-height:1}
+  #cardName{margin:0 0 10px;font-size:20px;line-height:1.2;color:#fff;padding-right:28px}
+  #cardClose{position:absolute;top:14px;right:14px;background:none;border:1px solid var(--line2);color:var(--muted);
+    width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:14px;line-height:1}
   #cardClose:hover{border-color:var(--accent);color:#fff}
-  #tabs{display:flex;gap:2px;padding:10px 14px 0;border-bottom:1px solid var(--line);flex:0 0 auto;flex-wrap:wrap}
-  .tab{background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);
-    font-size:11.5px;padding:7px 9px;cursor:pointer}
-  .tab.active{color:#fff;border-bottom-color:var(--accent)}
-  #cardBody{padding:15px 18px 24px;overflow-y:auto;flex:1 1 auto;font-size:12.8px;line-height:1.55}
-  #cardBody h4{margin:16px 0 7px;font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+  #cardChips{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .chip2{font-size:10.3px;letter-spacing:.05em;padding:4px 10px;border-radius:8px;border:1px solid;white-space:nowrap}
+  .chip2.c1{color:var(--accent);border-color:rgba(47,210,245,.45);background:rgba(47,210,245,.07)}
+  .chip2.c2{color:var(--purp);border-color:rgba(176,107,255,.45);background:rgba(176,107,255,.07)}
+  .chip2.cc{color:var(--crit);border-color:rgba(255,84,112,.45);background:rgba(255,84,112,.07)}
+  #roleRow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px}
+  #roleRow .k{font-size:10.5px;color:var(--muted)}
+  #roleRow .v{font-size:13px;color:#fff;margin-top:2px}
+  #tabs{display:flex;gap:20px;padding:6px 18px 0;border-bottom:1px solid var(--line);flex:0 0 auto}
+  .tab{background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);font-size:13px;
+    padding:9px 2px;cursor:pointer}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  #cardBody{padding:14px 18px 20px;overflow-y:auto;flex:1 1 auto;font-size:12.8px;line-height:1.55}
+  #cardBody h4{margin:16px 0 7px;font-size:10.8px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
   #cardBody h4:first-child{margin-top:0}
   #cardBody p{margin:0 0 10px;color:#cdd8e6}
   #cardBody .spec{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #172130}
@@ -75,117 +113,170 @@
   #cardBody .dep .op.op-meta{color:#8b9bff}#cardBody .dep .op.op-goog{color:#ffd23f}
   #cardBody .dep .op.op-aws{color:#ff8c32}#cardBody .dep .op.op-x{color:#e6edf6}#cardBody .dep .op.op-oai{color:#39d98a}
   #cardBody .dep .t{color:#cdd8e6;font-size:11.8px}
-  .chip{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);
-    color:var(--muted);margin:0 5px 5px 0}
-  .chip.crit{color:var(--crit);border-color:rgba(255,84,112,.4)}
-  .cta{display:block;margin-top:6px;background:linear-gradient(135deg,#123, #16324a);border:1px solid var(--accent);
+  .ig{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .ic{background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:10px;display:flex;
+    flex-direction:column;gap:6px}
+  .ic .th{height:44px;border-radius:8px;background:#0a1119;display:flex;align-items:center;justify-content:center;
+    font-size:21px;letter-spacing:2px}
+  .ic .n{font-size:12.3px;color:#fff;font-weight:600;line-height:1.25}
+  .ic .d{font-size:10.8px;color:var(--muted);line-height:1.4;flex:1}
+  .ic button{background:#0d1722;border:1px solid var(--line2);color:var(--accent);border-radius:8px;padding:6px;
+    font-size:11.3px;cursor:pointer;display:flex;gap:6px;align-items:center;justify-content:center}
+  .ic button:hover{border-color:var(--accent)}
+  .why{margin-top:14px;background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px}
+  .why h5{margin:0 0 6px;font-size:10.3px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;
+    display:flex;justify-content:space-between;align-items:center}
+  .why p{margin:0;color:#cdd8e6;font-size:11.8px}
+  .cta{display:block;margin-top:14px;background:linear-gradient(135deg,#123,#16324a);border:1px solid var(--accent);
     color:#fff;text-decoration:none;border-radius:10px;padding:13px 15px;cursor:pointer;transition:.15s}
-  .cta:hover{background:linear-gradient(135deg,#16324a,#1c4363);box-shadow:0 0 0 1px var(--accent) inset}
+  .cta:hover{background:linear-gradient(135deg,#16324a,#1c4363)}
   .cta .lead{font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent)}
-  .cta .ttl{font-size:14px;font-weight:600;margin:3px 0 2px;display:flex;align-items:center;gap:7px}
+  .cta .ttl{font-size:14px;font-weight:600;margin:3px 0 2px}
   .cta .sub{font-size:11.6px;color:var(--muted)}
   .cta .go{margin-top:8px;font-size:11.5px;color:var(--accent);font-weight:600}
-  /* floating labels + identify */
+  /* ---------- bottom bar ---------- */
+  #bottombar{left:16px;right:472px;bottom:16px;height:66px;background:rgba(13,19,28,.92);
+    border:1px solid var(--line);border-radius:var(--rad);display:flex;align-items:center;z-index:8;
+    backdrop-filter:blur(6px);padding:0 8px}
+  .bb{flex:1;padding:6px 16px;border-left:1px solid var(--line);min-width:0}
+  .bb:first-child{border-left:0;display:flex;align-items:center;gap:10px;flex:1.4}
+  .bb .k{font-size:10.3px;color:var(--muted);white-space:nowrap}
+  .bb .v{font-size:13.5px;color:#fff;margin-top:2px;font-variant-numeric:tabular-nums;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis}
+  #bbIcon{width:34px;height:34px;border-radius:8px;background:#0a1119;border:1px solid var(--line2);
+    display:flex;align-items:center;justify-content:center;font-size:15px;flex:0 0 auto}
+  #btnNote{margin:0 6px;flex:0 0 auto}
+  /* ---------- labels / ident ---------- */
   .lbl{position:absolute;transform:translate(-50%,-50%);font-size:10px;color:var(--ink);
     background:rgba(10,14,20,.82);border:1px solid var(--line);padding:2px 6px;border-radius:5px;
     pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .18s}
   .lbl.crit{border-color:rgba(255,84,112,.55)}
-  .peri-lbl{position:absolute;transform:translate(-50%,-140%);font-size:10px;color:#fff;
-    background:rgba(20,26,38,.92);border:1px solid var(--accent);padding:2px 7px;border-radius:5px;
-    pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .18s}
-  #ident{position:absolute;pointer-events:none;transform:translate(12px,-50%);font-size:11px;color:#fff;
+  .peri-lbl{position:absolute;transform:translate(-50%,-150%);font-size:10.5px;color:#fff;
+    background:rgba(13,19,28,.95);border:1px solid var(--line2);padding:3px 9px;border-radius:7px;
+    pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .18s;box-shadow:0 2px 10px rgba(0,0,0,.4)}
+  #ident{pointer-events:none;transform:translate(12px,-50%);font-size:11px;color:#fff;
     background:rgba(10,14,20,.9);border:1px solid var(--line);padding:3px 9px;border-radius:6px;
     opacity:0;transition:opacity .12s;white-space:nowrap;z-index:7}
   #ident .st{color:var(--crit);margin-right:5px}
   .uruler{position:absolute;transform:translate(-50%,-50%);font-size:9.5px;color:var(--muted);
     pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .2s}
-  #hint{bottom:16px;left:50%;transform:translateX(-50%);font-size:11.5px;color:var(--muted);
-    background:rgba(18,24,35,.72);padding:6px 13px;border-radius:20px;border:1px solid var(--line);
-    text-align:center;max-width:56vw}
-  #hint b{color:var(--ink);font-weight:600}
   #err{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
     color:var(--muted);font-size:13px;text-align:center;padding:40px}
-  /* course overlay */
-  #course{position:fixed;inset:0;background:rgba(6,9,14,.72);display:none;align-items:center;justify-content:center;
-    z-index:20;padding:24px;backdrop-filter:blur(3px)}
-  #course.open{display:flex}
-  #courseBox{background:var(--panel);border:1px solid var(--line);border-radius:16px;max-width:640px;width:100%;
-    max-height:86vh;overflow-y:auto;padding:26px 28px}
+  #toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--panel2);
+    border:1px solid var(--accent);color:#fff;font-size:12.5px;padding:9px 16px;border-radius:10px;
+    opacity:0;transition:.25s;z-index:30;pointer-events:none}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* ---------- overlays ---------- */
+  #course,#help{position:fixed;inset:0;background:rgba(6,9,14,.72);display:none;align-items:center;
+    justify-content:center;z-index:20;padding:24px;backdrop-filter:blur(3px)}
+  #course.open,#help.open{display:flex}
+  #courseBox,#helpBox{background:var(--panel);border:1px solid var(--line);border-radius:16px;max-width:640px;
+    width:100%;max-height:86vh;overflow-y:auto;padding:26px 28px}
   #courseBox .kick{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
   #courseBox h2{margin:6px 0 2px;font-size:21px}
   #courseBox .prog{color:var(--muted);font-size:12.5px;margin-bottom:14px}
-  #courseBox h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 0 8px}
-  #courseBox p{font-size:13.5px;line-height:1.6;color:#cdd8e6;margin:0 0 10px}
-  #courseBox ol{margin:0;padding-left:20px;font-size:13px;line-height:1.7;color:#cdd8e6}
-  #courseBox ol b{color:#fff}
+  #courseBox h3,#helpBox h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 0 8px}
+  #courseBox p,#helpBox p{font-size:13.5px;line-height:1.6;color:#cdd8e6;margin:0 0 10px}
   #courseBox .obj{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--accent);
     border-radius:9px;padding:12px 14px;font-size:13px;color:#dbe6f2}
   #courseBox .foot{margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  #courseBox .foot a{font-size:12.5px}
-  #courseClose{background:var(--accent);border:0;color:#04121c;font-weight:700;border-radius:9px;
+  #courseClose,#helpClose{background:var(--accent);border:0;color:#04121c;font-weight:700;border-radius:9px;
     padding:10px 18px;cursor:pointer;font-size:13px}
-  @media (max-width:760px){
-    #title{max-width:70%}#controls{width:170px}
-    #card{width:100%;max-width:100%}
-    #legend{display:none}#hint{max-width:82vw}
-    body.card-open #controls{display:none}
-  }
+  #helpBox ul{margin:0;padding-left:18px;font-size:13px;line-height:1.8;color:#cdd8e6}
+  /* ---------- responsive ---------- */
+  @media (max-width:1500px){#stepper .step span.txt{display:none}#stepper{gap:6px}}
+  @media (max-width:1180px){#sidebar{display:none}#controls{right:16px;top:80px;width:190px}
+    #card{top:auto;height:52vh;left:16px;width:auto;bottom:16px}
+    #bottombar{display:none}#brand p{display:none}#stepper{display:none}}
 </style>
 </head>
 <body>
 <div id="app"></div>
 
-<div id="title" class="hud">
-  <h1>Interactive 42U AI Data Center Rack</h1>
-  <p>Drag to orbit · scroll to zoom · click any component. <b style="color:var(--crit)">Critical components dissect</b> — slide out, casing opens, peripherals separate. Built to EIA-310-D / ASHRAE TC9.9.</p>
-  <span class="badge">★ Critical-component dissection · vendor & deployment data · 2026</span>
-</div>
+<header id="topbar" class="hud">
+  <button class="iconbtn sq" id="menuBtn" title="Toggle rack contents"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+  <div id="brand">
+    <div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 7l8-4 8 4-8 4-8-4z"/><path d="M4 12l8 4 8-4"/><path d="M4 17l8 4 8-4"/></svg></div>
+    <div><h1>Interactive 42U AI Data Center Rack</h1><p>Vendor &amp; Deployment Training · Critical Component Dissection</p></div>
+  </div>
+  <ol id="stepper">
+    <li class="step s1 active"><span class="num">1</span><span class="txt">Select component</span></li><li class="chev">›</li>
+    <li class="step s2"><span class="num">2</span><span class="txt">Pull out</span></li><li class="chev">›</li>
+    <li class="step s3"><span class="num">3</span><span class="txt">Open chassis</span></li><li class="chev">›</li>
+    <li class="step s4"><span class="num">4</span><span class="txt">Inspect internals</span></li>
+  </ol>
+  <div id="topActions">
+    <button class="iconbtn" id="btnTraining"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10L12 5 2 10l10 5 10-5zM6 12v5c0 1 3 3 6 3s6-2 6-3v-5"/></svg>Training mode</button>
+    <button class="iconbtn" id="btnHelp"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 015.8 1c0 2-3 3-3 3M12 17h.01"/></svg>Help</button>
+    <button class="iconbtn sq" id="btnFull" title="Fullscreen"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg></button>
+  </div>
+</header>
+
+<aside id="sidebar" class="hud">
+  <h2>Rack contents</h2>
+  <ul id="rackList"></ul>
+  <button id="btnFullRack">⤢&nbsp; View full rack</button>
+</aside>
 
 <div id="controls" class="hud">
-  <button class="btn active" id="btnRotate"><span class="dot" style="background:var(--ok)"></span>Auto-rotate: ON</button>
-  <button class="btn" id="btnPower"><span class="dot" style="background:var(--a)"></span>Power view (A/B feeds)</button>
-  <button class="btn" id="btnAir"><span class="dot" style="background:var(--warn)"></span>Airflow view (blanking)</button>
-  <button class="btn" id="btnLabels"><span class="dot" style="background:var(--accent)"></span>Component labels</button>
-  <button class="btn" id="btnU"><span class="dot" style="background:var(--muted)"></span>U-position ruler</button>
-  <button class="btn crit" id="btnExit" style="display:none"><span class="dot" style="background:var(--crit)"></span>Exit dissection</button>
-  <button class="btn" id="btnReset"><span class="dot" style="background:#fff"></span>Reset view</button>
+  <div class="ctl on" id="btnRotate"><span class="dot" style="background:var(--ok)"></span>Auto-rotate<span class="switch"></span></div>
+  <div class="ctl" id="btnPower"><span class="dot" style="background:var(--a)"></span>Power view<span class="end">A/B feeds</span></div>
+  <div class="ctl" id="btnAir"><span class="dot" style="background:var(--warn)"></span>Airflow view<span class="end">(blanking)</span></div>
+  <div class="ctl on" id="btnLabels"><span class="dot" style="background:var(--accent)"></span>Component labels<span class="switch"></span></div>
+  <div class="ctl on" id="btnU"><span class="dot" style="background:var(--muted)"></span>U-position ruler<span class="switch"></span></div>
+  <div class="ctl" id="btnExit" style="display:none"><span class="dot" style="background:var(--crit)"></span>Exit dissection</div>
+  <div class="ctl reset" id="btnReset"><span class="dot" style="background:#fff"></span>Reset view</div>
 </div>
 
-<div id="legend" class="hud">
-  <h2>Rack contents</h2>
-  <div class="lg"><span class="star">★</span><span>Critical component — click to dissect</span></div>
-  <div class="lg"><span class="sw" style="background:#ff5470"></span>AI GPU compute node (GB200-class)</div>
-  <div class="lg"><span class="sw" style="background:#3aa0e6"></span>Compute server (dual-PSU)</div>
-  <div class="lg"><span class="sw" style="background:#39d98a"></span>Top-of-Rack switch / patch</div>
-  <div class="lg"><span class="sw" style="background:#b06bff"></span>Storage · UPS / BBU</div>
-  <div class="lg"><span class="sw" style="background:var(--blank)"></span>Blanking panel (empty U)</div>
-  <div class="lg"><span class="sw" style="background:var(--a)"></span>rPDU A-feed&nbsp;<span class="sw" style="background:var(--b)"></span>B-feed</div>
-</div>
-
-<div id="ident" class="hud"><span class="st">★</span><span id="identTxt"></span></div>
-
-<!-- Report card -->
-<aside id="card">
+<aside id="card" class="hud">
   <div id="cardHead">
     <button id="cardBack">◄ <span id="cardBackTxt">Back</span></button>
-    <p id="cardClass">—</p>
-    <h3 id="cardName">Component</h3>
-    <div id="cardU"></div>
-    <button id="cardClose" title="Close">✕</button>
+    <h3 id="cardName">—</h3>
+    <div id="cardChips"></div>
+    <div id="roleRow"></div>
+    <button id="cardClose" title="Back to rack overview">✕</button>
   </div>
   <div id="tabs">
     <button class="tab active" data-tab="overview">Overview</button>
     <button class="tab" data-tab="specs">Specs</button>
-    <button class="tab" data-tab="vendors">Vendors &amp; deployments</button>
-    <button class="tab" data-tab="course">Course</button>
+    <button class="tab" data-tab="internals">Internals</button>
+    <button class="tab" data-tab="vendors">Vendors</button>
   </div>
   <div id="cardBody"></div>
 </aside>
 
-<div id="hint" class="hud">1U = 1.75 in (44.45 mm) · 42U = 73.5 in (1867 mm) · inlet target 18–27 °C · <b>click a ★ critical part to dissect it</b></div>
-<div id="err">Couldn't load the 3D engine (needs internet for the Three.js CDN). The component list and specs are in the course build pack.</div>
+<footer id="bottombar" class="hud">
+  <div class="bb"><div id="bbIcon">▦</div><div style="min-width:0"><div class="v" id="bbName">42U Rack</div><div class="k">Position: <span id="bbPos">—</span></div></div></div>
+  <div class="bb"><div class="k">U Position</div><div class="v" id="bbU">—</div></div>
+  <div class="bb"><div class="k">Size</div><div class="v" id="bbSize">—</div></div>
+  <div class="bb"><div class="k">Depth</div><div class="v" id="bbDepth">—</div></div>
+  <div class="bb"><div class="k">Weight (est.)</div><div class="v" id="bbWeight">—</div></div>
+  <button class="iconbtn" id="btnNote"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Add note</button>
+</footer>
 
-<!-- Course overlay -->
+<div id="ident" class="hud"><span class="st">★</span><span id="identTxt"></span></div>
+<div id="err">Couldn't load the 3D engine (needs internet for the Three.js CDN). The component list and specs are in the course build pack.</div>
+<div id="toast"></div>
+
+<div id="help"><div id="helpBox">
+  <h2 style="margin:0 0 4px;font-size:20px">How to use this trainer</h2>
+  <h3>The 4-step dissection</h3>
+  <ul>
+    <li><b>1 · Select component</b> — click any device in the rack (or in the Rack Contents list).</li>
+    <li><b>2 · Pull out</b> — critical components slide out of the rack on their rails.</li>
+    <li><b>3 · Open chassis</b> — the casing splits apart and fades to a ghost.</li>
+    <li><b>4 · Inspect internals</b> — click any internal part in 3D, or use the <b>Internals</b> tab → <b>Inspect</b>.</li>
+  </ul>
+  <h3>Controls</h3>
+  <ul>
+    <li>Drag to orbit · scroll/pinch to zoom · hover to identify.</li>
+    <li><b>Power view</b> highlights the A/B feed path; <b>Airflow view</b> highlights blanking panels.</li>
+    <li><b>Esc</b> closes overlays and exits dissection. <b>Reset view</b> returns to the full rack.</li>
+  </ul>
+  <p style="margin-top:14px">Specs trace to EIA-310-D / ASHRAE TC9.9; vendor &amp; deployment data reflects the 2026 US AI-infrastructure landscape.</p>
+  <button id="helpClose">Close</button>
+</div></div>
+
 <div id="course"><div id="courseBox">
   <div class="kick" id="courseKick">Rack to Runtime · Program P2</div>
   <h2 id="courseTitle">Lesson</h2>
@@ -197,6 +288,7 @@
     <a href="https://github.com/AkhilDhruva/DATA-CENTER-TRAINING" target="_blank" rel="noopener">View the full build pack ↗</a>
   </div>
 </div></div>
+
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -562,6 +654,7 @@
 
     const pivot=new THREE.Group(); comp.add(pivot); comp._pivot=pivot;
     comp._pivotExpl=new THREE.Vector3(0, 0, RACK_D*0.3 + 1.4); // slide forward out of the rack
+    comp._yaw=-0.30;
 
     const bodyCol = C[e.cat]||0x3aa0e6;
     // base tray (bottom + rear) — always visible
@@ -601,12 +694,13 @@
       const rx=(n>1? (-0.34 + (i/(n-1))*0.68):0)*w;
       const rz=(i%2? -0.14:0.14)*d;
       pg.position.set(rx, hubY, rz);
-      // exploded position: fan out in front of the frame, but stay in shot
-      const ang=(n>1? (-0.82 + (i/(n-1))*1.64):0); // radians spread
-      const R=3.0 + (e.h>=3?0.8:0);
-      const ex=Math.sin(ang)*R;
-      const ez=d/2 + Math.cos(ang)*R*0.38 + 0.6;
-      const ey=hubY + (i%2? 0.85:-0.5) + (Math.abs(ang)*0.7);
+      // exploded position: schematic grid in front-left of the rack (mockup layout)
+      const cols=Math.max(1,Math.ceil(n/2));
+      const gx=i%cols, gy=Math.floor(i/cols);
+      const sp=1.85;
+      const ex=(gx-(cols-1)/2)*sp - 1.1;
+      const ey=hubY + (gy? -1.15:0.85);
+      const ez=d/2 + 2.4 + gy*1.0;
       pg.userData.pick={type:'peri',comp,peri:p};
       pg.traverse(o=>{if(o.isMesh){o.userData.pick={type:'peri',comp,peri:p};o.castShadow=true;pickable.push(o);}});
       pg.visible=false;
@@ -639,6 +733,7 @@
     comp._t=0; comp._goal=0; comp._parts=[]; comp._peris=[]; comp._lines=[];
     const pivot=new THREE.Group(); comp.add(pivot); comp._pivot=pivot;
     comp._pivotExpl=new THREE.Vector3(pd.side*2.0, 0, RACK_D*0.3+1.4);
+    comp._yaw=0;
 
     const bodyMat=mat(pd.color,{metalness:.6,roughness:.4,emissive:pd.color,emissiveIntensity:.12});
     const body=box(w,h,d,bodyMat); body.userData.pick={type:'comp',comp}; pivot.add(body); pickable.push(body);
@@ -696,6 +791,104 @@
   }}
 
   /* =========================================================================
+     TRAINING-CONSOLE UI — stepper, sidebar, bottom bar, top-bar actions
+  ==========================================================================*/
+  const bbName=document.getElementById('bbName'), bbPos=document.getElementById('bbPos'),
+        bbU=document.getElementById('bbU'), bbSize=document.getElementById('bbSize'),
+        bbDepth=document.getElementById('bbDepth'), bbWeight=document.getElementById('bbWeight'),
+        bbIcon=document.getElementById('bbIcon'), toastEl=document.getElementById('toast');
+  const stepEls=[1,2,3,4].map(n=>document.querySelector('#stepper .s'+n));
+  let curStep=0, activeGroupIdx=-1;
+
+  function hex(c){return '#'+('000000'+(c||0x8aa0b8).toString(16)).slice(-6);}
+  const GLYPH={gpu:'▩',cpu:'▣',dimm:'‖‖',psu:'⚡',nic:'⇄',fan:'✻',asic:'◼',board:'▬',battery:'▮▮',
+               drive:'▤',drivebank:'▤',manifold:'≋',busbar:'ǁ',optic:'◈'};
+  const META={
+    gpu:{chips:['AI COMPUTE','LIQUID-COOLED'],role:'AI training / inference',ff:'2U rack tray (NVL72 pod)',depth:'33.5 in (850 mm)',weight:'~35 kg / 77 lbs',icon:'▩'},
+    server:{chips:['DUAL-PSU','GENERAL COMPUTE'],role:'AI/ML workload host',ff:'Rackmount server',depth:'33.5 in (850 mm)',weight:'~28.7 kg / 63.3 lbs',icon:'▤'},
+    switch:{chips:['NETWORK','CRITICAL PATH'],role:'Rack network uplink',ff:'1U fixed switch',depth:'22 in (560 mm)',weight:'~10 kg / 22 lbs',icon:'⇄'},
+    patch:{chips:['PASSIVE','CABLING'],role:'Cable termination',ff:'1U panel',depth:'4 in (100 mm)',weight:'~2 kg / 4.4 lbs',icon:'▥'},
+    storage:{chips:['DUAL-CTRL','FLASH / HDD'],role:'Shared data services',ff:'4U array',depth:'36 in (915 mm)',weight:'~90 kg / 198 lbs',icon:'▦'},
+    ups:{chips:['RIDE-THROUGH','LI-ION BBU'],role:'Bridge power',ff:'3U UPS / BBU',depth:'28 in (710 mm)',weight:'~65 kg / 143 lbs',icon:'▮'},
+    pdu:{chips:['0U VERTICAL','METERED'],role:'Rack power path',ff:'Zero-U rPDU',depth:'—',weight:'~12 kg / 26 lbs',icon:'ǁ'},
+    blank:{chips:['PASSIVE','AIRFLOW'],role:'Stop recirculation',ff:'1U snap-in panel',depth:'—',weight:'~0.3 kg / 0.7 lbs',icon:'▭'},
+    rack:{chips:['EIA-310-D','42U · 19-IN'],role:'Equipment cabinet',ff:'42U · 19-in cabinet',depth:'47.2 in (1200 mm)',weight:'≤ 1588 kg / 3500 lb',icon:'▦'}};
+  const RACKREPORT={cat:'rack',critical:false,name:'42U Data Center Rack',
+    summary:'The standard data-center cabinet, built to EIA-310-D: 42 rack units of 1.75 in (44.45 mm) each, 19-inch mounting, populated with compute, network, storage and power — and a blanking panel on every empty U. Click any component in the rack (or in the Rack Contents list) to begin the dissection.',
+    why:'Everything the facility does — power redundancy, airflow discipline, serviceability — is enforced one rack at a time. This rack is the unit of installation, commissioning, and 24×7 defense.',
+    specs:[['Usable height','42U · 73.5 in / 1867 mm'],['1U pitch','1.75 in / 44.45 mm'],['Mounting width','19 in / 482.6 mm'],['Typical depth','1000–1200 mm'],['Static load','≤ 1588 kg / 3500 lb'],['Power','A + B feeds · 2N-capable'],['Inlet target','18–27 °C (ASHRAE TC9.9)']],
+    vendors:[['Vertiv / Schneider Electric (APC) / Eaton','racks, containment, power train'],['Rittal / Legrand / Chatsworth (CPI)','enclosures & cable management'],['OCP Open Rack','hyperscale exception: 21-in, OU pitch, busbar']],
+    deploys:[['msft','Fairwater (Atlanta/Wisconsin): 2N electrical, scaling toward ~5M H100e.'],['meta','Catalina GB200 racks on Open Rack busbar; Prometheus ~631 MW.'],['x','Colossus (Memphis): 100k+ GPUs on Spectrum-X.'],['oai','Stargate Abilene ~421 MW GB200 clusters.'],['aws','New Carlisle (Rainier): Trainium2/3 UltraClusters.']],
+    course:'L1',peris:[]};
+
+  function setStep(n){
+    if(n===curStep) return; curStep=n;
+    stepEls.forEach((el,i)=>{el.classList.toggle('active',i+1===n);el.classList.toggle('done',i+1<n);});
+  }
+  function updateBottomBar(d){
+    const m=META[d.cat]||META.rack;
+    bbName.textContent=d.name; bbIcon.textContent=m.icon||'▦'; bbIcon.style.color=d.critical?'var(--crit)':'var(--accent)';
+    if(d.u){ bbPos.textContent=(d.u-d.h+1)+'U'; bbU.textContent=(d.u-d.h+1)+' – '+d.u+' U';
+      bbSize.textContent=d.h+'U ('+(d.h*1.75).toFixed(1)+' in / '+(d.h*44.45).toFixed(1)+' mm)'; }
+    else if(d.feed){ bbPos.textContent='0U'; bbU.textContent='Full height (rear)'; bbSize.textContent='Zero-U vertical'; }
+    else { bbPos.textContent='—'; bbU.textContent='42U (73.5 in)'; bbSize.textContent='600 × 1200 mm'; }
+    bbDepth.textContent=m.depth; bbWeight.textContent=m.weight;
+  }
+  function renderRackOverview(){ if(!active) setStep(1); renderCard(RACKREPORT,null); markSidebar(null); }
+
+  const GROUPS=[
+    {label:'AI GPU compute node (GB200-class)',color:'#ff5470',match:d=>d.cat==='gpu'},
+    {label:'Compute server (dual-PSU)',color:'#3aa0e6',match:d=>d.cat==='server'},
+    {label:'Top-of-Rack switch / patch',color:'#39d98a',match:d=>d.cat==='switch'||d.cat==='patch'},
+    {label:'Storage · UPS / BBU',color:'#b06bff',match:d=>d.cat==='storage'||d.cat==='ups'},
+    {label:'Blanking panel (empty U)',color:'#2a3445',blank:true},
+    {label:'rPDU A-feed',color:'#ff8c32',match:d=>d.feed==='A'},
+    {label:'rPDU B-feed',color:'#36c2ff',match:d=>d.feed==='B'}];
+  function buildSidebar(){
+    const ul=document.getElementById('rackList'); ul.innerHTML='';
+    GROUPS.forEach((g,gi)=>{
+      let cnt;
+      if(g.blank){ cnt=0; for(let u=1;u<=UNITS;u++) if(!occupied[u]) cnt++; }
+      else cnt=components.filter(c=>g.match(c.userData.def)).length;
+      const li=document.createElement('li');
+      li.innerHTML='<span class="sw" style="background:'+g.color+'"></span><span>'+g.label+'</span><span class="cnt">'+cnt+'</span>';
+      li.addEventListener('click',()=>{
+        if(g.blank){ let u0=0; for(let u=UNITS;u>=1;u--) if(!occupied[u]){u0=u;break;} if(u0) openBlank(u0); }
+        else { const c=components.find(cc=>g.match(cc.userData.def)); if(c) openComponent(c); }
+      });
+      ul.appendChild(li); g.el=li;
+    });
+    document.getElementById('btnFullRack').addEventListener('click',()=>{ closeCardFlow(); });
+  }
+  function markSidebar(def){
+    GROUPS.forEach(g=>{ const on=def? (g.blank? def.cat==='blank' : !!(g.match&&g.match(def))) : false;
+      if(g.el) g.el.classList.toggle('active',on); });
+  }
+  function closeCardFlow(){ collapseAll(); renderRackOverview(); }
+  function toast(msg){ toastEl.textContent=msg; toastEl.classList.add('show');
+    clearTimeout(toastEl._t); toastEl._t=setTimeout(()=>toastEl.classList.remove('show'),2600); }
+
+  document.getElementById('menuBtn').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('hide'));
+  document.getElementById('btnFull').addEventListener('click',()=>{
+    if(document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen(); });
+  let training=false;
+  document.getElementById('btnTraining').addEventListener('click',function(){
+    training=!training; this.classList.toggle('active',training);
+    toast(training?'Training mode ON — follow steps 1→4 in the header':'Training mode off');
+    if(training && !active){ toast('Step 1: click a ★ critical component to dissect it'); } });
+  const helpEl=document.getElementById('help');
+  document.getElementById('btnHelp').addEventListener('click',()=>helpEl.classList.add('open'));
+  document.getElementById('helpClose').addEventListener('click',()=>helpEl.classList.remove('open'));
+  helpEl.addEventListener('click',e=>{if(e.target===helpEl)helpEl.classList.remove('open');});
+  document.getElementById('btnNote').addEventListener('click',()=>{
+    const who=(curReport&&curReport.name)||'rack';
+    const n=prompt('Add a training note for: '+who);
+    if(n){ try{ const k='dc-notes'; const all=JSON.parse(localStorage.getItem(k)||'{}');
+      (all[who]=all[who]||[]).push(n); localStorage.setItem(k,JSON.stringify(all)); }catch(e){}
+      toast('Note saved for '+who); } });
+
+
+  /* =========================================================================
      CAMERA (custom orbit + animated goal for POV choreography)
   ==========================================================================*/
   const cam={theta:0.7,phi:1.12,radius:31,tx:0,ty:0,tz:0};
@@ -715,9 +908,12 @@
   }
   function focusOn(comp,exploded){
     const p=new THREE.Vector3(); comp.getWorldPosition(p);
-    goal.tx=p.x*0.4; goal.ty=p.y; goal.tz= exploded? (comp._pivotExpl.z*0.5 + 1.4) : 0;
-    goal.theta=0.5; goal.phi=1.06;
-    goal.radius= exploded ? (17 + comp._peris.length*1.4) : 16;
+    const th=0.55; goal.theta=th; goal.phi=1.07;
+    const off=exploded?2.2:1.4; // bias left of the report panel, like the mockup
+    goal.tx=p.x*0.35 + Math.sin(th+Math.PI/2)*off;
+    goal.tz=(exploded? comp._pivotExpl.z*0.5+1.2 : 0) + Math.cos(th+Math.PI/2)*off;
+    goal.ty=p.y*0.9;
+    goal.radius= exploded ? (16 + comp._peris.length*1.3) : 15;
   }
   function defaultView(){goal.theta=0.7;goal.phi=1.12;goal.radius=31;goal.tx=0;goal.ty=0;goal.tz=0;}
 
@@ -754,12 +950,14 @@
     if(hasDis){ setExplode(comp,1); focusOn(comp,true); stage.intensity=0.55; btnExit.style.display='flex'; }
     else { focusOn(comp,false); btnExit.style.display= (active&&active._peris.length)?'flex':'none'; }
     setRotate(false);
+    curTab = hasDis? 'internals':'overview';
+    markSidebar(e); setStep(hasDis?2:1);
     renderCard(e,null);
   }
   function collapseAll(){
     if(active){ setExplode(active,0); }
     active=null; selectedPeri=null; stage.intensity=0.0; btnExit.style.display='none';
-    defaultView();
+    defaultView(); setStep(1); markSidebar(null);
   }
 
   renderer.domElement.addEventListener('click',e=>{
@@ -774,13 +972,14 @@
     if(pick.type==='comp'){ openComponent(pick.comp); return; }
     if(pick.type==='peri'){
       if(active!==pick.comp){ openComponent(pick.comp); }
-      selectedPeri=pick.peri; renderCard(pick.comp.userData.def, pick.peri); focusOn(pick.comp,true);
+      selectedPeri=pick.peri; renderCard(pick.comp.userData.def, pick.peri); focusOn(pick.comp,true); setStep(4);
     }
   });
 
   function openBlank(u){
     active=null; selectedPeri=null; defaultView();
-    const r=Object.assign({},blankReport); renderCard(r,null,'U'+u);
+    const r=Object.assign({},blankReport,{u:u,h:1}); curTab='overview';
+    markSidebar(r); setStep(1); renderCard(r,null);
   }
 
   /* =========================================================================
@@ -796,77 +995,80 @@
   function opClass(k){return ({meta:'op-meta',goog:'op-goog',aws:'op-aws',x:'op-x',oai:'op-oai',msft:'',all:''})[k]||'';}
   function opName(k){return ({meta:'Meta',goog:'Google',aws:'AWS',x:'xAI',oai:'OpenAI',msft:'Microsoft',all:'Industry'})[k]||k;}
 
-  function closeCard(){ card.classList.remove('open'); document.body.classList.remove('card-open'); }
-  function renderCard(report,peri,uLabel){
-    curReport=report; curPeri=peri;
-    card.classList.add('open'); document.body.classList.add('card-open');
-    const crit=report.critical && !peri;
-    cardClass.textContent = peri? 'Peripheral · inside '+report.name : (report.cls||'Component');
-    cardClass.classList.toggle('crit', !!(report.critical));
-    cardName.textContent = peri? peri.name : report.name;
-    cardU.textContent = peri? '' : (uLabel? uLabel+' · '+ (report.cat||'') : (report.feed? report.feed+'-feed':''));
+  function closeCard(){ renderRackOverview(); }
+  function renderCard(r,peri,uLabel){
+    curReport=r; curPeri=peri;
+    const m=META[r.cat]||META.rack;
     cardBack.classList.toggle('show', !!peri);
-    if(peri) cardBackTxt.textContent='Back to '+report.name;
-    // default to overview when switching top-level component
-    if(!peri) { /* keep current tab */ }
+    if(peri) cardBackTxt.textContent='Back to '+r.name;
+    cardName.textContent = peri? peri.name : r.name;
+    let ch;
+    if(peri){ ch=[['c1',(peri.kind||'part').toUpperCase()],['c2','INSIDE: '+r.name.toUpperCase().slice(0,24)]]; }
+    else { ch=[['c1',m.chips[0]],['c2',m.chips[1]]]; if(r.critical) ch.push(['cc','★ CRITICAL']); }
+    document.getElementById('cardChips').innerHTML=ch.map(c=>'<span class="chip2 '+c[0]+'">'+c[1]+'</span>').join('');
+    document.getElementById('roleRow').innerHTML = peri? '' :
+      '<div><div class="k">Role</div><div class="v">'+(r.role||m.role)+'</div></div>'+
+      '<div><div class="k">Form Factor</div><div class="v">'+(r.ff||m.ff)+'</div></div>';
+    updateBottomBar(r);
     drawTab();
+  }
+  function whyBox(r){ return r.why? '<div class="why"><h5>Why it matters <span>ⓘ</span></h5><p>'+r.why+'</p></div>':''; }
+  function internalsGrid(r){
+    if(!r.peris||!r.peris.length)
+      return '<p style="color:var(--muted)">No internal peripherals are modeled for this part. Pick a ★ critical component (GPU node, UPS, ToR switch, storage, rPDU) to dissect internals.</p>';
+    let h='<p style="margin:0 0 2px;color:#fff;font-weight:600">Internal components ('+r.peris.length+')</p>'+
+      '<p style="color:var(--muted);font-size:11.5px;margin:0 0 4px">Click a component to focus it in 3D and learn more.</p><div class="ig">';
+    r.peris.forEach((p,i)=>{
+      const blurb=(p.desc||'').split('. ')[0]; const g=GLYPH[p.kind]||'▣';
+      h+='<div class="ic"><div class="th" style="color:'+hex(p.color)+'">'+g+'</div>'+
+         '<div class="n">'+p.name+'</div><div class="d">'+blurb.slice(0,76)+(blurb.length>76?'…':'')+'</div>'+
+         '<button data-peri="'+i+'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg> Inspect</button></div>';
+    });
+    return h+'</div>';
   }
   function drawTab(){
     const r=curReport, p=curPeri; if(!r) return;
     tabs.forEach(t=>t.classList.toggle('active',t.dataset.tab===curTab));
     let html='';
     if(p){
-      // peripheral view — condensed, tab-aware
-      if(curTab==='overview'||curTab==='specs'){
-        html+='<p>'+p.desc+'</p>';
-        if(p.specs&&p.specs.length){html+='<h4>Specs</h4>'+p.specs.map(s=>'<div class="spec"><span class="k">'+s[0]+'</span><span class="v">'+s[1]+'</span></div>').join('');}
-      }
-      if(curTab==='vendors'){
-        html+='<h4>Who makes it</h4>'+(p.vendors||[]).map(v=>'<div class="vend"><div class="n">'+v[0]+'</div>'+(v[1]?'<div class="d">'+v[1]+'</div>':'')+'</div>').join('');
-        html+='<p style="margin-top:12px;color:var(--muted)">Part of <b style="color:#fff">'+r.name+'</b>. Use “Vendors &amp; deployments” on the component for how hyperscalers deploy it.</p>';
-      }
-      if(curTab==='course'){ html+=courseCTA(r); }
+      if(curTab==='overview'){ html+='<p>'+p.desc+'</p>'+whyBox(r); }
+      if(curTab==='specs'){ html+='<h4>Specs — '+p.name+'</h4>'+(p.specs||[]).map(s=>'<div class="spec"><span class="k">'+s[0]+'</span><span class="v">'+s[1]+'</span></div>').join('');
+        html+='<h4 style="margin-top:16px">Host component</h4>'+(r.specs||[]).slice(0,4).map(s=>'<div class="spec"><span class="k">'+s[0]+'</span><span class="v">'+s[1]+'</span></div>').join(''); }
+      if(curTab==='internals'){ html+=internalsGrid(r); }
+      if(curTab==='vendors'){ html+='<h4>Who makes it</h4>'+(p.vendors||[]).map(v=>'<div class="vend"><div class="n">'+v[0]+'</div>'+(v[1]?'<div class="d">'+v[1]+'</div>':'')+'</div>').join('');
+        html+='<p style="margin-top:12px;color:var(--muted);font-size:11.5px">Part of <b style="color:#fff">'+r.name+'</b> — open its Vendors tab for hyperscaler deployments.</p>'+courseCTA(r); }
     } else {
-      if(curTab==='overview'){
-        html+='<p>'+r.summary+'</p>';
-        if(r.why){html+='<h4>Why it matters</h4><p>'+r.why+'</p>';}
-        if(r.peris&&r.peris.length){
-          html+='<h4>Inside this component ('+r.peris.length+')</h4>';
-          html+='<p style="color:var(--muted);margin-bottom:8px">'+(r.critical?'★ Critical — ':'')+'click it in the 3D view to dissect, then click any part:</p>';
-          html+=r.peris.map(pp=>'<span class="chip">'+pp.name+'</span>').join('');
-        }
-      }
-      if(curTab==='specs'){
-        html+='<h4>Specifications</h4>'+(r.specs||[]).map(s=>'<div class="spec"><span class="k">'+s[0]+'</span><span class="v">'+s[1]+'</span></div>').join('');
-        html+='<p style="margin-top:12px;color:var(--muted);font-size:11.5px">Rack mechanical/thermal figures per EIA-310-D &amp; ASHRAE TC9.9 (project Spec Library). Density &amp; vendor figures: 2026 industry landscape.</p>';
-      }
-      if(curTab==='vendors'){
-        html+='<h4>Global vendors</h4>'+(r.vendors||[]).map(v=>'<div class="vend"><div class="n">'+v[0]+'</div>'+(v[1]?'<div class="d">'+v[1]+'</div>':'')+'</div>').join('');
-        if(r.deploys&&r.deploys.length){
-          html+='<h4>How the hyperscalers deploy it</h4>';
-          html+=r.deploys.map(d=>'<div class="dep"><span class="op '+opClass(d[0])+'">'+opName(d[0])+'</span><span class="t">'+d[1]+'</span></div>').join('');
-          html+='<p style="margin-top:12px;color:var(--muted);font-size:11.5px">Deployment/project data reflects operational &amp; under-construction US AI infrastructure as of 2026.</p>';
-        }
-      }
-      if(curTab==='course'){ html+=courseCTA(r); }
+      if(curTab==='overview'){ html+='<p>'+r.summary+'</p>'+whyBox(r)+courseCTA(r); }
+      if(curTab==='specs'){ html+='<h4>Specifications</h4>'+(r.specs||[]).map(s=>'<div class="spec"><span class="k">'+s[0]+'</span><span class="v">'+s[1]+'</span></div>').join('');
+        html+='<p style="margin-top:12px;color:var(--muted);font-size:11.3px">Rack mechanical/thermal figures per EIA-310-D &amp; ASHRAE TC9.9 (project Spec Library). Density &amp; vendor figures: 2026 industry landscape.</p>'; }
+      if(curTab==='internals'){ html+=internalsGrid(r)+whyBox(r); }
+      if(curTab==='vendors'){ html+='<h4>Global vendors</h4>'+(r.vendors||[]).map(v=>'<div class="vend"><div class="n">'+v[0]+'</div>'+(v[1]?'<div class="d">'+v[1]+'</div>':'')+'</div>').join('');
+        if(r.deploys&&r.deploys.length){ html+='<h4>How the hyperscalers deploy it</h4>'+r.deploys.map(d=>'<div class="dep"><span class="op '+opClass(d[0])+'">'+opName(d[0])+'</span><span class="t">'+d[1]+'</span></div>').join('');
+          html+='<p style="margin-top:12px;color:var(--muted);font-size:11.3px">Deployment data reflects operational &amp; under-construction US AI infrastructure as of 2026.</p>'; }
+        html+=courseCTA(r); }
     }
     cardBody.innerHTML=html;
     const c=cardBody.querySelector('[data-course]'); if(c){c.addEventListener('click',()=>openCourse(c.getAttribute('data-course')));}
+    cardBody.querySelectorAll('[data-peri]').forEach(btn=>btn.addEventListener('click',()=>{
+      const r2=curReport; const comp=components.find(cc=>cc.userData.def===r2); if(!comp) return;
+      if(active!==comp) openComponent(comp);
+      selectedPeri=r2.peris[+btn.dataset.peri]; renderCard(r2,selectedPeri); focusOn(comp,true); setStep(4);
+    }));
   }
   function courseCTA(r){
     const key=r.course||'L1'; const c=COURSE[key]||COURSE.L1;
-    return '<h4>Learn more about this component</h4>'+
+    return '<h4 style="margin-top:16px">Learn more about this component</h4>'+
       '<div class="cta" data-course="'+key+'">'+
         '<div class="lead">Start the course here — click here</div>'+
         '<div class="ttl">▶ '+c.title+'</div>'+
         '<div class="sub">'+c.obj+'</div>'+
         '<div class="go">Open lesson '+key+' →</div>'+
-      '</div>'+
-      '<p style="margin-top:12px;color:var(--muted);font-size:11.5px">This launches the matching lesson from the <b style="color:#cdd8e6">Rack to Runtime</b> program. (The interactive site is kept separate from the Rise 360 course objects.)</p>';
+      '</div>';
   }
+
   tabs.forEach(t=>t.addEventListener('click',()=>{curTab=t.dataset.tab;drawTab();}));
   cardBack.addEventListener('click',()=>{ selectedPeri=null; curPeri=null; if(active){focusOn(active,true);} renderCard(curReport,null); });
-  document.getElementById('cardClose').addEventListener('click',()=>{closeCard();collapseAll();});
+  document.getElementById('cardClose').addEventListener('click',()=>{closeCardFlow();});
 
   /* course overlay */
   const courseEl=document.getElementById('course');
@@ -910,12 +1112,11 @@
   /* =========================================================================
      VIEW MODES / BUTTONS
   ==========================================================================*/
-  let autoRotate=!REDUCED, showLabels=false, showU=false, mode='all';
+  let autoRotate=!REDUCED, showLabels=true, showU=true, mode='all';
   const btnRotate=document.getElementById('btnRotate'),btnPower=document.getElementById('btnPower'),
         btnAir=document.getElementById('btnAir'),btnLabels=document.getElementById('btnLabels'),
         btnU=document.getElementById('btnU'),btnReset=document.getElementById('btnReset'),btnExit=document.getElementById('btnExit');
-  function setRotate(v){autoRotate=v;btnRotate.classList.toggle('active',v);
-    btnRotate.innerHTML='<span class="dot" style="background:var(--ok)"></span>Auto-rotate: '+(v?'ON':'OFF');}
+  function setRotate(v){autoRotate=v;btnRotate.classList.toggle('on',v);}
   function dimMesh(o,on){ if(!o.material)return; o.material.opacity=on?1:0.1; o.material.transparent=!on; }
   function setMode(m){
     mode=(mode===m)?'all':m;
@@ -939,17 +1140,17 @@
   btnRotate.onclick=()=>setRotate(!autoRotate);
   btnPower.onclick=()=>setMode('power');
   btnAir.onclick=()=>setMode('air');
-  btnLabels.onclick=()=>{showLabels=!showLabels;btnLabels.classList.toggle('active',showLabels);};
-  btnU.onclick=()=>{showU=!showU;btnU.classList.toggle('active',showU);};
-  btnExit.onclick=()=>{closeCard();collapseAll();};
+  btnLabels.onclick=()=>{showLabels=!showLabels;btnLabels.classList.toggle('on',showLabels);};
+  btnU.onclick=()=>{showU=!showU;btnU.classList.toggle('on',showU);};
+  btnExit.onclick=()=>{closeCardFlow();};
   btnReset.onclick=()=>{
     mode='all'; setMode('all'); mode='all';
     components.forEach(comp=>comp.traverse(o=>{if(o.isMesh)dimMesh(o,true);}));
-    showLabels=false;showU=false;btnLabels.classList.remove('active');btnU.classList.remove('active');
+    showLabels=true;showU=true;btnLabels.classList.add('on');btnU.classList.add('on');
     btnPower.classList.remove('active');btnAir.classList.remove('active');
-    closeCard(); collapseAll(); setRotate(!REDUCED);
+    closeCardFlow(); setRotate(!REDUCED);
   };
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(courseEl.classList.contains('open'))courseEl.classList.remove('open');else{closeCard();collapseAll();}}});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(courseEl.classList.contains('open'))courseEl.classList.remove('open');else if(helpEl.classList.contains('open'))helpEl.classList.remove('open');else closeCardFlow();}});
 
   /* =========================================================================
      ANIMATION
@@ -964,9 +1165,10 @@
       const t=comp._t, et=ease(t);
       // pivot slide-out
       comp._pivot.position.lerpVectors(new THREE.Vector3(0,0,0), comp._pivotExpl, et);
+      comp._pivot.rotation.y=(comp._yaw||0)*et;
       // casing parts (fade to a translucent "ghost" so internals read through)
       comp._parts.forEach(pt=>{ pt.m.position.lerpVectors(pt.rest,pt.expl,et);
-        if(pt.cas && pt.m.material){ pt.m.material.opacity = 1 - 0.62*et; } });
+        if(pt.cas && pt.m.material){ pt.m.material.opacity = 1 - 0.78*et; } });
       // peripherals
       comp._peris.forEach(pr=>{
         pr.g.visible = t>0.02;
@@ -991,6 +1193,7 @@
       // critical LED pulse
       if(comp._led){ comp._led.material.emissiveIntensity = 0.6 + 0.4*Math.sin(nowT*3 + comp.position.y); }
     });
+    if(active && active._goal>0){ const t=active._t, s=t<0.45?2:(t<0.92?3:(selectedPeri?4:4)); if(s!==curStep) setStep(s); }
   }
 
   /* label projection */
@@ -1044,7 +1247,7 @@
     try{updateLabels();}catch(err){}
     renderer.render(scene,camera);
   }
-  setRotate(!REDUCED); applyCamera(); requestAnimationFrame(tick);
+  setRotate(!REDUCED); buildSidebar(); renderRackOverview(); applyCamera(); requestAnimationFrame(tick);
 })();
 </script>
 </body>
