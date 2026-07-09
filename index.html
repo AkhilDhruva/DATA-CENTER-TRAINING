@@ -310,6 +310,7 @@
   if(!window.THREE){document.getElementById('err').style.display='flex';return;}
   const THREE = window.THREE;
   const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  try{const QS=new URLSearchParams(location.search); if(QS.get('dbg'))window.__dbg=true; if(QS.get('noglb'))window.__noGLB=true;}catch(e){}
   const app = document.getElementById('app');
 
   /* =========================================================================
@@ -447,7 +448,8 @@
       peris:[
         {id:'drive',kind:'drivebank',name:'Drive carriers (NVMe/SAS)',color:0xb06bff,desc:'Rows of hot-swap drives — the capacity itself. Front-loaded for service without downtime.',specs:[['Bays','24–90+'],['Interface','NVMe / SAS'],['Hot-swap','yes']],vendors:[['Micron',''],['Samsung',''],['Seagate','HDD tier']]},
         {id:'ctrl',kind:'board',name:'Dual storage controllers',color:0x39d98a,desc:'Two active/active controllers — data keeps flowing if one fails.',specs:[['Config','active/active'],['Cache','NVRAM-backed'],['Failover','non-disruptive']],vendors:[['Dell',''],['NetApp',''],['Pure Storage','']]},
-        {id:'psu',kind:'psu',name:'Dual PSU (A+B)',color:0xff8c32,desc:'Redundant supplies on separate feeds.',specs:[['Config','1+1'],['Feeds','A + B']],vendors:[['Delta',''],['Artesyn','']]}
+        {id:'psu',kind:'psu',name:'Dual PSU (A+B)',color:0xff8c32,desc:'Redundant supplies on separate feeds.',specs:[['Config','1+1'],['Feeds','A + B']],vendors:[['Delta',''],['Artesyn','']]},
+        {id:'backplane',kind:'backplane',name:'Backplane / Interconnect',color:0xffd23f,desc:'High-speed SAS/NVMe interconnect board behind the drive bays — every carrier mates into it and traffic fans out to both controllers.',specs:[['Fabric','PCIe Gen5 NVMe / SAS-4'],['Bays served','24–90+'],['Pathing','dual-ported to both controllers']],vendors:[['Broadcom','SAS expanders / PCIe switch'],['Microchip','SmartIOC / expanders'],['Amphenol','high-speed connectors']]}
       ]},
 
     { u:25,h:1,type:'server',cat:'server',critical:false,name:'1U Server',
@@ -570,6 +572,10 @@
   const rim = new THREE.DirectionalLight(0x36c2ff, 0.55); rim.position.set(-14,9,-12); scene.add(rim);
   const cold = new THREE.PointLight(0x36c2ff, 0.6, 70); cold.position.set(0,6,16); scene.add(cold);
   const stage = new THREE.PointLight(0xffffff, 0.0, 40); stage.position.set(0,4,14); scene.add(stage); // brightens on dissection
+  // dissection stage lights — cyan rim + purple accent, ramped up only while inspecting
+  const stageRim = new THREE.SpotLight(0x36c2ff, 0.0, 60, 0.7, 0.5); stageRim.position.set(-12,9,15);
+  stageRim.target.position.set(0,2,8); scene.add(stageRim); scene.add(stageRim.target);
+  const stageAccent = new THREE.PointLight(0xb06bff, 0.0, 45); stageAccent.position.set(9,3,13); scene.add(stageAccent);
 
   /* Dimensions */
   const U = 0.4, UNITS = 42;
@@ -653,14 +659,249 @@
     }else if(p.kind==='optic'){
       for(let i=0;i<6;i++){const s=box(0.16,0.16,0.6,mat(col,{emissive:col,emissiveIntensity:.3,metalness:.6}));s.position.x=-0.5+i*0.2;g.add(s);
         const lt=box(0.05,0.05,0.05,mat(0x36c2ff,{emissive:0x36c2ff,emissiveIntensity:1}));lt.position.set(-0.5+i*0.2,0,0.32);g.add(lt);}
+    }else if(p.kind==='backplane'){
+      const b=box(1.4,0.9,0.08,mat(0x123023,{metalness:.3,roughness:.6})); g.add(b);
+      for(let i=0;i<6;i++){const pin=box(0.14,0.1,0.06,mat(0xd7a94a,{metalness:.9,roughness:.3}));pin.position.set(-0.5+i*0.2,-0.25,0.07);g.add(pin);}
     }else{
       g.add(box(0.6,0.3,0.6,mat(col)));
     }
     return g;
   }
 
+  /* =========================================================================
+     HIGH-FIDELITY STORAGE ARRAY DISSECTION (staged asset pipeline)
+     The procedural fallback below is structured EXACTLY like the authored
+     GLB (models/storage-array.glb), so the Blender asset can be dropped in
+     with no code changes. Export contract — named nodes/groups:
+       Tray, GhostCover, DriveCarriers, Controllers, PSU_A, PSU_B,
+       Backplane, PCB, Bezel, Rails
+     Stages: selected → pullout → open → inspect (driven by comp._t).
+  ==========================================================================*/
+  const HIFI_NODE_NAMES=['Tray','GhostCover','DriveCarriers','Controllers','PSU_A','PSU_B','Backplane','PCB','Bezel','Rails'];
+
+  // beveled box (ExtrudeGeometry with a rounded profile) — reads as milled metal
+  function bevelBox(w,h,d,r,material){
+    r=Math.min(r,w/2*0.9,h/2*0.9,d/2*0.9);
+    const s=new THREE.Shape(); const x=-w/2,y=-h/2;
+    s.moveTo(x+r,y); s.lineTo(x+w-r,y); s.quadraticCurveTo(x+w,y,x+w,y+r);
+    s.lineTo(x+w,y+h-r); s.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    s.lineTo(x+r,y+h); s.quadraticCurveTo(x,y+h,x,y+h-r);
+    s.lineTo(x,y+r); s.quadraticCurveTo(x,y,x+r,y);
+    const dep=Math.max(0.01,d-2*r);
+    const g=new THREE.ExtrudeGeometry(s,{depth:dep,bevelEnabled:true,
+      bevelThickness:r,bevelSize:r*0.9,bevelSegments:2,curveSegments:4});
+    g.translate(0,0,-dep/2);
+    const m=new THREE.Mesh(g,material); m.castShadow=true; m.receiveShadow=true; return m;
+  }
+
+  function buildStorageArrayHiFi(e){
+    const w=innerW-0.25, h=e.h*U-0.08, d=RACK_D-0.7;
+    const yc=yForBlock(e.u,e.h);
+    const comp=new THREE.Group(); comp.position.set(0,yc,0.18);
+    comp.userData.def=e; comp._t=0; comp._goal=0; comp._parts=[]; comp._peris=[]; comp._lines=[];
+    comp._hifi=true; comp._heroScale=1.5;
+    const pivot=new THREE.Group(); comp.add(pivot); comp._pivot=pivot;
+    // pull far enough that the whole chassis clears the rack before it scales up
+    comp._pivotExpl=new THREE.Vector3(0,0,RACK_D/2+5.4);
+    comp._yaw=0; // straight out, parallel to the rack
+
+    const groups={}; comp._groups=groups;
+    HIFI_NODE_NAMES.forEach(n=>{const g=new THREE.Group(); g.name=n; groups[n]=g;});
+    const psuPair=new THREE.Group(); psuPair.name='PSUs';
+    psuPair.add(groups.PSU_A); psuPair.add(groups.PSU_B);
+
+    const floorY=-h*0.42;
+    const compPick={type:'comp',comp};
+    function pickAll(o,tag){o.traverse(m2=>{if(m2.isMesh){m2.userData.pick=tag;pickable.push(m2);}});}
+    function casPart(m2,expl){comp._parts.push({m:m2,rest:m2.position.clone(),expl:expl||m2.position.clone(),cas:true});
+      if(m2.material){m2.material.transparent=true;} m2.userData.casing=true;}
+
+    /* ---- Tray: brushed-metal floor + fading walls ---- */
+    const trayM=new THREE.MeshStandardMaterial({color:0xb3bfcb,metalness:.85,roughness:.3});
+    const wallM=new THREE.MeshStandardMaterial({color:0x94a2b1,metalness:.8,roughness:.34,transparent:true});
+    const trayFloor=bevelBox(w,0.12,d,0.035,trayM); trayFloor.position.y=floorY; groups.Tray.add(trayFloor);
+    const wallL=box(0.09,h*0.86,d,wallM); wallL.position.set(-w/2+0.05,floorY+h*0.45,0);
+    const wallR=wallL.clone(); wallR.position.x=w/2-0.05;
+    const wallB=box(w,h*0.86,0.09,wallM); wallB.position.set(0,floorY+h*0.45,-d/2+0.05);
+    groups.Tray.add(wallL,wallR,wallB);
+    comp._parts.push({m:trayFloor,rest:trayFloor.position.clone(),expl:trayFloor.position.clone(),cas:false});
+    casPart(wallL); casPart(wallR); casPart(wallB); // fade in place — internals stay framed by the tray
+
+    /* ---- Rails: slide rails outside the tray ---- */
+    const railM=new THREE.MeshStandardMaterial({color:0x6f7f92,metalness:.92,roughness:.26});
+    const railL=bevelBox(0.16,0.2,d+0.5,0.05,railM); railL.position.set(-w/2-0.12,floorY+0.02,0);
+    const railR=railL.clone(); railR.position.x=w/2+0.12;
+    groups.Rails.add(railL,railR);
+    comp._parts.push({m:railL,rest:railL.position.clone(),expl:railL.position.clone(),cas:false});
+    comp._parts.push({m:railR,rest:railR.position.clone(),expl:railR.position.clone(),cas:false});
+
+    /* ---- Bezel: front face w/ bay slots + critical LED ---- */
+    const bezM=new THREE.MeshStandardMaterial({color:0x0d141d,metalness:.4,roughness:.7,transparent:true});
+    const slotM=new THREE.MeshStandardMaterial({color:0x05080d,roughness:.9,transparent:true});
+    const bez=bevelBox(w,h*0.96,0.16,0.04,bezM); bez.position.set(0,0,d/2+0.02); groups.Bezel.add(bez);
+    for(let i=0;i<10;i++){const slot=new THREE.Mesh(new THREE.BoxGeometry(w*0.072,h*0.6,0.05),slotM);
+      slot.position.set(-w*0.41+i*w*0.0885,0.02,0.1); bez.add(slot);}
+    const led=box(0.14,0.14,0.06,mat(0xff5470,{emissive:0xff5470,emissiveIntensity:1,transparent:true}));
+    led.position.set(w/2-0.34,h*0.33,0.12); bez.add(led); comp._led=led;
+    casPart(bez,new THREE.Vector3(0,-h*0.08,d/2+0.9));
+    casPart(led); // LED fades with the bezel
+    casPart(bez.children[0]); // slots share slotM, so one cas entry fades all ten
+
+    /* ---- GhostCover: physical-material lid, lifts + goes translucent ---- */
+    const ghostM=new THREE.MeshPhysicalMaterial({color:0x9cc4de,metalness:.75,roughness:.15,
+      clearcoat:1,clearcoatRoughness:.3,transparent:true,opacity:1,side:THREE.DoubleSide});
+    const lid=bevelBox(w*0.995,0.09,d*0.99,0.03,ghostM); lid.position.y=h*0.46; groups.GhostCover.add(lid);
+    casPart(lid,new THREE.Vector3(0,h*0.46+2.6,-0.35));
+
+    /* ---- DriveCarriers: cloned prototype (shared geometry/materials) ---- */
+    const carBodyM=new THREE.MeshStandardMaterial({color:0x151d2b,metalness:.65,roughness:.4});
+    const carFaceM=new THREE.MeshStandardMaterial({color:0x1b2536,metalness:.6,roughness:.35});
+    const stripM=new THREE.MeshStandardMaterial({color:0xb06bff,emissive:0xb06bff,emissiveIntensity:1.1,metalness:.4,roughness:.3});
+    const cledM=new THREE.MeshStandardMaterial({color:0x39d98a,emissive:0x39d98a,emissiveIntensity:1});
+    const hdlM=new THREE.MeshStandardMaterial({color:0x8fa2b5,metalness:.85,roughness:.3});
+    const proto=new THREE.Group();
+    const cbdy=bevelBox(0.34,1.02,1.06,0.03,carBodyM); proto.add(cbdy);
+    const strip=box(0.26,0.05,0.9,stripM); strip.position.y=0.54; proto.add(strip);
+    const cface=box(0.3,0.98,0.08,carFaceM); cface.position.z=0.56; proto.add(cface);
+    const cled=box(0.05,0.05,0.04,cledM); cled.position.set(0.09,0.4,0.6); proto.add(cled);
+    const hdl=box(0.24,0.07,0.05,hdlM); hdl.position.set(0,-0.4,0.6); proto.add(hdl);
+    const carY=floorY+0.06+0.51;
+    groups.DriveCarriers.position.set(-w*0.20,carY,d*0.24);
+    for(let r2=0;r2<2;r2++)for(let i2=0;i2<7;i2++){
+      const c2=proto.clone(); c2.position.set(-1.29+i2*0.43,0,0.625-r2*1.25);
+      groups.DriveCarriers.add(c2);
+    }
+
+    /* ---- Backplane: behind the drive carriers ---- */
+    const bpM=new THREE.MeshStandardMaterial({color:0x123023,metalness:.3,roughness:.6});
+    const pinM=new THREE.MeshStandardMaterial({color:0xd7a94a,metalness:.9,roughness:.3,emissive:0x3a2b08,emissiveIntensity:.5});
+    groups.Backplane.position.set(-w*0.20,-0.09,d*0.24-1.35);
+    const bpBoard=box(2.9,1.02,0.09,bpM); groups.Backplane.add(bpBoard);
+    for(let r2=0;r2<2;r2++)for(let i2=0;i2<7;i2++){
+      const pin=box(0.16,0.12,0.07,pinM); pin.position.set(-1.29+i2*0.43,0.22-r2*0.44,0.08);
+      groups.Backplane.add(pin);
+    }
+
+    /* ---- PCB: middle board the controllers sit on ---- */
+    const pcbM=new THREE.MeshStandardMaterial({color:0x11331f,metalness:.25,roughness:.6});
+    const traceM=new THREE.MeshStandardMaterial({color:0x1d5c38,emissive:0x0f3b22,emissiveIntensity:.7});
+    groups.PCB.position.set(w*0.02,floorY+0.10,-d*0.145); // clear of carriers (front) and PSUs (right)
+    const pcb=bevelBox(2.6,0.07,2.4,0.02,pcbM); groups.PCB.add(pcb);
+    for(let i=0;i<4;i++){const tr=box(2.2,0.02,0.05,traceM); tr.position.set(0,0.05,-0.9+i*0.6); groups.PCB.add(tr);}
+    for(let i=0;i<5;i++){const cap=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.14,10),
+      new THREE.MeshStandardMaterial({color:0x2a3445,metalness:.6,roughness:.4}));
+      cap.position.set(-1.05+i*0.5,0.1,0.95); groups.PCB.add(cap);}
+
+    /* ---- Controllers: dual active/active modules, center of the PCB ---- */
+    const ctlBaseM=new THREE.MeshStandardMaterial({color:0x22304a,metalness:.6,roughness:.4});
+    const finM=new THREE.MeshStandardMaterial({color:0xaebfd0,metalness:.85,roughness:.25});
+    const edgeM=new THREE.MeshStandardMaterial({color:0x36c2ff,emissive:0x36c2ff,emissiveIntensity:.9});
+    function buildCtl(){const g2=new THREE.Group();
+      const b2=bevelBox(1.22,0.24,1.45,0.03,ctlBaseM); g2.add(b2);
+      for(let i=0;i<9;i++){const f=box(1.06,0.26,0.06,finM); f.position.set(0,0.24,-0.6+i*0.15); g2.add(f);}
+      const eg=box(1.1,0.05,0.05,edgeM); eg.position.set(0,0.05,0.74); g2.add(eg);
+      return g2;}
+    groups.Controllers.position.set(w*0.02,floorY+0.32,-d*0.145); // seated mid-PCB
+    const ctlA=buildCtl(); ctlA.position.x=-0.7; const ctlB=buildCtl(); ctlB.position.x=0.7;
+    groups.Controllers.add(ctlA,ctlB);
+
+    /* ---- PSU_A + PSU_B: rear-right pair on separate feeds ---- */
+    const psuM=new THREE.MeshStandardMaterial({color:0x39424f,metalness:.75,roughness:.35});
+    const fanM=new THREE.MeshStandardMaterial({color:0x0c1118,roughness:.8});
+    function buildPSUmod(ledCol){const g2=new THREE.Group();
+      const b2=bevelBox(1.1,0.72,1.3,0.05,psuM); g2.add(b2);
+      const fan=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.24,0.06,20),fanM);
+      fan.rotation.x=Math.PI/2; fan.position.z=-0.66; g2.add(fan);
+      const lb=box(0.07,0.07,0.05,mat(ledCol,{emissive:ledCol,emissiveIntensity:1})); lb.position.set(0.4,0.2,0.66); g2.add(lb);
+      return g2;}
+    psuPair.position.set(w*0.35,floorY+0.44,-d*0.28);
+    groups.PSU_A.position.z=0.72;  groups.PSU_A.add(buildPSUmod(0xff8c32)); // A-feed amber
+    groups.PSU_B.position.z=-0.72; groups.PSU_B.add(buildPSUmod(0x36c2ff)); // B-feed cyan
+
+    /* assemble; internals are direct pivot children so anchors stay simple */
+    [groups.Rails,groups.Tray,groups.Bezel,groups.GhostCover,
+     groups.DriveCarriers,groups.Backplane,groups.PCB,groups.Controllers,psuPair].forEach(g2=>pivot.add(g2));
+    [groups.Tray,groups.Rails,groups.Bezel,groups.GhostCover].forEach(g2=>{
+      pickAll(g2,compPick); g2.userData.pickTag=compPick; // pickTag survives the GLB swap
+    });
+
+    /* ---- label/leader-line anchors: only these 4 groups get callouts ---- */
+    const periById={}; (e.peris||[]).forEach(p2=>periById[p2.id]=p2);
+    function periAnchor(id,grp,off){
+      const p2=periById[id]; if(!p2) return;
+      const tag={type:'peri',comp,peri:p2}; grp.userData.pickTag=tag; pickAll(grp,tag);
+      const rec={g:grp,def:p2,rest:grp.position.clone(),expl:grp.position.clone(),off:off};
+      const geom=new THREE.BufferGeometry();
+      geom.setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3));
+      const line=new THREE.Line(geom,new THREE.LineDashedMaterial({color:0x36c2ff,transparent:true,opacity:0,dashSize:0.22,gapSize:0.14}));
+      pivot.add(line); comp._lines.push({line,peri:grp,off:off});
+      const el=document.createElement('div'); el.className='peri-lbl'; el.textContent=p2.name;
+      app.appendChild(el); rec.el=el; comp._peris.push(rec);
+    }
+    periAnchor('drive',    groups.DriveCarriers,new THREE.Vector3(-0.5,1.35,0.5));
+    periAnchor('ctrl',     groups.Controllers,  new THREE.Vector3(0.25,1.6,0.3));
+    periAnchor('psu',      psuPair,             new THREE.Vector3(0.7,1.5,0.4));
+    periAnchor('backplane',groups.Backplane,    new THREE.Vector3(-1.1,1.9,-0.25));
+
+    /* ---- soft contact shadow under the pulled-out chassis ---- */
+    const cvs=document.createElement('canvas'); cvs.width=cvs.height=128;
+    const cx2=cvs.getContext('2d'); const gr=cx2.createRadialGradient(64,64,6,64,64,64);
+    gr.addColorStop(0,'rgba(0,0,0,0.6)'); gr.addColorStop(1,'rgba(0,0,0,0)');
+    cx2.fillStyle=gr; cx2.fillRect(0,0,128,128);
+    const shadow=new THREE.Mesh(new THREE.PlaneGeometry(w*1.7,d*1.6),
+      new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cvs),transparent:true,opacity:0,depthWrite:false}));
+    shadow.rotation.x=-Math.PI/2; shadow.position.y=floorY-0.5; pivot.add(shadow);
+
+    /* stage hook: hero scale-up once clear of the rack + contact shadow */
+    comp._update=function(t,pull,open,spread){
+      pivot.scale.setScalar(1+(comp._heroScale-1)*open);
+      shadow.material.opacity=0.45*pull;
+    };
+
+    rackGroup.add(comp);
+    labelData.push({obj:comp, text:e.name, crit:e.critical});
+    return comp;
+  }
+
+  /* ---- model-loading layer: lazy GLB swap (rack itself stays low-poly) ---- */
+  let _gltfReady=null;
+  function ensureGLTFLoader(){
+    if(_gltfReady) return _gltfReady;
+    _gltfReady=new Promise((res,rej)=>{
+      if(THREE.GLTFLoader) return res();
+      const s=document.createElement('script');
+      s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';
+      s.onload=()=>res(); s.onerror=()=>rej(new Error('GLTFLoader load failed'));
+      document.head.appendChild(s);
+    });
+    return _gltfReady;
+  }
+  function loadStorageGLB(comp){
+    if(comp._glbTried) return; comp._glbTried=true;
+    ensureGLTFLoader().then(()=>new Promise((res,rej)=>{
+      new THREE.GLTFLoader().load('models/storage-array.glb',res,undefined,rej);
+    })).then(gltf=>{
+      const root=gltf.scene; let found=0;
+      HIFI_NODE_NAMES.forEach(name=>{
+        const node=root.getObjectByName(name), grp=comp._groups&&comp._groups[name];
+        if(!node||!grp) return; found++;
+        // retire the procedural fallback in this slot, graft the authored mesh
+        for(let i=grp.children.length-1;i>=0;i--){
+          grp.children[i].traverse(o=>{if(o.isMesh)o.visible=false;});
+          grp.remove(grp.children[i]);
+        }
+        const tag=grp.userData.pickTag;
+        node.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;
+          if(tag){o.userData.pick=tag;pickable.push(o);}}});
+        grp.add(node);
+      });
+      if(found) toast('High-fidelity storage model loaded ('+found+' groups)');
+    }).catch(()=>{/* no GLB yet — procedural fallback stays, silently */});
+  }
+
   /* -------- build a detailed, dissectable component -------- */
   function buildComponent(e){
+    if(e.cat==='storage' && e.peris && e.peris.length) return buildStorageArrayHiFi(e);
     const w=innerW-0.25, h=e.h*U-0.08, d=RACK_D-0.7;
     const yc=yForBlock(e.u,e.h);
     const comp=new THREE.Group(); comp.position.set(0,yc,0.18);
@@ -825,7 +1066,7 @@
 
   function hex(c){return '#'+('000000'+(c||0x8aa0b8).toString(16)).slice(-6);}
   const GLYPH={gpu:'▩',cpu:'▣',dimm:'‖‖',psu:'⚡',nic:'⇄',fan:'✻',asic:'◼',board:'▬',battery:'▮▮',
-               drive:'▤',drivebank:'▤',manifold:'≋',busbar:'ǁ',optic:'◈'};
+               drive:'▤',drivebank:'▤',manifold:'≋',busbar:'ǁ',optic:'◈',backplane:'▦'};
   const META={
     gpu:{chips:['AI COMPUTE','LIQUID-COOLED'],role:'AI training / inference',ff:'2U rack tray (NVL72 pod)',depth:'33.5 in (850 mm)',weight:'~35 kg / 77 lbs',icon:'▩'},
     server:{chips:['DUAL-PSU','GENERAL COMPUTE'],role:'AI/ML workload host',ff:'Rackmount server',depth:'33.5 in (850 mm)',weight:'~28.7 kg / 63.3 lbs',icon:'▤'},
@@ -932,14 +1173,17 @@
     camera.position.z=target.z+cam.radius*Math.sin(cam.phi)*Math.cos(cam.theta);
     camera.lookAt(target);
   }
+  // component-specific camera presets — keep the right side clear for the inspector
+  const CAM_PRESETS={ storage:{theta:0.52,phi:1.03,radius:15,off:3.0,ty:0.35,tzScale:0.8} };
   function focusOn(comp,exploded){
     const p=new THREE.Vector3(); comp.getWorldPosition(p);
-    const th=0.55; goal.theta=th; goal.phi=1.07;
-    const off=exploded?2.2:1.4; // bias left of the report panel, like the mockup
+    const pre=exploded? CAM_PRESETS[comp.userData.def.cat] : null;
+    const th=pre?pre.theta:0.55; goal.theta=th; goal.phi=pre?pre.phi:1.07;
+    const off=exploded?(pre?pre.off:2.2):1.4; // bias left of the report panel, like the mockup
     goal.tx=p.x*0.35 + Math.sin(th+Math.PI/2)*off;
-    goal.tz=(exploded? comp._pivotExpl.z*0.5+1.2 : 0) + Math.cos(th+Math.PI/2)*off;
-    goal.ty=p.y*0.9;
-    goal.radius= exploded ? (16 + comp._peris.length*1.3) : 15;
+    goal.tz=(exploded? comp._pivotExpl.z*(pre?pre.tzScale:0.5)+(pre?0:1.2) : 0) + Math.cos(th+Math.PI/2)*off;
+    goal.ty=p.y*0.9+(pre?pre.ty:0);
+    goal.radius= exploded ? (pre?pre.radius:(16 + comp._peris.length*1.3)) : 15;
   }
   function defaultView(){goal.theta=0.7;goal.phi=1.12;goal.radius=31;goal.tx=0;goal.ty=0;goal.tz=0;}
 
@@ -974,7 +1218,10 @@
     active=comp; selectedPeri=null;
     components.forEach(c=>setGlow(c,false)); setGlow(comp,true);
     const hasDis=(comp._peris&&comp._peris.length);
-    if(hasDis){ setExplode(comp,1); focusOn(comp,true); stage.intensity=0.55; btnExit.style.display='flex'; }
+    if(comp._hifi && !window.__noGLB) loadStorageGLB(comp); // lazy-load the authored asset on first inspect
+    if(hasDis){ setExplode(comp,1); focusOn(comp,true); stage.intensity=0.55;
+      stageRim.intensity=comp._hifi?0.85:0.5; stageAccent.intensity=comp._hifi?0.55:0.3;
+      btnExit.style.display='flex'; }
     else { focusOn(comp,false); btnExit.style.display= (active&&active._peris.length)?'flex':'none'; }
     setRotate(false);
     curTab = hasDis? 'internals':'overview';
@@ -984,7 +1231,8 @@
   function collapseAll(){
     if(active){ setExplode(active,0); }
     components.forEach(c=>setGlow(c,false));
-    active=null; selectedPeri=null; stage.intensity=0.0; btnExit.style.display='none';
+    active=null; selectedPeri=null; stage.intensity=0.0; stageRim.intensity=0.0; stageAccent.intensity=0.0;
+    btnExit.style.display='none';
     defaultView(); setStep(1); markSidebar(null);
   }
 
@@ -1196,31 +1444,45 @@
         if(dir>0? comp._t>comp._goal : comp._t<comp._goal) comp._t=comp._goal;
       }
       const t=comp._t;
+      const SEC=(window.__dbg&&comp===active)?function(s){try{localStorage.setItem('dbgSec',s+' t='+t.toFixed(3))}catch(e){}}:null;
       const pull  =ease(Math.min(1, t/0.42));                      // stage 2: chassis slides out
       const open  =ease(Math.max(0,Math.min(1,(t-0.36)/0.40)));    // stage 3: casing lifts/fades
       const spread=ease(Math.max(0,Math.min(1,(t-0.60)/0.40)));    // stage 4: internals separate
+      if(SEC)SEC('a-pivot');
       comp._pivot.position.lerpVectors(new THREE.Vector3(0,0,0), comp._pivotExpl, pull);
       comp._pivot.rotation.y=(comp._yaw||0)*pull;
+      if(SEC)SEC('b-parts');
       comp._parts.forEach(pt=>{ pt.m.position.lerpVectors(pt.rest,pt.expl,open);
-        if(pt.cas && pt.m.material){ pt.m.material.opacity = 1 - 0.85*open; } });
+        if(pt.cas && pt.m.material){ pt.m.material.transparent=true; pt.m.material.opacity = 1 - 0.85*open; } });
+      if(SEC)SEC('c-apron');
       if(comp._apron && comp._apron.material){ comp._apron.material.opacity = 0.22*spread; }
+      if(SEC)SEC('d-peris');
       comp._peris.forEach(pr=>{
         pr.g.visible = t>0.55;
         pr.g.position.lerpVectors(pr.rest,pr.expl,spread);
         const sel=(comp===active && selectedPeri===pr.def);
         pr.g.traverse(o=>{if(o.isMesh&&o.material&&o.material.emissive){
-          if(sel){o.material.emissiveIntensity=0.6;} }});
+          if(o.userData._emBase===undefined)o.userData._emBase=o.material.emissiveIntensity;
+          o.material.emissiveIntensity = sel? Math.max(0.6,o.userData._emBase) : o.userData._emBase; }});
       });
       comp._lines.forEach(ln=>{
         const on = t>0.6;
         ln.line.material.opacity = on? 0.45*spread : 0;
         if(on){
           const g=ln.line.geometry.attributes.position;
-          g.setXYZ(0, 0, 0, 0);
-          g.setXYZ(1, ln.peri.position.x, ln.peri.position.y, ln.peri.position.z);
+          if(ln.off){ // hi-fi: leader line rises from the part to its callout anchor
+            g.setXYZ(0, ln.peri.position.x, ln.peri.position.y+0.2, ln.peri.position.z);
+            g.setXYZ(1, ln.peri.position.x+ln.off.x, ln.peri.position.y+ln.off.y, ln.peri.position.z+ln.off.z);
+          } else {
+            g.setXYZ(0, 0, 0, 0);
+            g.setXYZ(1, ln.peri.position.x, ln.peri.position.y, ln.peri.position.z);
+          }
           g.needsUpdate=true; ln.line.computeLineDistances();
         }
       });
+      if(SEC)SEC('e-update');
+      if(comp._update) comp._update(t,pull,open,spread); // component-specific staging (hi-fi)
+      if(SEC)SEC('f-led');
       if(comp._led){ comp._led.material.emissiveIntensity = 0.6 + 0.4*Math.sin(nowT*3 + comp.position.y); }
     });
     if(active && active._goal>0){ const t=active._t, s=t<0.42?2:(t<0.80?3:4); if(s!==curStep) setStep(s); }
@@ -1245,7 +1507,9 @@
       comp._peris.forEach(pr=>{
         if(!pr.el)return;
         if(!showP){pr.el.style.opacity=0;return;}
-        pr.g.getWorldPosition(_v); _v.project(camera);
+        if(pr.off){ _v.copy(pr.g.position).add(pr.off); pr.g.parent.localToWorld(_v); }
+        else pr.g.getWorldPosition(_v);
+        _v.project(camera);
         const on=_v.z<1;
         pr.el.style.opacity=on?(selectedPeri===pr.def?1:0.82):0;
         pr.el.style.borderColor = selectedPeri===pr.def? 'var(--accent)':'rgba(54,194,255,.4)';
@@ -1269,15 +1533,31 @@
 
   let nowT=0;
   function tick(ts){
-    requestAnimationFrame(tick);
+    if(window.__dbg && document.hidden){ setTimeout(function(){tick(performance.now());},50); } // debug: keep animating in hidden tabs
+    else requestAnimationFrame(tick);
     nowT=(ts||0)/1000;
+    const D=window.__dbg, LS=D?function(s){try{localStorage.setItem('dbgPhase',s+' t='+(active?active._t.toFixed(3):'-'))}catch(e){}}:null;
+    if(D)LS('P0-frame');
     if(autoRotate && !dragging && !active){ goal.theta+=0.0022; }
+    if(D)LS('P1-cam');
     applyCamera();
+    if(D)LS('P2-anim');
     animateComponents();
+    if(D)LS('P3-labels');
     try{updateLabels();}catch(err){}
+    if(D)LS('P4-render');
     renderer.render(scene,camera);
+    if(D)LS('P5-done');
   }
-  setRotate(!REDUCED); buildSidebar(); renderRackOverview(); applyCamera(); requestAnimationFrame(tick);
+  setRotate(!REDUCED); buildSidebar(); renderRackOverview(); applyCamera();
+  // prewarm: compile every shader (incl. hidden dissection internals) at load,
+  // so first-time GPU shader compilation can't stall mid-animation
+  try{
+    const hidden=[]; components.forEach(c=>c._peris.forEach(pr=>{if(!pr.g.visible){pr.g.visible=true;hidden.push(pr.g);}}));
+    renderer.compile(scene,camera);
+    hidden.forEach(g=>g.visible=false);
+  }catch(e){}
+  if(window.__dbg) tick(performance.now()); else requestAnimationFrame(tick);
 })();
 </script>
 </body>
