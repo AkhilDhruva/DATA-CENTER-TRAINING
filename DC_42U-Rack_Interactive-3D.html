@@ -668,7 +668,7 @@
 
     const pivot=new THREE.Group(); comp.add(pivot); comp._pivot=pivot;
     comp._pivotExpl=new THREE.Vector3(0, 0, RACK_D*0.3 + 1.4); // slide forward out of the rack
-    comp._yaw=-0.30;
+    comp._yaw=0; // pull straight out, parallel to the rack (no sideways twist)
 
     const bodyCol = C[e.cat]||0x3aa0e6;
     // base tray (bottom + rear) — always visible
