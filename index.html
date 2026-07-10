@@ -226,7 +226,7 @@
   </div>
 </header>
 
-<aside id="sidebar" class="hud" data-component="RackContentsSidebar">
+<aside id="sidebar" class="hud hide" data-component="RackContentsSidebar"><!-- hidden by default: keep the rack render clean; menu button toggles -->
   <h2>Rack contents</h2>
   <ul id="rackList"></ul>
   <button id="btnFullRack">⤢&nbsp; View full rack</button>
@@ -236,7 +236,7 @@
   <div class="ctl on" id="btnRotate"><span class="dot" style="background:var(--ok)"></span>Auto-rotate<span class="switch"></span></div>
   <div class="ctl" id="btnPower"><span class="dot" style="background:var(--a)"></span>Power view<span class="end">A/B feeds</span></div>
   <div class="ctl" id="btnAir"><span class="dot" style="background:var(--warn)"></span>Airflow view<span class="end">(blanking)</span></div>
-  <div class="ctl on" id="btnLabels"><span class="dot" style="background:var(--accent)"></span>Component labels<span class="switch"></span></div>
+  <div class="ctl" id="btnLabels"><span class="dot" style="background:var(--accent)"></span>Component labels<span class="switch"></span></div>
   <div class="ctl on" id="btnU"><span class="dot" style="background:var(--muted)"></span>U-position ruler<span class="switch"></span></div>
   <div class="ctl" id="btnExit" style="display:none"><span class="dot" style="background:var(--crit)"></span>Exit dissection</div>
   <div class="ctl reset" id="btnReset"><span class="dot" style="background:#fff"></span>Reset view</div>
@@ -612,6 +612,232 @@
   function mat(hex,opts){return new THREE.MeshStandardMaterial(Object.assign({color:hex,roughness:.5,metalness:.5},opts||{}));}
   function darkMetal(){return new THREE.MeshStandardMaterial({color:0x1b2432,roughness:.55,metalness:.6});}
 
+  /* =========================================================================
+     PROCEDURAL PRIMITIVES — one shared visual language for every rack module:
+     real rackmount depth, front bezel + rack ears/screws, side rails, vents,
+     status LEDs, bevels and material contrast. Geometries are cached/shared;
+     materials are created per call so selection glow and dissection dimming
+     stay per-module.
+  ==========================================================================*/
+  const GEO=new Map();
+  function gBox(w,h,d){const k='b'+w+'|'+h+'|'+d;if(!GEO.has(k))GEO.set(k,new THREE.BoxGeometry(w,h,d));return GEO.get(k);}
+  function gCyl(r,h,s){const k='c'+r+'|'+h+'|'+s;if(!GEO.has(k))GEO.set(k,new THREE.CylinderGeometry(r,r,h,s));return GEO.get(k);}
+  function pm(geo,material){const m=new THREE.Mesh(geo,material);m.castShadow=true;m.receiveShadow=true;return m;}
+  const PAL={
+    rackMetal:()=>mat(0x27303d,{metalness:.6,roughness:.48}),
+    bezel:()=>mat(0x0e141d,{metalness:.45,roughness:.65,transparent:true}),
+    slot:()=>mat(0x05080d,{roughness:.9,metalness:.1,transparent:true}),
+    tray:()=>mat(0xb3bfcb,{metalness:.85,roughness:.3}),
+    rail:()=>mat(0x6f7f92,{metalness:.92,roughness:.26}),
+    plastic:()=>mat(0x11161f,{metalness:.2,roughness:.78}),
+    pcb:()=>mat(0x11331f,{metalness:.25,roughness:.6}),
+    fin:()=>mat(0xaebfd0,{metalness:.85,roughness:.25}),
+    steel:()=>mat(0x39424f,{metalness:.75,roughness:.35}),
+    led:c=>mat(c,{emissive:c,emissiveIntensity:1,transparent:true}),
+    glow:(c,i)=>mat(c,{emissive:c,emissiveIntensity:(i==null?0.8:i),metalness:.4,roughness:.35,transparent:true})
+  };
+
+  /* rack ears + screws — the EIA-310 mounting identity every bezel shares */
+  function addRackEars(bez,w,h){
+    const earM=mat(0x2c3644,{metalness:.7,roughness:.4,transparent:true});
+    const scM=mat(0x9fb0c2,{metalness:.9,roughness:.3,transparent:true});
+    [-1,1].forEach(s=>{
+      const ear=box(0.16,Math.min(h*0.9,1.1),0.05,earM); ear.position.set(s*(w/2+0.07),0,0.02); bez.add(ear);
+      [h*0.28,-h*0.28].forEach(y=>{
+        const sc=pm(gCyl(0.035,0.03,8),scM); sc.rotation.x=Math.PI/2;
+        sc.position.set(s*(w/2+0.07),Math.max(-0.5,Math.min(0.5,y)),0.055); bez.add(sc);
+      });
+    });
+  }
+
+  /* RackModuleShell — the closed exterior. Returns separable casing pieces
+     (tray/top/left/right/bezel) so the generic dissection explode still works.
+     opts.faceFn(bez,w,h,e) draws the category-specific faceplate. */
+  function RackModuleShell(w,h,d,e,opts){
+    opts=opts||{};
+    const tray=box(w,h*0.34,d,mat(0x27303d,{metalness:.6,roughness:.48})); tray.position.y=-h*0.32;
+    const top=box(w,h*0.14,d,mat(0x2b3442,{metalness:.65,roughness:.42,transparent:true})); top.position.y=h*0.42;
+    const left=box(0.1,h*0.9,d,mat(0x1f2733,{metalness:.6,roughness:.5,transparent:true})); left.position.x=-w/2;
+    const right=left.clone(); right.material=left.material.clone(); right.position.x=w/2;
+    const bez=bevelBox(w,h*0.96,0.14,0.03,PAL.bezel()); bez.position.z=d/2;
+    addRackEars(bez,w,h);
+    if(opts.accent){const strip=box(w*0.94,0.035,0.03,PAL.glow(opts.accent,.9)); strip.position.set(0,-h*0.4,0.075); bez.add(strip);}
+    if(opts.faceFn) opts.faceFn(bez,w,h,e);
+    else { const vent=box(w*0.8,h*0.5,0.04,PAL.slot()); vent.position.z=0.06; bez.add(vent); }
+    return {tray,top,left,right,bezel:bez};
+  }
+
+  /* PulloutTray — brushed sled: bevelled floor, fading walls, slide rails */
+  function PulloutTray(w,h,d){
+    const floorY=-h*0.42;
+    const floor=bevelBox(w,0.12,d,0.035,PAL.tray()); floor.position.y=floorY;
+    const wallM=mat(0x94a2b1,{metalness:.8,roughness:.34,transparent:true});
+    const wl=box(0.09,h*0.86,d,wallM); wl.position.set(-w/2+0.05,floorY+h*0.45,0);
+    const wr=wl.clone(); wr.position.x=w/2-0.05;
+    const wb=box(w,h*0.86,0.09,wallM); wb.position.set(0,floorY+h*0.45,-d/2+0.05);
+    const rl=bevelBox(0.16,0.2,d+0.5,0.05,PAL.rail()); rl.position.set(-w/2-0.12,floorY+0.02,0);
+    const rr=rl.clone(); rr.position.x=w/2+0.12;
+    return {floor,walls:[wl,wr,wb],rails:[rl,rr],floorY};
+  }
+
+  /* GhostCoverPrim — translucent physical-material lid */
+  function GhostCoverPrim(w,h,d){
+    const m=new THREE.MeshPhysicalMaterial({color:0x9cc4de,metalness:.75,roughness:.15,
+      clearcoat:1,clearcoatRoughness:.3,transparent:true,opacity:1,side:THREE.DoubleSide});
+    const lid=bevelBox(w*0.995,0.09,d*0.99,0.03,m); lid.position.y=h*0.46;
+    return lid;
+  }
+
+  /* DriveCarrierProto — one vertical hot-swap carrier; callers clone it */
+  function DriveCarrierProto(){
+    const proto=new THREE.Group();
+    proto.add(bevelBox(0.34,1.02,1.06,0.03,mat(0x151d2b,{metalness:.65,roughness:.4})));
+    const strip=box(0.26,0.05,0.9,mat(0xb06bff,{emissive:0xb06bff,emissiveIntensity:1.1,metalness:.4,roughness:.3})); strip.position.y=0.54; proto.add(strip);
+    const face=box(0.3,0.98,0.08,mat(0x1b2536,{metalness:.6,roughness:.35})); face.position.z=0.56; proto.add(face);
+    const led=box(0.05,0.05,0.04,mat(0x39d98a,{emissive:0x39d98a,emissiveIntensity:1})); led.position.set(0.09,0.4,0.6); proto.add(led);
+    const hdl=box(0.24,0.07,0.05,mat(0x8fa2b5,{metalness:.85,roughness:.3})); hdl.position.set(0,-0.4,0.6); proto.add(hdl);
+    return proto;
+  }
+  /* DriveBayRow — rows×cols carriers cloned from one prototype */
+  function DriveBayRow(rows,cols,dx,dz){
+    const g=new THREE.Group(); const proto=DriveCarrierProto();
+    for(let r=0;r<rows;r++)for(let i=0;i<cols;i++){
+      const c=proto.clone(); c.position.set((i-(cols-1)/2)*dx,0,(r?-1:1)*dz/2*(rows>1?1:0)); g.add(c);
+    }
+    return g;
+  }
+
+  /* FanWall — N hot-swap fans across a width */
+  function FanWall(n,width,hgt){
+    const g=new THREE.Group(); const frameM=PAL.plastic();
+    const ringM=mat(0xcfd8e6,{metalness:.4,roughness:.5}); const hubM=mat(0x0c1118,{roughness:.8});
+    const fw=width/n, rad=Math.min(fw*0.34,hgt*0.42);
+    for(let i=0;i<n;i++){
+      const x=-width/2+fw*(i+0.5);
+      const f=box(fw*0.92,hgt,0.46,frameM); f.position.x=x; g.add(f);
+      const ring=pm(gCyl(rad,0.34,18),ringM); ring.rotation.x=Math.PI/2; ring.position.set(x,0,0.1); g.add(ring);
+      const hub=pm(gCyl(0.07,0.4,10),hubM); hub.rotation.x=Math.PI/2; hub.position.set(x,0,0.1); g.add(hub);
+    }
+    return g;
+  }
+
+  /* PSUBlock — hot-swap supply w/ rear fan, handle and feed LED */
+  function PSUBlock(ledCol,dim){
+    dim=dim||{}; const W=dim.w||1.1,H=dim.h||0.72,D=dim.d||1.3;
+    const g=new THREE.Group();
+    g.add(bevelBox(W,H,D,0.05,PAL.steel()));
+    const fan=pm(gCyl(Math.min(W,H)*0.33,0.06,18),mat(0x0c1118,{roughness:.8}));
+    fan.rotation.x=Math.PI/2; fan.position.z=-D/2-0.01; g.add(fan);
+    const lb=box(0.07,0.07,0.05,mat(ledCol,{emissive:ledCol,emissiveIntensity:1})); lb.position.set(W*0.36,H*0.28,D/2+0.01); g.add(lb);
+    const hdl=box(W*0.4,0.05,0.06,mat(0x8fa2b5,{metalness:.85,roughness:.3})); hdl.position.set(-W*0.2,-H*0.3,D/2+0.03); g.add(hdl);
+    return g;
+  }
+
+  /* ControllerBlock — heatsinked active/active module */
+  function ControllerBlock(){
+    const g=new THREE.Group();
+    g.add(bevelBox(1.22,0.24,1.45,0.03,mat(0x22304a,{metalness:.6,roughness:.4})));
+    const finM=PAL.fin();
+    for(let i=0;i<9;i++){const f=box(1.06,0.26,0.06,finM); f.position.set(0,0.24,-0.6+i*0.15); g.add(f);}
+    const eg=box(1.1,0.05,0.05,mat(0x36c2ff,{emissive:0x36c2ff,emissiveIntensity:.9})); eg.position.set(0,0.05,0.74); g.add(eg);
+    return g;
+  }
+
+  /* PCBPlane — green board + traces + caps */
+  function PCBPlane(W,D){
+    const g=new THREE.Group();
+    g.add(bevelBox(W,0.07,D,0.02,PAL.pcb()));
+    const traceM=mat(0x1d5c38,{emissive:0x0f3b22,emissiveIntensity:.7});
+    for(let i=0;i<4;i++){const tr=box(W*0.84,0.02,0.05,traceM); tr.position.set(0,0.05,-D*0.38+i*D*0.25); g.add(tr);}
+    const capM=mat(0x2a3445,{metalness:.6,roughness:.4});
+    for(let i=0;i<5;i++){const cap=pm(gCyl(0.06,0.14,10),capM); cap.position.set(-W*0.4+i*W*0.2,0.1,D*0.4); g.add(cap);}
+    return g;
+  }
+
+  /* HeatsinkBlock — silver fin stack on a base */
+  function HeatsinkBlock(W,D,fins){
+    const g=new THREE.Group();
+    g.add(bevelBox(W,0.1,D,0.02,mat(0x22304a,{metalness:.6,roughness:.4})));
+    const finM=PAL.fin(); fins=fins||10;
+    for(let i=0;i<fins;i++){const f=box(W*0.92,0.3,0.05,finM); f.position.set(0,0.22,-D/2+D*(i+0.5)/fins); g.add(f);}
+    return g;
+  }
+
+  /* DIMMBank — row of DDR5 sticks */
+  function DIMMBank(n,len,hgt){
+    const g=new THREE.Group(); const dm=mat(0xffd23f,{emissive:0xffd23f,emissiveIntensity:.12});
+    const sk=mat(0x0e1520,{metalness:.3,roughness:.6});
+    for(let i=0;i<n;i++){
+      const s=box(0.055,hgt||0.42,len||1.2,dm); s.position.x=(i-(n-1)/2)*0.14; g.add(s);
+      const sock=box(0.09,0.05,(len||1.2)+0.06,sk); sock.position.set(s.position.x,-(hgt||0.42)/2,0); g.add(sock);
+    }
+    return g;
+  }
+
+  /* NICCard — low-profile adapter w/ ports */
+  function NICCard(){
+    const g=new THREE.Group();
+    const b=box(1.0,0.06,0.62,PAL.pcb()); g.add(b);
+    const chip=box(0.26,0.1,0.26,mat(0x36c2ff,{emissive:0x36c2ff,emissiveIntensity:.25})); chip.position.y=0.08; g.add(chip);
+    const cage=box(0.5,0.14,0.1,mat(0x1b2430,{metalness:.7,roughness:.35})); cage.position.set(0,0.08,0.32); g.add(cage);
+    return g;
+  }
+
+  /* SwitchPortRow — QSFP cage grid with activity LEDs */
+  function SwitchPortRow(n,rows,width,hgt){
+    const g=new THREE.Group();
+    const bodyM=mat(0x1b2430,{metalness:.7,roughness:.35,transparent:true});
+    const holeM=PAL.slot();
+    const gLed=mat(0x39d98a,{emissive:0x39d98a,emissiveIntensity:1,transparent:true});
+    const aLed=mat(0xffd23f,{emissive:0xffd23f,emissiveIntensity:1,transparent:true});
+    const cw=width/n;
+    for(let r=0;r<rows;r++)for(let i=0;i<n;i++){
+      const y=(rows>1?(r?-hgt*0.17:hgt*0.17):0);
+      const c=box(cw*0.8,hgt*(rows>1?0.26:0.4),0.06,bodyM); c.position.set(-width/2+cw*(i+0.5),y,0.06); g.add(c);
+      const o=box(cw*0.58,hgt*(rows>1?0.13:0.2),0.02,holeM); o.position.set(c.position.x,y,0.095); g.add(o);
+      if((i+r)%3!==2){const ld=box(0.026,0.026,0.015,(i%4===3)?aLed:gLed);
+        ld.position.set(c.position.x+cw*0.27,y+hgt*(rows>1?0.1:0.15),0.1); g.add(ld);}
+    }
+    return g;
+  }
+
+  /* BatteryBlock — stacked Li-ion modules w/ terminals + hazard stripe */
+  function BatteryBlock(n){
+    const g=new THREE.Group(); const bm=mat(0x9d6bff,{metalness:.4,roughness:.5,emissive:0x9d6bff,emissiveIntensity:.08});
+    const tm=mat(0xd7a94a,{metalness:.9,roughness:.3});
+    for(let i=0;i<(n||3);i++){
+      const s=box(1.0,0.26,0.9,bm); s.position.y=-0.3+i*0.3; g.add(s);
+      const t1=pm(gCyl(0.035,0.06,8),tm); t1.position.set(0.32,-0.3+i*0.3+0.16,0.3); g.add(t1);
+      const t2=t1.clone(); t2.position.x=0.12; g.add(t2);
+    }
+    const hz=box(1.02,0.05,0.92,mat(0xffd23f,{emissive:0xffd23f,emissiveIntensity:.25})); hz.position.y=-0.47; g.add(hz);
+    return g;
+  }
+
+  /* PDUOutletStrip — vertical zero-U strip: inlet, breakers, meter, outlets */
+  function PDUOutletStrip(hgt,feedCol){
+    const g=new THREE.Group();
+    const body=box(0.5,hgt,0.5,mat(0x161d28,{metalness:.5,roughness:.55})); g.add(body);
+    const edge=box(0.06,hgt*0.98,0.52,PAL.glow(feedCol,.7)); edge.position.x=-0.26; g.add(edge);
+    // metered screen (top)
+    const scr=box(0.3,0.22,0.03,PAL.glow(feedCol,.9)); scr.position.set(0,hgt/2-0.5,0.26); g.add(scr);
+    g.userData.body=body; g.userData.screen=scr;
+    // breaker rockers
+    const bkM=mat(0x0a0f16,{roughness:.85});
+    for(let i=0;i<2;i++){const bk=box(0.14,0.2,0.05,bkM); bk.position.set(0,hgt/2-1.0-i*0.3,0.26); g.add(bk);}
+    // C13 outlets down the face
+    const oM=PAL.slot(); const orM=mat(feedCol,{emissive:feedCol,emissiveIntensity:.35,transparent:true});
+    const n=16, y0=hgt/2-1.8, y1=-hgt/2+0.5;
+    for(let i=0;i<n;i++){
+      const y=y0+(y1-y0)*i/(n-1);
+      const ring=box(0.22,0.24,0.02,orM); ring.position.set(0,y,0.252); g.add(ring);
+      const o=box(0.16,0.18,0.03,oM); o.position.set(0,y,0.26); g.add(o);
+    }
+    // inlet (bottom)
+    const inlet=pm(gCyl(0.09,0.3,10),mat(0x0c1118,{roughness:.8})); inlet.position.set(0,-hgt/2+0.15,0.28); inlet.rotation.x=Math.PI/2; g.add(inlet);
+    return g;
+  }
+
   /* -------- build one internal peripheral mesh by kind -------- */
   function buildPeri(p, w, h, d){
     const g = new THREE.Group();
@@ -694,138 +920,56 @@
     const m=new THREE.Mesh(g,material); m.castShadow=true; m.receiveShadow=true; return m;
   }
 
-  function buildStorageArrayHiFi(e){
+  const SERVER_NODE_NAMES=['Tray','GhostCover','FanWall','CPUs','DIMMs','NVMe','NIC','PSU_A','PSU_B','PCB','Bezel','Rails'];
+
+  /* hifiScaffold — shared gold-standard dissection scaffold: pull-out tray,
+     ghost cover, detailed bezel, contact shadow, hero scale, callout anchors.
+     Both hi-fi modules (storage, server) build their internals on top. */
+  function hifiScaffold(e,opts){
     const w=innerW-0.25, h=e.h*U-0.08, d=RACK_D-0.7;
     const yc=yForBlock(e.u,e.h);
     const comp=new THREE.Group(); comp.position.set(0,yc,0.18);
     comp.userData.def=e; comp._t=0; comp._goal=0; comp._parts=[]; comp._peris=[]; comp._lines=[];
-    comp._hifi=true; comp._heroScale=1.5;
+    comp._hifi=true; comp._heroScale=opts.heroScale||1.5;
+    comp._glbUrl=opts.glbUrl; comp._nodeNames=opts.nodeNames;
     const pivot=new THREE.Group(); comp.add(pivot); comp._pivot=pivot;
-    // pull far enough that the whole chassis clears the rack before it scales up
-    comp._pivotExpl=new THREE.Vector3(0,0,RACK_D/2+5.4);
+    comp._pivotExpl=new THREE.Vector3(0,0,RACK_D/2+5.4); // clears the rack before scaling up
     comp._yaw=0; // straight out, parallel to the rack
 
     const groups={}; comp._groups=groups;
-    HIFI_NODE_NAMES.forEach(n=>{const g=new THREE.Group(); g.name=n; groups[n]=g;});
-    const psuPair=new THREE.Group(); psuPair.name='PSUs';
-    psuPair.add(groups.PSU_A); psuPair.add(groups.PSU_B);
+    opts.nodeNames.forEach(n=>{const g=new THREE.Group(); g.name=n; groups[n]=g;});
+    let psuPair=null;
+    if(groups.PSU_A&&groups.PSU_B){ psuPair=new THREE.Group(); psuPair.name='PSUs';
+      psuPair.add(groups.PSU_A); psuPair.add(groups.PSU_B); }
 
-    const floorY=-h*0.42;
     const compPick={type:'comp',comp};
     function pickAll(o,tag){o.traverse(m2=>{if(m2.isMesh){m2.userData.pick=tag;pickable.push(m2);}});}
     function casPart(m2,expl){comp._parts.push({m:m2,rest:m2.position.clone(),expl:expl||m2.position.clone(),cas:true});
       if(m2.material){m2.material.transparent=true;} m2.userData.casing=true;}
+    function solidPart(m2){comp._parts.push({m:m2,rest:m2.position.clone(),expl:m2.position.clone(),cas:false});}
 
-    /* ---- Tray: brushed-metal floor + fading walls ---- */
-    const trayM=new THREE.MeshStandardMaterial({color:0xb3bfcb,metalness:.85,roughness:.3});
-    const wallM=new THREE.MeshStandardMaterial({color:0x94a2b1,metalness:.8,roughness:.34,transparent:true});
-    const trayFloor=bevelBox(w,0.12,d,0.035,trayM); trayFloor.position.y=floorY; groups.Tray.add(trayFloor);
-    const wallL=box(0.09,h*0.86,d,wallM); wallL.position.set(-w/2+0.05,floorY+h*0.45,0);
-    const wallR=wallL.clone(); wallR.position.x=w/2-0.05;
-    const wallB=box(w,h*0.86,0.09,wallM); wallB.position.set(0,floorY+h*0.45,-d/2+0.05);
-    groups.Tray.add(wallL,wallR,wallB);
-    comp._parts.push({m:trayFloor,rest:trayFloor.position.clone(),expl:trayFloor.position.clone(),cas:false});
-    casPart(wallL); casPart(wallR); casPart(wallB); // fade in place — internals stay framed by the tray
+    /* tray + rails (walls fade in place so internals stay framed) */
+    const tray=PulloutTray(w,h,d); const floorY=tray.floorY;
+    groups.Tray.add(tray.floor,tray.walls[0],tray.walls[1],tray.walls[2]);
+    groups.Rails.add(tray.rails[0],tray.rails[1]);
+    solidPart(tray.floor); tray.walls.forEach(casPart); tray.rails.forEach(solidPart);
 
-    /* ---- Rails: slide rails outside the tray ---- */
-    const railM=new THREE.MeshStandardMaterial({color:0x6f7f92,metalness:.92,roughness:.26});
-    const railL=bevelBox(0.16,0.2,d+0.5,0.05,railM); railL.position.set(-w/2-0.12,floorY+0.02,0);
-    const railR=railL.clone(); railR.position.x=w/2+0.12;
-    groups.Rails.add(railL,railR);
-    comp._parts.push({m:railL,rest:railL.position.clone(),expl:railL.position.clone(),cas:false});
-    comp._parts.push({m:railR,rest:railR.position.clone(),expl:railR.position.clone(),cas:false});
-
-    /* ---- Bezel: front face w/ bay slots + critical LED ---- */
-    const bezM=new THREE.MeshStandardMaterial({color:0x0d141d,metalness:.4,roughness:.7,transparent:true});
-    const slotM=new THREE.MeshStandardMaterial({color:0x05080d,roughness:.9,transparent:true});
-    const bez=bevelBox(w,h*0.96,0.16,0.04,bezM); bez.position.set(0,0,d/2+0.02); groups.Bezel.add(bez);
-    for(let i=0;i<10;i++){const slot=new THREE.Mesh(new THREE.BoxGeometry(w*0.072,h*0.6,0.05),slotM);
-      slot.position.set(-w*0.41+i*w*0.0885,0.02,0.1); bez.add(slot);}
-    const led=box(0.14,0.14,0.06,mat(0xff5470,{emissive:0xff5470,emissiveIntensity:1,transparent:true}));
-    led.position.set(w/2-0.34,h*0.33,0.12); bez.add(led); comp._led=led;
+    /* bezel: shared rackmount face w/ ears + category faceplate + LED */
+    const bez=bevelBox(w,h*0.96,0.16,0.04,PAL.bezel()); bez.position.set(0,0,d/2+0.02);
+    addRackEars(bez,w,h);
+    if(opts.faceFn) opts.faceFn(bez,w,h,e);
+    if(e.critical){const led=box(0.14,0.14,0.06,mat(0xff5470,{emissive:0xff5470,emissiveIntensity:1,transparent:true}));
+      led.position.set(w/2-0.34,h*0.33,0.1); bez.add(led); comp._led=led;}
+    groups.Bezel.add(bez);
     casPart(bez,new THREE.Vector3(0,-h*0.08,d/2+0.9));
-    casPart(led); // LED fades with the bezel
-    casPart(bez.children[0]); // slots share slotM, so one cas entry fades all ten
+    bez.traverse(o=>{if(o.isMesh&&o!==bez){if(o.material)o.material.transparent=true;
+      comp._parts.push({m:o,rest:o.position.clone(),expl:o.position.clone(),cas:true});}});
 
-    /* ---- GhostCover: physical-material lid, lifts + goes translucent ---- */
-    const ghostM=new THREE.MeshPhysicalMaterial({color:0x9cc4de,metalness:.75,roughness:.15,
-      clearcoat:1,clearcoatRoughness:.3,transparent:true,opacity:1,side:THREE.DoubleSide});
-    const lid=bevelBox(w*0.995,0.09,d*0.99,0.03,ghostM); lid.position.y=h*0.46; groups.GhostCover.add(lid);
-    casPart(lid,new THREE.Vector3(0,h*0.46+2.6,-0.35));
+    /* ghost cover */
+    const lid=GhostCoverPrim(w,h,d); groups.GhostCover.add(lid);
+    casPart(lid,new THREE.Vector3(0,h*0.46+(opts.lidLift==null?2.6:opts.lidLift),-0.35));
 
-    /* ---- DriveCarriers: cloned prototype (shared geometry/materials) ---- */
-    const carBodyM=new THREE.MeshStandardMaterial({color:0x151d2b,metalness:.65,roughness:.4});
-    const carFaceM=new THREE.MeshStandardMaterial({color:0x1b2536,metalness:.6,roughness:.35});
-    const stripM=new THREE.MeshStandardMaterial({color:0xb06bff,emissive:0xb06bff,emissiveIntensity:1.1,metalness:.4,roughness:.3});
-    const cledM=new THREE.MeshStandardMaterial({color:0x39d98a,emissive:0x39d98a,emissiveIntensity:1});
-    const hdlM=new THREE.MeshStandardMaterial({color:0x8fa2b5,metalness:.85,roughness:.3});
-    const proto=new THREE.Group();
-    const cbdy=bevelBox(0.34,1.02,1.06,0.03,carBodyM); proto.add(cbdy);
-    const strip=box(0.26,0.05,0.9,stripM); strip.position.y=0.54; proto.add(strip);
-    const cface=box(0.3,0.98,0.08,carFaceM); cface.position.z=0.56; proto.add(cface);
-    const cled=box(0.05,0.05,0.04,cledM); cled.position.set(0.09,0.4,0.6); proto.add(cled);
-    const hdl=box(0.24,0.07,0.05,hdlM); hdl.position.set(0,-0.4,0.6); proto.add(hdl);
-    const carY=floorY+0.06+0.51;
-    groups.DriveCarriers.position.set(-w*0.20,carY,d*0.24);
-    for(let r2=0;r2<2;r2++)for(let i2=0;i2<7;i2++){
-      const c2=proto.clone(); c2.position.set(-1.29+i2*0.43,0,0.625-r2*1.25);
-      groups.DriveCarriers.add(c2);
-    }
-
-    /* ---- Backplane: behind the drive carriers ---- */
-    const bpM=new THREE.MeshStandardMaterial({color:0x123023,metalness:.3,roughness:.6});
-    const pinM=new THREE.MeshStandardMaterial({color:0xd7a94a,metalness:.9,roughness:.3,emissive:0x3a2b08,emissiveIntensity:.5});
-    groups.Backplane.position.set(-w*0.20,-0.09,d*0.24-1.35);
-    const bpBoard=box(2.9,1.02,0.09,bpM); groups.Backplane.add(bpBoard);
-    for(let r2=0;r2<2;r2++)for(let i2=0;i2<7;i2++){
-      const pin=box(0.16,0.12,0.07,pinM); pin.position.set(-1.29+i2*0.43,0.22-r2*0.44,0.08);
-      groups.Backplane.add(pin);
-    }
-
-    /* ---- PCB: middle board the controllers sit on ---- */
-    const pcbM=new THREE.MeshStandardMaterial({color:0x11331f,metalness:.25,roughness:.6});
-    const traceM=new THREE.MeshStandardMaterial({color:0x1d5c38,emissive:0x0f3b22,emissiveIntensity:.7});
-    groups.PCB.position.set(w*0.02,floorY+0.10,-d*0.145); // clear of carriers (front) and PSUs (right)
-    const pcb=bevelBox(2.6,0.07,2.4,0.02,pcbM); groups.PCB.add(pcb);
-    for(let i=0;i<4;i++){const tr=box(2.2,0.02,0.05,traceM); tr.position.set(0,0.05,-0.9+i*0.6); groups.PCB.add(tr);}
-    for(let i=0;i<5;i++){const cap=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.14,10),
-      new THREE.MeshStandardMaterial({color:0x2a3445,metalness:.6,roughness:.4}));
-      cap.position.set(-1.05+i*0.5,0.1,0.95); groups.PCB.add(cap);}
-
-    /* ---- Controllers: dual active/active modules, center of the PCB ---- */
-    const ctlBaseM=new THREE.MeshStandardMaterial({color:0x22304a,metalness:.6,roughness:.4});
-    const finM=new THREE.MeshStandardMaterial({color:0xaebfd0,metalness:.85,roughness:.25});
-    const edgeM=new THREE.MeshStandardMaterial({color:0x36c2ff,emissive:0x36c2ff,emissiveIntensity:.9});
-    function buildCtl(){const g2=new THREE.Group();
-      const b2=bevelBox(1.22,0.24,1.45,0.03,ctlBaseM); g2.add(b2);
-      for(let i=0;i<9;i++){const f=box(1.06,0.26,0.06,finM); f.position.set(0,0.24,-0.6+i*0.15); g2.add(f);}
-      const eg=box(1.1,0.05,0.05,edgeM); eg.position.set(0,0.05,0.74); g2.add(eg);
-      return g2;}
-    groups.Controllers.position.set(w*0.02,floorY+0.32,-d*0.145); // seated mid-PCB
-    const ctlA=buildCtl(); ctlA.position.x=-0.7; const ctlB=buildCtl(); ctlB.position.x=0.7;
-    groups.Controllers.add(ctlA,ctlB);
-
-    /* ---- PSU_A + PSU_B: rear-right pair on separate feeds ---- */
-    const psuM=new THREE.MeshStandardMaterial({color:0x39424f,metalness:.75,roughness:.35});
-    const fanM=new THREE.MeshStandardMaterial({color:0x0c1118,roughness:.8});
-    function buildPSUmod(ledCol){const g2=new THREE.Group();
-      const b2=bevelBox(1.1,0.72,1.3,0.05,psuM); g2.add(b2);
-      const fan=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.24,0.06,20),fanM);
-      fan.rotation.x=Math.PI/2; fan.position.z=-0.66; g2.add(fan);
-      const lb=box(0.07,0.07,0.05,mat(ledCol,{emissive:ledCol,emissiveIntensity:1})); lb.position.set(0.4,0.2,0.66); g2.add(lb);
-      return g2;}
-    psuPair.position.set(w*0.35,floorY+0.44,-d*0.28);
-    groups.PSU_A.position.z=0.72;  groups.PSU_A.add(buildPSUmod(0xff8c32)); // A-feed amber
-    groups.PSU_B.position.z=-0.72; groups.PSU_B.add(buildPSUmod(0x36c2ff)); // B-feed cyan
-
-    /* assemble; internals are direct pivot children so anchors stay simple */
-    [groups.Rails,groups.Tray,groups.Bezel,groups.GhostCover,
-     groups.DriveCarriers,groups.Backplane,groups.PCB,groups.Controllers,psuPair].forEach(g2=>pivot.add(g2));
-    [groups.Tray,groups.Rails,groups.Bezel,groups.GhostCover].forEach(g2=>{
-      pickAll(g2,compPick); g2.userData.pickTag=compPick; // pickTag survives the GLB swap
-    });
-
-    /* ---- label/leader-line anchors: only these 4 groups get callouts ---- */
+    /* label/leader-line anchors */
     const periById={}; (e.peris||[]).forEach(p2=>periById[p2.id]=p2);
     function periAnchor(id,grp,off){
       const p2=periById[id]; if(!p2) return;
@@ -838,12 +982,8 @@
       const el=document.createElement('div'); el.className='peri-lbl'; el.textContent=p2.name;
       app.appendChild(el); rec.el=el; comp._peris.push(rec);
     }
-    periAnchor('drive',    groups.DriveCarriers,new THREE.Vector3(-0.5,1.35,0.5));
-    periAnchor('ctrl',     groups.Controllers,  new THREE.Vector3(0.25,1.6,0.3));
-    periAnchor('psu',      psuPair,             new THREE.Vector3(0.7,1.5,0.4));
-    periAnchor('backplane',groups.Backplane,    new THREE.Vector3(-1.1,1.9,-0.25));
 
-    /* ---- soft contact shadow under the pulled-out chassis ---- */
+    /* soft contact shadow under the pulled-out chassis */
     const cvs=document.createElement('canvas'); cvs.width=cvs.height=128;
     const cx2=cvs.getContext('2d'); const gr=cx2.createRadialGradient(64,64,6,64,64,64);
     gr.addColorStop(0,'rgba(0,0,0,0.6)'); gr.addColorStop(1,'rgba(0,0,0,0)');
@@ -852,15 +992,123 @@
       new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cvs),transparent:true,opacity:0,depthWrite:false}));
     shadow.rotation.x=-Math.PI/2; shadow.position.y=floorY-0.5; pivot.add(shadow);
 
-    /* stage hook: hero scale-up once clear of the rack + contact shadow */
     comp._update=function(t,pull,open,spread){
       pivot.scale.setScalar(1+(comp._heroScale-1)*open);
       shadow.material.opacity=0.45*pull;
     };
 
-    rackGroup.add(comp);
-    labelData.push({obj:comp, text:e.name, crit:e.critical});
-    return comp;
+    function finish(internalGroups){
+      [groups.Rails,groups.Tray,groups.Bezel,groups.GhostCover].concat(internalGroups).forEach(g2=>pivot.add(g2));
+      [groups.Tray,groups.Rails,groups.Bezel,groups.GhostCover].forEach(g2=>{
+        pickAll(g2,compPick); g2.userData.pickTag=compPick; // pickTag survives the GLB swap
+      });
+      rackGroup.add(comp);
+      labelData.push({obj:comp, text:e.name, crit:e.critical});
+      return comp;
+    }
+    return {comp,pivot,groups,psuPair,w,h,d,floorY,casPart,solidPart,pickAll,periAnchor,finish};
+  }
+
+  /* ---- 4U Storage Array — the gold-standard dissection ---- */
+  function buildStorageArrayHiFi(e){
+    const k=hifiScaffold(e,{heroScale:1.5,lidLift:2.6,nodeNames:HIFI_NODE_NAMES,
+      glbUrl:'models/storage-array.glb',faceFn:FACE.storage});
+    const {groups,psuPair,w,d,floorY}=k;
+
+    /* DriveCarriers: cloned prototype (shared geometry/materials) */
+    const proto=DriveCarrierProto();
+    const carY=floorY+0.06+0.51;
+    groups.DriveCarriers.position.set(-w*0.20,carY,d*0.24);
+    for(let r2=0;r2<2;r2++)for(let i2=0;i2<7;i2++){
+      const c2=proto.clone(); c2.position.set(-1.29+i2*0.43,0,0.625-r2*1.25);
+      groups.DriveCarriers.add(c2);
+    }
+
+    /* Backplane: behind the drive carriers */
+    const bpM=mat(0x123023,{metalness:.3,roughness:.6});
+    const pinM=mat(0xd7a94a,{metalness:.9,roughness:.3,emissive:0x3a2b08,emissiveIntensity:.5});
+    groups.Backplane.position.set(-w*0.20,-0.09,d*0.24-1.35);
+    groups.Backplane.add(box(2.9,1.02,0.09,bpM));
+    for(let r2=0;r2<2;r2++)for(let i2=0;i2<7;i2++){
+      const pin=box(0.16,0.12,0.07,pinM); pin.position.set(-1.29+i2*0.43,0.22-r2*0.44,0.08);
+      groups.Backplane.add(pin);
+    }
+
+    /* PCB + dual Controllers seated mid-board */
+    groups.PCB.position.set(w*0.02,floorY+0.10,-d*0.145);
+    groups.PCB.add(PCBPlane(2.6,2.4));
+    groups.Controllers.position.set(w*0.02,floorY+0.32,-d*0.145);
+    const ctlA=ControllerBlock(); ctlA.position.x=-0.7;
+    const ctlB=ControllerBlock(); ctlB.position.x=0.7;
+    groups.Controllers.add(ctlA,ctlB);
+
+    /* PSU_A + PSU_B: rear-right pair on separate feeds */
+    psuPair.position.set(w*0.35,floorY+0.44,-d*0.28);
+    groups.PSU_A.position.z=0.72;  groups.PSU_A.add(PSUBlock(0xff8c32)); // A-feed amber
+    groups.PSU_B.position.z=-0.72; groups.PSU_B.add(PSUBlock(0x36c2ff)); // B-feed cyan
+
+    k.periAnchor('drive',    groups.DriveCarriers,new THREE.Vector3(-0.5,1.35,0.5));
+    k.periAnchor('ctrl',     groups.Controllers,  new THREE.Vector3(0.25,1.6,0.3));
+    k.periAnchor('psu',      psuPair,             new THREE.Vector3(0.7,1.5,0.4));
+    k.periAnchor('backplane',groups.Backplane,    new THREE.Vector3(-1.1,1.9,-0.25));
+
+    return k.finish([groups.DriveCarriers,groups.Backplane,groups.PCB,groups.Controllers,psuPair]);
+  }
+
+  /* ---- 2U Compute Server — second gold-standard dissection ----
+     GLB contract (models/compute-server.glb): Tray, GhostCover, FanWall,
+     CPUs, DIMMs, NVMe, NIC, PSU_A, PSU_B, PCB, Bezel, Rails */
+  function buildServerHiFi(e){
+    const k=hifiScaffold(e,{heroScale:1.7,lidLift:1.8,nodeNames:SERVER_NODE_NAMES,
+      glbUrl:'models/compute-server.glb',faceFn:FACE.server});
+    const {groups,psuPair,w,d,floorY}=k;
+    const fTop=floorY+0.06; // tray floor top
+
+    /* NVMe: front row of hot-swap 2.5" drives lying flat */
+    const nvProto=new THREE.Group();
+    nvProto.add(box(0.42,0.15,1.0,mat(0x1a2230,{metalness:.6,roughness:.4})));
+    const nvLed=box(0.04,0.04,0.03,mat(0x39d98a,{emissive:0x39d98a,emissiveIntensity:1})); nvLed.position.set(0.14,0.03,0.51); nvProto.add(nvLed);
+    const nvHdl=box(0.3,0.05,0.04,mat(0x8fa2b5,{metalness:.85,roughness:.3})); nvHdl.position.set(-0.03,-0.04,0.51); nvProto.add(nvHdl);
+    groups.NVMe.position.set(-w*0.14,fTop+0.075,d*0.36);
+    for(let i=0;i<8;i++){const c2=nvProto.clone(); c2.position.x=(i-3.5)*0.48; groups.NVMe.add(c2);}
+
+    /* FanWall: N+1 hot-swap fans across the chassis */
+    groups.FanWall.position.set(0,fTop+0.21,d*0.17);
+    groups.FanWall.add(FanWall(5,w*0.8,0.42));
+
+    /* PCB spanning the mid/rear section */
+    groups.PCB.position.set(0,floorY+0.10,-d*0.13);
+    groups.PCB.add(PCBPlane(w*0.8,3.2));
+
+    /* CPUs: dual sockets under silver heatsinks */
+    groups.CPUs.position.set(0,fTop+0.09,-d*0.08);
+    const hsA=HeatsinkBlock(1.05,1.25,9); hsA.position.x=-1.05;
+    const hsB=HeatsinkBlock(1.05,1.25,9); hsB.position.x=1.05;
+    groups.CPUs.add(hsA,hsB);
+
+    /* DIMMs: banks flanking the sockets */
+    groups.DIMMs.position.set(0,fTop+0.24,-d*0.08);
+    const dbC=DIMMBank(8,1.15,0.36); groups.DIMMs.add(dbC);
+    const dbL=DIMMBank(4,1.15,0.36); dbL.position.x=-1.9; groups.DIMMs.add(dbL);
+    const dbR=DIMMBank(4,1.15,0.36); dbR.position.x=1.9; groups.DIMMs.add(dbR);
+
+    /* NIC: rear-left adapter */
+    groups.NIC.position.set(-w*0.28,fTop+0.05,-d*0.39);
+    groups.NIC.add(NICCard());
+
+    /* PSU_A + PSU_B: rear-right, side by side on separate feeds */
+    psuPair.position.set(w*0.36,fTop+0.25,-d*0.39);
+    groups.PSU_A.position.x=-0.32; groups.PSU_A.add(PSUBlock(0xff8c32,{w:0.6,h:0.5,d:1.2}));
+    groups.PSU_B.position.x=0.32;  groups.PSU_B.add(PSUBlock(0x36c2ff,{w:0.6,h:0.5,d:1.2}));
+
+    k.periAnchor('nvme',groups.NVMe,   new THREE.Vector3(-0.5,1.1,0.5));
+    k.periAnchor('fan', groups.FanWall,new THREE.Vector3(-1.4,1.25,0.3));
+    k.periAnchor('cpu', groups.CPUs,   new THREE.Vector3(0.35,1.5,0.1));
+    k.periAnchor('dimm',groups.DIMMs,  new THREE.Vector3(-1.7,1.6,-0.2));
+    k.periAnchor('nic', groups.NIC,    new THREE.Vector3(-0.9,1.35,-0.4));
+    k.periAnchor('psu', psuPair,       new THREE.Vector3(0.85,1.3,0.3));
+
+    return k.finish([groups.NVMe,groups.FanWall,groups.PCB,groups.CPUs,groups.DIMMs,groups.NIC,psuPair]);
   }
 
   /* ---- model-loading layer: lazy GLB swap (rack itself stays low-poly) ---- */
@@ -876,13 +1124,13 @@
     });
     return _gltfReady;
   }
-  function loadStorageGLB(comp){
-    if(comp._glbTried) return; comp._glbTried=true;
+  function loadModuleGLB(comp){
+    if(comp._glbTried || !comp._glbUrl) return; comp._glbTried=true;
     ensureGLTFLoader().then(()=>new Promise((res,rej)=>{
-      new THREE.GLTFLoader().load('models/storage-array.glb',res,undefined,rej);
+      new THREE.GLTFLoader().load(comp._glbUrl,res,undefined,rej);
     })).then(gltf=>{
       const root=gltf.scene; let found=0;
-      HIFI_NODE_NAMES.forEach(name=>{
+      (comp._nodeNames||HIFI_NODE_NAMES).forEach(name=>{
         const node=root.getObjectByName(name), grp=comp._groups&&comp._groups[name];
         if(!node||!grp) return; found++;
         // retire the procedural fallback in this slot, graft the authored mesh
@@ -895,13 +1143,52 @@
           if(tag){o.userData.pick=tag;pickable.push(o);}}});
         grp.add(node);
       });
-      if(found) toast('High-fidelity storage model loaded ('+found+' groups)');
+      if(found) toast('High-fidelity model loaded ('+found+' groups)');
     }).catch(()=>{/* no GLB yet — procedural fallback stays, silently */});
   }
 
+  /* -------- category faceplates (drawn on the shared RackModuleShell bezel) -------- */
+  const FACE={
+    gpu:function(bez,w,h,e){ // compute-tray modules + liquid quick-disconnects
+      for(let i=0;i<4;i++){
+        const s=box(w*0.17,h*0.42,0.05,PAL.slot()); s.position.set(-w*0.33+i*w*0.22,h*0.1,0.06); bez.add(s);
+        const lt=box(w*0.13,0.03,0.02,PAL.glow(0x36c2ff,.9)); lt.position.set(-w*0.33+i*w*0.22,-h*0.14,0.09); bez.add(lt);
+      }
+      [-1,1].forEach(s=>{const qd=pm(gCyl(0.06,0.1,10),mat(0x8fb4d8,{metalness:.85,roughness:.3,transparent:true}));
+        qd.rotation.x=Math.PI/2; qd.position.set(s*w*0.43,-h*0.2,0.09); bez.add(qd);});
+    },
+    server:function(bez,w,h,e){ // hot-swap bays left, PSU/vent block right
+      const rows=e.h>=2?2:1;
+      for(let r=0;r<rows;r++)for(let i=0;i<8;i++){
+        const y=rows>1?(r?-h*0.18:h*0.18):h*0.02;
+        const bay=box(w*0.086,h*(rows>1?0.3:0.46),0.05,PAL.slot()); bay.position.set(-w*0.39+i*w*0.096,y,0.06); bez.add(bay);
+        const led=box(0.028,0.028,0.02,PAL.led(0x39d98a)); led.position.set(-w*0.39+i*w*0.096+w*0.028,y+h*(rows>1?0.1:0.16),0.09); bez.add(led);
+      }
+      const vent=box(w*0.13,h*0.62,0.04,PAL.slot()); vent.position.set(w*0.415,0,0.06); bez.add(vent);
+    },
+    switch:function(bez,w,h){ bez.add(SwitchPortRow(16,2,w*0.84,h)); const mgmt=box(0.18,0.1,0.04,PAL.slot()); mgmt.position.set(w*0.44,0,0.07); bez.add(mgmt); },
+    patch:function(bez,w,h){ const km=PAL.plastic(); km.transparent=true;
+      for(let r=0;r<2;r++)for(let i=0;i<12;i++){const k=box(0.14,0.12,0.05,km); k.position.set(-w*0.4+i*w*0.0727,(r?-1:1)*h*0.17,0.06); bez.add(k);} },
+    storage:function(bez,w,h){ // dense drive-bay grid
+      for(let i=0;i<10;i++){const slot=box(w*0.072,h*0.6,0.05,PAL.slot()); slot.position.set(-w*0.41+i*w*0.0885,0.02,0.06); bez.add(slot);
+        const lt=box(w*0.05,0.025,0.02,PAL.glow(0xb06bff,.7)); lt.position.set(-w*0.41+i*w*0.0885,h*0.36,0.09); bez.add(lt);}
+    },
+    ups:function(bez,w,h){ // heavy vent grid + battery status bank
+      const grid=box(w*0.52,h*0.62,0.04,PAL.slot()); grid.position.set(-w*0.2,0,0.06); bez.add(grid);
+      const scr=box(w*0.15,h*0.3,0.02,PAL.glow(0x36c2ff,.55)); scr.position.set(w*0.13,h*0.1,0.08); bez.add(scr);
+      for(let i=0;i<3;i++){
+        const b=box(w*0.085,h*0.4,0.05,mat(0x1a2534,{metalness:.5,roughness:.5,transparent:true})); b.position.set(w*0.26+i*w*0.1,-h*0.05,0.07); bez.add(b);
+        const ld=box(0.035,0.035,0.02,PAL.led(i<2?0x39d98a:0xffd23f)); ld.position.set(w*0.26+i*w*0.1,h*0.24,0.09); bez.add(ld);
+      }
+    }
+  };
+
   /* -------- build a detailed, dissectable component -------- */
   function buildComponent(e){
-    if(e.cat==='storage' && e.peris && e.peris.length) return buildStorageArrayHiFi(e);
+    if(e.peris && e.peris.length){
+      if(e.cat==='storage') return buildStorageArrayHiFi(e);
+      if(e.cat==='server' && e.h>=2) return buildServerHiFi(e);
+    }
     const w=innerW-0.25, h=e.h*U-0.08, d=RACK_D-0.7;
     const yc=yForBlock(e.u,e.h);
     const comp=new THREE.Group(); comp.position.set(0,yc,0.18);
@@ -911,25 +1198,18 @@
     comp._pivotExpl=new THREE.Vector3(0, 0, RACK_D*0.3 + 1.4); // slide forward out of the rack
     comp._yaw=0; // pull straight out, parallel to the rack (no sideways twist)
 
-    const bodyCol = C[e.cat]||0x3aa0e6;
-    // base tray (bottom + rear) — always visible
-    const tray=box(w,h*0.34,d,mat(bodyCol,{metalness:.55,roughness:.42}));
-    tray.position.y=-h*0.32; tray.userData.pick={type:'comp',comp}; pivot.add(tray); pickable.push(tray);
-    // front bezel (with vent) — opens toward front (+z)
-    const bezel=box(w,h,0.12,mat(0x0c1118,{roughness:.8,metalness:.3}));
-    bezel.position.z=d/2; bezel.userData.pick={type:'comp',comp}; pivot.add(bezel); pickable.push(bezel);
-    const vent=box(w*0.8,h*0.55,0.05,mat(0x05080d)); vent.position.z=0.08; bezel.add(vent); // child of bezel → small offset, not d/2
+    // shared rackmount shell: dark metal casing + detailed bezel w/ ears
+    const shell=RackModuleShell(w,h,d,e,{accent:C[e.cat]||0x3aa0e6,faceFn:FACE[e.cat]});
+    const tray=shell.tray, top=shell.top, left=shell.left, right=shell.right, bezel=shell.bezel;
+    [tray,top,left,right,bezel].forEach(m=>{m.userData.pick={type:'comp',comp}; pivot.add(m); pickable.push(m);});
+    bezel.traverse(o=>{if(o.isMesh){o.userData.pick={type:'comp',comp}; pickable.push(o);}});
     // critical status LED on bezel
-    if(e.critical){const led=box(0.14,0.14,0.06,mat(0xff5470,{emissive:0xff5470,emissiveIntensity:1}));led.position.set(w/2-0.3,h/2-0.28,0.09);bezel.add(led);comp._led=led;}
-    // top cover — lifts up
-    const top=box(w,h*0.14,d,mat(bodyCol,{metalness:.6,roughness:.38,transparent:true}));
-    top.position.y=h*0.42; top.userData.pick={type:'comp',comp}; pivot.add(top); pickable.push(top);
-    // side panels — split opposite directions
-    const left=box(0.1,h*0.9,d,mat(bodyCol,{metalness:.6,roughness:.4,transparent:true})); left.position.x=-w/2;
-    const right=box(0.1,h*0.9,d,mat(bodyCol,{metalness:.6,roughness:.4,transparent:true})); right.position.x= w/2;
-    left.userData.pick={type:'comp',comp}; right.userData.pick={type:'comp',comp};
-    pivot.add(left); pivot.add(right); pickable.push(left,right);
+    if(e.critical){const led=box(0.14,0.14,0.06,mat(0xff5470,{emissive:0xff5470,emissiveIntensity:1,transparent:true}));
+      led.position.set(w/2-0.3,h*0.34,0.09); bezel.add(led); comp._led=led;}
     [top,left,right,bezel].forEach(m=>{m.userData.casing=true;m.material.transparent=true;});
+    // bezel details fade with the bezel during dissection
+    bezel.traverse(o=>{if(o.isMesh&&o!==bezel){if(o.material)o.material.transparent=true;
+      comp._parts.push({m:o,rest:o.position.clone(),expl:o.position.clone(),cas:true});}});
 
     // exploded targets for casing (modest, so internals stay framed; casing fades to ghost)
     comp._parts.push({m:top,rest:top.position.clone(),expl:new THREE.Vector3(0, h*0.42 + h*1.0 + 0.75, 0),cas:true});
@@ -986,6 +1266,11 @@
   }
 
   const components = equip.map(buildComponent);
+  // debug audit (used with ?dbg=1 only)
+  window.__audit=function(){ return components.filter(c=>c._hifi).map(c=>({u:c.userData.def.u,
+    dim:!!c._dimmed, t:+c._t.toFixed(2),
+    lidOp:+(c._groups.GhostCover.children[0].material.opacity).toFixed(2),
+    wallOp:+(c._groups.Tray.children[1].material.opacity).toFixed(2)})); };
 
   /* -------- rPDUs (vertical, zero-U) as dissectable components -------- */
   function buildPDU(pd){
@@ -999,11 +1284,11 @@
     comp._pivotExpl=new THREE.Vector3(pd.side*2.0, 0, RACK_D*0.3+1.4);
     comp._yaw=0;
 
-    const bodyMat=mat(pd.color,{metalness:.6,roughness:.4,emissive:pd.color,emissiveIntensity:.12});
-    const body=box(w,h,d,bodyMat); body.userData.pick={type:'comp',comp}; pivot.add(body); pickable.push(body);
-    // outlet dots down the face
-    for(let i=0;i<18;i++){const o=box(0.14,0.14,0.06,mat(0x0c1118));o.position.set(0,-h/2+0.6+i*((h-1.0)/17),d/2+0.03);body.add(o);}
-    const led=box(0.12,0.12,0.06,mat(pd.color,{emissive:pd.color,emissiveIntensity:1}));led.position.set(0,h/2-0.3,d/2+0.04);body.add(led);
+    // zero-U outlet strip: inlet, breakers, metered screen, C13 outlets, feed accent
+    const strip=PDUOutletStrip(h,pd.color); pivot.add(strip);
+    const body=strip.userData.body;
+    strip.traverse(o=>{if(o.isMesh){o.userData.pick={type:'comp',comp};pickable.push(o);}});
+    comp._led=strip.userData.screen;
     comp._parts.push({m:body,rest:body.position.clone(),expl:new THREE.Vector3(0,0,0)}); // body stays (frame)
 
     const peris=pd.peris||[]; const n=peris.length;
@@ -1030,15 +1315,25 @@
   const pduComps = pduData.map(buildPDU);
   components.push(...pduComps);
 
-  /* -------- blanking panels (report-only) -------- */
-  for(let u=1;u<=UNITS;u++){
-    if(occupied[u]) continue;
+  /* -------- blanking panels (report-only) — real vented blanks, one shared proto -------- */
+  const blankGroups=[];
+  (function(){
     const w=innerW-0.25,h=U-0.06;
-    const m=box(w,h,0.2,mat(C.blank));
-    m.position.set(0,yForBlock(u,1),RACK_D/2-0.45);
-    m.userData.pick={type:'blank',u};
-    rackGroup.add(m); pickable.push(m);
-  }
+    const proto=new THREE.Group();
+    const panelM=mat(0x222a36,{metalness:.5,roughness:.6});
+    const slatM=mat(0x0d1219,{roughness:.85,metalness:.15});
+    const scM=mat(0x8fa0b2,{metalness:.9,roughness:.3});
+    proto.add(box(w,h,0.14,panelM));
+    for(let i=0;i<3;i++){const s=box(w*0.86,h*0.14,0.04,slatM); s.position.set(0,-h*0.26+i*h*0.26,0.06); proto.add(s);}
+    [-1,1].forEach(sd=>{const sc=pm(gCyl(0.03,0.03,8),scM); sc.rotation.x=Math.PI/2; sc.position.set(sd*(w/2-0.12),0,0.08); proto.add(sc);});
+    for(let u=1;u<=UNITS;u++){
+      if(occupied[u]) continue;
+      const g=proto.clone();
+      g.position.set(0,yForBlock(u,1),RACK_D/2-0.45);
+      g.traverse(o=>{if(o.isMesh){o.userData.pick={type:'blank',u};pickable.push(o);}});
+      rackGroup.add(g); blankGroups.push(g);
+    }
+  })();
   const blankReport={critical:false,cat:'blank',name:'Blanking Panel',cls:'Airflow · ASHRAE',
     summary:'A passive panel that fills an empty U so hot exhaust from the rear can’t curl back into the cold-aisle intake. The cheapest airflow win in the hall — every empty U gets one.',
     why:'Open U’s let hot air recirculate and raise inlet temperature. Blanking + aisle containment can save up to ~30% cooling energy and helps hold the ASHRAE 18–27 °C inlet target.',
@@ -1131,6 +1426,17 @@
   function setGlow(c,on){ if(!c._parts || (c.userData.def&&c.userData.def.feed)) return;
     c._parts.forEach(pt=>{ if(pt.m.material&&pt.m.material.emissive){
       pt.m.material.emissive.setHex(on?0x36c2ff:0x000000); pt.m.material.emissiveIntensity=on?0.16:0; } }); }
+  /* dim everything except the dissected module — product-render focus */
+  function setObjDim(root,on){
+    root.traverse(o=>{ if(o.isMesh&&o.material){ const m2=o.material;
+      if(on){ if(m2.userData._preDim===undefined) m2.userData._preDim={t:m2.transparent,o:m2.opacity};
+        m2.transparent=true; m2.opacity=0.1; m2.depthWrite=false; }
+      else { const p=m2.userData._preDim; if(p){ m2.transparent=p.t; m2.opacity=p.o; } m2.depthWrite=true; }
+    }});
+  }
+  function setCompDim(c,on){ if(c._dimmed===!!on) return; c._dimmed=!!on; setObjDim(c,on); }
+  function dimOthers(sel){ components.forEach(c=>setCompDim(c,sel? c!==sel : false));
+    blankGroups.forEach(g=>setObjDim(g,!!sel)); }
   function closeCardFlow(){ collapseAll(); renderRackOverview(); }
   function toast(msg){ toastEl.textContent=msg; toastEl.classList.add('show');
     clearTimeout(toastEl._t); toastEl._t=setTimeout(()=>toastEl.classList.remove('show'),2600); }
@@ -1174,7 +1480,8 @@
     camera.lookAt(target);
   }
   // component-specific camera presets — keep the right side clear for the inspector
-  const CAM_PRESETS={ storage:{theta:0.52,phi:1.03,radius:15,off:3.0,ty:0.35,tzScale:0.8} };
+  const CAM_PRESETS={ storage:{theta:0.52,phi:1.03,radius:15,off:3.0,ty:0.35,tzScale:0.8},
+                      server:{theta:0.52,phi:1.03,radius:16,off:3.0,ty:0.3,tzScale:0.75} };
   function focusOn(comp,exploded){
     const p=new THREE.Vector3(); comp.getWorldPosition(p);
     const pre=exploded? CAM_PRESETS[comp.userData.def.cat] : null;
@@ -1218,11 +1525,12 @@
     active=comp; selectedPeri=null;
     components.forEach(c=>setGlow(c,false)); setGlow(comp,true);
     const hasDis=(comp._peris&&comp._peris.length);
-    if(comp._hifi && !window.__noGLB) loadStorageGLB(comp); // lazy-load the authored asset on first inspect
+    if(comp._hifi && !window.__noGLB) loadModuleGLB(comp); // lazy-load the authored asset on first inspect
     if(hasDis){ setExplode(comp,1); focusOn(comp,true); stage.intensity=0.55;
       stageRim.intensity=comp._hifi?0.85:0.5; stageAccent.intensity=comp._hifi?0.55:0.3;
+      dimOthers(comp); // selected module keeps full detail; the rest recedes
       btnExit.style.display='flex'; }
-    else { focusOn(comp,false); btnExit.style.display= (active&&active._peris.length)?'flex':'none'; }
+    else { focusOn(comp,false); dimOthers(null); btnExit.style.display= (active&&active._peris.length)?'flex':'none'; }
     setRotate(false);
     curTab = hasDis? 'internals':'overview';
     markSidebar(e); setStep(hasDis?2:1);
@@ -1232,7 +1540,7 @@
     if(active){ setExplode(active,0); }
     components.forEach(c=>setGlow(c,false));
     active=null; selectedPeri=null; stage.intensity=0.0; stageRim.intensity=0.0; stageAccent.intensity=0.0;
-    btnExit.style.display='none';
+    dimOthers(null); btnExit.style.display='none';
     defaultView(); setStep(1); markSidebar(null);
   }
 
@@ -1388,7 +1696,7 @@
   /* =========================================================================
      VIEW MODES / BUTTONS
   ==========================================================================*/
-  let autoRotate=!REDUCED, showLabels=true, showU=true, mode='all';
+  let autoRotate=!REDUCED, showLabels=false, showU=true, mode='all'; // labels off by default — clean render; selected module still gets its label
   const btnRotate=document.getElementById('btnRotate'),btnPower=document.getElementById('btnPower'),
         btnAir=document.getElementById('btnAir'),btnLabels=document.getElementById('btnLabels'),
         btnU=document.getElementById('btnU'),btnReset=document.getElementById('btnReset'),btnExit=document.getElementById('btnExit');
@@ -1404,7 +1712,7 @@
       else if(mode==='air') on=false;
       comp.traverse(o=>{if(o.isMesh)dimMesh(o,mode==='all'?true:on);});
     });
-    rackGroup.children.forEach(o=>{ if(o.isMesh&&o.userData.pick&&o.userData.pick.type==='blank'){dimMesh(o,mode==='air'||mode==='all');}});
+    blankGroups.forEach(g=>g.traverse(o=>{if(o.isMesh)dimMesh(o,mode==='air'||mode==='all');}));
     if(mode==='power'){renderCard({critical:true,cat:'pdu',name:'Power view — A/B feeds',cls:'Power · 2N',
       summary:'Two independent power paths (A = amber, B = cyan). Every device’s dual PSUs split one per feed. Redundancy is judged at failover: each feed alone must carry the whole load without tripping. That’s the 2N promise (Tier IV / Rated 4).',
       why:'Balance each feed low so the survivor holds 100% on a feed loss. Verified at commissioning before IT is energized.',
@@ -1422,7 +1730,7 @@
   btnReset.onclick=()=>{
     mode='all'; setMode('all'); mode='all';
     components.forEach(comp=>comp.traverse(o=>{if(o.isMesh)dimMesh(o,true);}));
-    showLabels=true;showU=true;btnLabels.classList.add('on');btnU.classList.add('on');
+    showLabels=false;showU=true;btnLabels.classList.remove('on');btnU.classList.add('on');
     btnPower.classList.remove('active');btnAir.classList.remove('active');
     closeCardFlow(); setRotate(!REDUCED);
   };
@@ -1453,7 +1761,7 @@
       comp._pivot.rotation.y=(comp._yaw||0)*pull;
       if(SEC)SEC('b-parts');
       comp._parts.forEach(pt=>{ pt.m.position.lerpVectors(pt.rest,pt.expl,open);
-        if(pt.cas && pt.m.material){ pt.m.material.transparent=true; pt.m.material.opacity = 1 - 0.85*open; } });
+        if(pt.cas && pt.m.material && !comp._dimmed){ pt.m.material.transparent=true; pt.m.material.opacity = 1 - 0.85*open; } });
       if(SEC)SEC('c-apron');
       if(comp._apron && comp._apron.material){ comp._apron.material.opacity = 0.22*spread; }
       if(SEC)SEC('d-peris');
@@ -1483,7 +1791,7 @@
       if(SEC)SEC('e-update');
       if(comp._update) comp._update(t,pull,open,spread); // component-specific staging (hi-fi)
       if(SEC)SEC('f-led');
-      if(comp._led){ comp._led.material.emissiveIntensity = 0.6 + 0.4*Math.sin(nowT*3 + comp.position.y); }
+      if(comp._led && !comp._dimmed){ comp._led.material.emissiveIntensity = 0.6 + 0.4*Math.sin(nowT*3 + comp.position.y); }
     });
     if(active && active._goal>0){ const t=active._t, s=t<0.42?2:(t<0.80?3:4); if(s!==curStep) setStep(s); }
   }
@@ -1491,7 +1799,7 @@
   /* label projection */
   function updateLabels(){
     labelData.forEach(L=>{
-      const showComp = showLabels && (active? active===L.obj : true); // dissection: selected label only
+      const showComp = active ? active===L.obj : showLabels; // dissection: selected label always; otherwise honor the toggle
       if(!showComp){L.el.style.opacity=0;}
       else{
         L.obj.getWorldPosition(_v); _v.x-=2.2; _v.project(camera);
