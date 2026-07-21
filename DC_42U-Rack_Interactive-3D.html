@@ -754,12 +754,12 @@
     return g;
   }
 
-  /* HeatsinkBlock — silver fin stack on a base */
-  function HeatsinkBlock(W,D,fins){
+  /* HeatsinkBlock — silver fin stack on a base; finH opt-in for low-profile 1U parts */
+  function HeatsinkBlock(W,D,fins,finH){
     const g=new THREE.Group();
     g.add(bevelBox(W,0.1,D,0.02,mat(0x22304a,{metalness:.6,roughness:.4})));
-    const finM=PAL.fin(); fins=fins||10;
-    for(let i=0;i<fins;i++){const f=box(W*0.92,0.3,0.05,finM); f.position.set(0,0.22,-D/2+D*(i+0.5)/fins); g.add(f);}
+    const finM=PAL.fin(); fins=fins||10; finH=finH||0.3;
+    for(let i=0;i<fins;i++){const f=box(W*0.92,finH,0.05,finM); f.position.set(0,0.07+finH/2,-D/2+D*(i+0.5)/fins); g.add(f);}
     return g;
   }
 
@@ -1055,51 +1055,55 @@
     return k.finish([groups.DriveCarriers,groups.Backplane,groups.PCB,groups.Controllers,psuPair]);
   }
 
-  /* ---- 2U Compute Server — second gold-standard dissection ----
-     GLB contract (models/compute-server.glb): Tray, GhostCover, FanWall,
-     CPUs, DIMMs, NVMe, NIC, PSU_A, PSU_B, PCB, Bezel, Rails */
+  /* ---- Compute Server (1U + 2U) — second gold-standard dissection ----
+     GLB contract (models/compute-server.glb, models/compute-server-1u.glb):
+     Tray, GhostCover, FanWall, CPUs, DIMMs, NVMe, NIC, PSU_A, PSU_B, PCB, Bezel, Rails */
   function buildServerHiFi(e){
-    const k=hifiScaffold(e,{heroScale:1.7,lidLift:1.8,nodeNames:SERVER_NODE_NAMES,
-      glbUrl:'models/compute-server.glb',faceFn:FACE.server});
+    const oneU=e.h<2; // 1U variant: low-profile internals
+    const k=hifiScaffold(e,{heroScale:oneU?1.6:1.7,lidLift:oneU?1.2:1.8,nodeNames:SERVER_NODE_NAMES,
+      glbUrl:oneU?'models/compute-server-1u.glb':'models/compute-server.glb',faceFn:FACE.server});
     const {groups,psuPair,w,d,floorY}=k;
     const fTop=floorY+0.06; // tray floor top
 
     /* NVMe: front row of hot-swap 2.5" drives lying flat */
     const nvProto=new THREE.Group();
-    nvProto.add(box(0.42,0.15,1.0,mat(0x1a2230,{metalness:.6,roughness:.4})));
+    nvProto.add(box(0.42,oneU?0.12:0.15,1.0,mat(0x1a2230,{metalness:.6,roughness:.4})));
     const nvLed=box(0.04,0.04,0.03,mat(0x39d98a,{emissive:0x39d98a,emissiveIntensity:1})); nvLed.position.set(0.14,0.03,0.51); nvProto.add(nvLed);
     const nvHdl=box(0.3,0.05,0.04,mat(0x8fa2b5,{metalness:.85,roughness:.3})); nvHdl.position.set(-0.03,-0.04,0.51); nvProto.add(nvHdl);
-    groups.NVMe.position.set(-w*0.14,fTop+0.075,d*0.36);
-    for(let i=0;i<8;i++){const c2=nvProto.clone(); c2.position.x=(i-3.5)*0.48; groups.NVMe.add(c2);}
+    groups.NVMe.position.set(-w*0.14,fTop+(oneU?0.06:0.075),d*0.36);
+    const nvN=oneU?6:8;
+    for(let i=0;i<nvN;i++){const c2=nvProto.clone(); c2.position.x=(i-(nvN-1)/2)*0.48; groups.NVMe.add(c2);}
 
     /* FanWall: N+1 hot-swap fans across the chassis */
-    groups.FanWall.position.set(0,fTop+0.21,d*0.17);
-    groups.FanWall.add(FanWall(5,w*0.8,0.42));
+    groups.FanWall.position.set(0,fTop+(oneU?0.1:0.21),d*0.17);
+    groups.FanWall.add(FanWall(oneU?6:5,w*0.8,oneU?0.18:0.42));
 
     /* PCB spanning the mid/rear section */
     groups.PCB.position.set(0,floorY+0.10,-d*0.13);
     groups.PCB.add(PCBPlane(w*0.8,3.2));
 
-    /* CPUs: dual sockets under silver heatsinks */
-    groups.CPUs.position.set(0,fTop+0.09,-d*0.08);
-    const hsA=HeatsinkBlock(1.05,1.25,9); hsA.position.x=-1.05;
-    const hsB=HeatsinkBlock(1.05,1.25,9); hsB.position.x=1.05;
+    /* CPUs: sockets under silver heatsinks (low-profile fins in 1U) */
+    groups.CPUs.position.set(0,fTop+(oneU?0.05:0.09),-d*0.08);
+    const hsA=HeatsinkBlock(1.05,1.25,9,oneU?0.1:0.3); hsA.position.x=-1.05;
+    const hsB=HeatsinkBlock(1.05,1.25,9,oneU?0.1:0.3); hsB.position.x=1.05;
     groups.CPUs.add(hsA,hsB);
 
     /* DIMMs: banks flanking the sockets */
-    groups.DIMMs.position.set(0,fTop+0.24,-d*0.08);
-    const dbC=DIMMBank(8,1.15,0.36); groups.DIMMs.add(dbC);
-    const dbL=DIMMBank(4,1.15,0.36); dbL.position.x=-1.9; groups.DIMMs.add(dbL);
-    const dbR=DIMMBank(4,1.15,0.36); dbR.position.x=1.9; groups.DIMMs.add(dbR);
+    groups.DIMMs.position.set(0,fTop+(oneU?0.1:0.24),-d*0.08);
+    const dl=oneU?0.95:1.15, dh=oneU?0.14:0.36;
+    const dbC=DIMMBank(8,dl,dh); groups.DIMMs.add(dbC);
+    const dbL=DIMMBank(4,dl,dh); dbL.position.x=-1.9; groups.DIMMs.add(dbL);
+    const dbR=DIMMBank(4,dl,dh); dbR.position.x=1.9; groups.DIMMs.add(dbR);
 
     /* NIC: rear-left adapter */
     groups.NIC.position.set(-w*0.28,fTop+0.05,-d*0.39);
     groups.NIC.add(NICCard());
 
     /* PSU_A + PSU_B: rear-right, side by side on separate feeds */
-    psuPair.position.set(w*0.36,fTop+0.25,-d*0.39);
-    groups.PSU_A.position.x=-0.32; groups.PSU_A.add(PSUBlock(0xff8c32,{w:0.6,h:0.5,d:1.2}));
-    groups.PSU_B.position.x=0.32;  groups.PSU_B.add(PSUBlock(0x36c2ff,{w:0.6,h:0.5,d:1.2}));
+    psuPair.position.set(w*0.36,fTop+(oneU?0.13:0.25),-d*0.39);
+    const psuDim={w:0.6,h:oneU?0.24:0.5,d:1.2};
+    groups.PSU_A.position.x=-0.32; groups.PSU_A.add(PSUBlock(0xff8c32,psuDim));
+    groups.PSU_B.position.x=0.32;  groups.PSU_B.add(PSUBlock(0x36c2ff,psuDim));
 
     k.periAnchor('nvme',groups.NVMe,   new THREE.Vector3(-0.5,1.1,0.5));
     k.periAnchor('fan', groups.FanWall,new THREE.Vector3(-1.4,1.25,0.3));
@@ -1109,6 +1113,209 @@
     k.periAnchor('psu', psuPair,       new THREE.Vector3(0.85,1.3,0.3));
 
     return k.finish([groups.NVMe,groups.FanWall,groups.PCB,groups.CPUs,groups.DIMMs,groups.NIC,psuPair]);
+  }
+
+  /* ---- 1U Top-of-Rack Switch — hi-fi dissection ----
+     GLB contract (models/tor-switch.glb): Tray, GhostCover, ASIC, Optics,
+     FanTray, PSU_A, PSU_B, PCB, Bezel, Rails */
+  const SWITCH_NODE_NAMES=['Tray','GhostCover','ASIC','Optics','FanTray','PSU_A','PSU_B','PCB','Bezel','Rails'];
+  function buildSwitchHiFi(e){
+    const k=hifiScaffold(e,{heroScale:1.55,lidLift:1.2,nodeNames:SWITCH_NODE_NAMES,
+      glbUrl:'models/tor-switch.glb',faceFn:FACE.switch});
+    const {groups,psuPair,w,d,floorY}=k;
+    const fTop=floorY+0.06;
+
+    /* PCB: full-width switchboard w/ retimer row behind the cages */
+    groups.PCB.position.set(0,floorY+0.08,0.1);
+    groups.PCB.add(PCBPlane(w*0.86,d*0.72));
+    for(let i=0;i<6;i++){const rt=box(0.22,0.06,0.22,mat(0x22304a,{metalness:.6,roughness:.4}));
+      rt.position.set((i-2.5)*0.7,0.08,d*0.24); groups.PCB.add(rt);}
+
+    /* Optics: two rows of QSFP-DD transceivers seated behind the port cages */
+    groups.Optics.position.set(0,fTop+0.1,d*0.37);
+    const oProto=new THREE.Group();
+    oProto.add(bevelBox(0.17,0.12,0.72,0.02,mat(0x8fa2b5,{metalness:.88,roughness:.28})));
+    const oTip=box(0.12,0.06,0.05,mat(0x36c2ff,{emissive:0x36c2ff,emissiveIntensity:.9})); oTip.position.set(0,0,0.38); oProto.add(oTip);
+    const oHdl=box(0.05,0.02,0.5,mat(0x11161f,{roughness:.8})); oHdl.position.set(0,0.08,0.05); oProto.add(oHdl);
+    for(let r2=0;r2<2;r2++)for(let i=0;i<8;i++){
+      const c2=oProto.clone(); c2.position.set((i-3.5)*0.55,0,r2?-0.85:0); groups.Optics.add(c2);
+    }
+
+    /* ASIC: merchant-silicon package under a low fin stack, center of board */
+    groups.ASIC.position.set(0,fTop+0.05,-d*0.05);
+    const aSub=bevelBox(1.35,0.07,1.35,0.02,mat(0x123023,{metalness:.35,roughness:.55})); groups.ASIC.add(aSub);
+    const aDie=box(0.72,0.09,0.72,mat(0x39d98a,{emissive:0x39d98a,emissiveIntensity:.35,metalness:.5,roughness:.35})); aDie.position.y=0.07; groups.ASIC.add(aDie);
+    const aHs=HeatsinkBlock(1.1,1.1,8,0.09); aHs.position.y=0.1; groups.ASIC.add(aHs);
+
+    /* FanTray: removable N+1 fan sled at the rear */
+    groups.FanTray.position.set(-w*0.12,fTop+0.1,-d*0.37);
+    const ftFrame=bevelBox(w*0.62,0.2,0.55,0.03,mat(0x1f2733,{metalness:.6,roughness:.5})); groups.FanTray.add(ftFrame);
+    const ftFans=FanWall(4,w*0.55,0.16); ftFans.position.z=0.02; groups.FanTray.add(ftFans);
+    const ftHdl=box(0.5,0.04,0.06,mat(0x8fa2b5,{metalness:.85,roughness:.3})); ftHdl.position.set(0,0.02,-0.32); groups.FanTray.add(ftHdl);
+
+    /* PSU_A + PSU_B: slim rear supplies on separate feeds */
+    psuPair.position.set(w*0.33,fTop+0.12,-d*0.37);
+    const sPsu={w:0.55,h:0.22,d:1.05};
+    groups.PSU_A.position.x=-0.32; groups.PSU_A.add(PSUBlock(0xff8c32,sPsu));
+    groups.PSU_B.position.x=0.32;  groups.PSU_B.add(PSUBlock(0x36c2ff,sPsu));
+
+    k.periAnchor('asic',  groups.ASIC,   new THREE.Vector3(0.4,1.5,0.2));
+    k.periAnchor('optics',groups.Optics, new THREE.Vector3(1.2,0.8,-0.2));
+    k.periAnchor('psu',   psuPair,       new THREE.Vector3(0.7,1.5,-0.3));
+    k.periAnchor('fan',   groups.FanTray,new THREE.Vector3(-1.5,1.25,-0.6));
+
+    return k.finish([groups.PCB,groups.Optics,groups.ASIC,groups.FanTray,psuPair]);
+  }
+
+  /* ---- 2U AI GPU Compute Node (GB200-class) — flagship hi-fi dissection ----
+     GLB contract (models/gpu-node.glb): Tray, GhostCover, GPUs, CPU, HBM,
+     NVSwitch, NICs, Manifold, Busbar, PCB, Bezel, Rails */
+  const GPU_NODE_NAMES=['Tray','GhostCover','GPUs','CPU','HBM','NVSwitch','NICs','Manifold','Busbar','PCB','Bezel','Rails'];
+  function buildGpuNodeHiFi(e){
+    const k=hifiScaffold(e,{heroScale:1.7,lidLift:1.8,nodeNames:GPU_NODE_NAMES,
+      glbUrl:'models/gpu-node.glb',faceFn:FACE.gpu});
+    const {groups,w,d,floorY}=k;
+    const fTop=floorY+0.06;
+
+    /* PCB: full carrier board */
+    groups.PCB.position.set(0,floorY+0.10,-0.3);
+    groups.PCB.add(PCBPlane(w*0.86,d*0.74));
+
+    /* GPUs: two Blackwell packages under liquid cold plates w/ coolant ports */
+    groups.GPUs.position.set(0,fTop+0.1,-d*0.1);
+    [-1.15,1.15].forEach(x=>{
+      const sub=bevelBox(1.6,0.08,1.6,0.02,mat(0x101820,{metalness:.5,roughness:.5})); sub.position.x=x; groups.GPUs.add(sub);
+      const plate=bevelBox(1.34,0.18,1.34,0.04,mat(0x9fb9d6,{metalness:.9,roughness:.2})); plate.position.set(x,0.16,0); groups.GPUs.add(plate);
+      for(let i=0;i<3;i++){const ch=box(1.1,0.03,0.08,mat(0x36c2ff,{emissive:0x36c2ff,emissiveIntensity:.7}));
+        ch.position.set(x,0.27,-0.4+i*0.4); groups.GPUs.add(ch);}
+      const idStrip=box(1.42,0.035,0.06,mat(0xff5470,{emissive:0xff5470,emissiveIntensity:.8})); idStrip.position.set(x,0.1,0.78); groups.GPUs.add(idStrip);
+      [-0.35,0.35].forEach(px=>{
+        const port=pm(gCyl(0.09,0.16,10),mat(0x8fb4d8,{metalness:.85,roughness:.3})); port.position.set(x+px,0.32,-0.45); groups.GPUs.add(port);
+        const hose=pm(gCyl(0.055,0.9,8),mat(0x1b2430,{metalness:.3,roughness:.7})); hose.rotation.x=Math.PI/2; hose.position.set(x+px,0.36,0.05); groups.GPUs.add(hose);
+      });
+    });
+
+    /* HBM: stacked memory flanking each GPU package */
+    groups.HBM.position.copy(groups.GPUs.position);
+    [-1.15,1.15].forEach(x=>{[-0.52,0.52].forEach(hz=>{[-0.95,0.95].forEach(hx=>{
+      const st=new THREE.Group();
+      for(let i2=0;i2<3;i2++){const l2=box(0.3,0.045,0.22,mat(0xffd23f,{emissive:0xffd23f,emissiveIntensity:.25,metalness:.5,roughness:.4}));
+        l2.position.y=0.03+i2*0.055; st.add(l2);}
+      st.position.set(x+hx,0,hz); groups.HBM.add(st);
+    });});});
+
+    /* CPU: Grace package + LPDDR modules, front-left */
+    groups.CPU.position.set(-w*0.28,fTop+0.09,d*0.22);
+    const cSub=bevelBox(1.15,0.07,1.15,0.02,mat(0x101820,{metalness:.5,roughness:.5})); groups.CPU.add(cSub);
+    const cIhs=bevelBox(0.85,0.12,0.85,0.03,mat(0x6bd0ff,{metalness:.75,roughness:.3,emissive:0x6bd0ff,emissiveIntensity:.12})); cIhs.position.y=0.1; groups.CPU.add(cIhs);
+    const cPlate=bevelBox(0.98,0.1,0.98,0.03,mat(0x9fb9d6,{metalness:.9,roughness:.2})); cPlate.position.y=0.21; groups.CPU.add(cPlate);
+    for(let i=0;i<4;i++){const lp=box(0.34,0.05,0.14,mat(0x2a3445,{metalness:.6,roughness:.4}));
+      lp.position.set(-0.55+i*0.37,0.02,0.75); groups.CPU.add(lp);}
+
+    /* NVSwitch: fabric chips between the GPU pair */
+    groups.NVSwitch.position.set(0,fTop+0.07,d*0.08);
+    [-0.55,0.55].forEach(nz=>{
+      const nSub=bevelBox(0.95,0.06,0.95,0.02,mat(0x123023,{metalness:.35,roughness:.55})); nSub.position.z=nz; groups.NVSwitch.add(nSub);
+      const nDie=box(0.5,0.09,0.5,mat(0x39d98a,{emissive:0x39d98a,emissiveIntensity:.4,metalness:.5})); nDie.position.set(0,0.06,nz); groups.NVSwitch.add(nDie);
+      const nHs=HeatsinkBlock(0.8,0.8,6,0.08); nHs.position.set(0,0.09,nz); groups.NVSwitch.add(nHs);
+    });
+
+    /* NICs: ConnectX-8 / BlueField cards at the rear */
+    groups.NICs.position.set(w*0.24,fTop+0.06,-d*0.38);
+    [-0.7,0.7].forEach(nx=>{const c2=NICCard(); c2.position.x=nx; c2.scale.setScalar(1.15); groups.NICs.add(c2);});
+
+    /* Manifold: front coolant rails + quick disconnects (supply/return capped) */
+    groups.Manifold.position.set(0,fTop+0.16,d*0.38);
+    const tubeM=mat(0x8fb4d8,{metalness:.85,roughness:.3});
+    [-0.14,0.14].forEach(my=>{const t2=pm(gCyl(0.11,w*0.8,14),tubeM); t2.rotation.z=Math.PI/2; t2.position.y=my; groups.Manifold.add(t2);});
+    for(let i=0;i<4;i++){const qd=pm(gCyl(0.07,0.3,10),mat(0x36c2ff,{emissive:0x36c2ff,emissiveIntensity:.5,metalness:.6}));
+      qd.rotation.x=Math.PI/2; qd.position.set((i-1.5)*1.1,0,-0.25); groups.Manifold.add(qd);}
+    [[-w*0.4,0x36c2ff],[w*0.4,0xff8c32]].forEach(mc=>{
+      const cap=pm(gCyl(0.13,0.18,12),mat(mc[1],{emissive:mc[1],emissiveIntensity:.5,metalness:.6}));
+      cap.rotation.z=Math.PI/2; cap.position.set(mc[0],0,0); groups.Manifold.add(cap);});
+
+    /* Busbar: rear DC tap — copper blades in a clamp, lug to the board */
+    groups.Busbar.position.set(0,fTop+0.14,-d*0.44);
+    const clamp=bevelBox(0.8,0.3,0.35,0.04,mat(0x1f2733,{metalness:.6,roughness:.5})); groups.Busbar.add(clamp);
+    [-0.16,0.16].forEach(bx=>{const blade=box(0.14,0.55,0.14,mat(0xd7a94a,{metalness:.95,roughness:.25}));
+      blade.position.x=bx; groups.Busbar.add(blade);});
+    const lug=box(1.0,0.07,0.07,mat(0xff8c32,{emissive:0xff8c32,emissiveIntensity:.4})); lug.position.set(-0.75,0,0.12); groups.Busbar.add(lug);
+
+    k.periAnchor('gpu',     groups.GPUs,    new THREE.Vector3(1.0,1.75,0.3));
+    k.periAnchor('hbm',     groups.HBM,     new THREE.Vector3(2.5,1.35,-0.5));
+    k.periAnchor('cpu',     groups.CPU,     new THREE.Vector3(-0.4,1.6,0.5));
+    k.periAnchor('nvswitch',groups.NVSwitch,new THREE.Vector3(0.2,2.0,-0.9));
+    k.periAnchor('nic',     groups.NICs,    new THREE.Vector3(0.6,1.35,-0.8));
+    k.periAnchor('manifold',groups.Manifold,new THREE.Vector3(-0.9,1.3,0.8));
+    k.periAnchor('busbar',  groups.Busbar,  new THREE.Vector3(-1.5,1.6,-1.1));
+
+    return k.finish([groups.PCB,groups.GPUs,groups.CPU,groups.HBM,groups.NVSwitch,groups.NICs,groups.Manifold,groups.Busbar]);
+  }
+
+  /* ---- 3U UPS / Battery (BBU) — hi-fi dissection ----
+     GLB contract (models/ups-bbu.glb): Tray, GhostCover, Batteries, Rectifier,
+     Inverter, Bypass, Control, PCB, Bezel, Rails */
+  const UPS_NODE_NAMES=['Tray','GhostCover','Batteries','Rectifier','Inverter','Bypass','Control','PCB','Bezel','Rails'];
+  function buildUpsHiFi(e){
+    const k=hifiScaffold(e,{heroScale:1.45,lidLift:2.2,nodeNames:UPS_NODE_NAMES,
+      glbUrl:'models/ups-bbu.glb',faceFn:FACE.ups});
+    const {groups,w,d,floorY}=k;
+    const fTop=floorY+0.06;
+
+    /* PCB: power backplane under the converter bays */
+    groups.PCB.position.set(w*0.18,floorY+0.10,-d*0.1);
+    groups.PCB.add(PCBPlane(w*0.55,d*0.6));
+
+    /* Batteries: two hot-swap Li-ion strings in the left bay */
+    groups.Batteries.position.set(-w*0.24,fTop,0.35);
+    [-1.05,0.05].forEach(bx=>{
+      const bstack=new THREE.Group();
+      for(let i=0;i<3;i++){
+        const cell=bevelBox(1.7,0.24,2.6,0.04,mat(0x9d6bff,{metalness:.45,roughness:.5,emissive:0x9d6bff,emissiveIntensity:.1}));
+        cell.position.y=0.16+i*0.3; bstack.add(cell);
+        const bHdl=box(0.5,0.05,0.07,mat(0x8fa2b5,{metalness:.85,roughness:.3})); bHdl.position.set(0,0.16+i*0.3,1.34); bstack.add(bHdl);
+        const bLed=box(0.05,0.05,0.04,mat(0x39d98a,{emissive:0x39d98a,emissiveIntensity:1})); bLed.position.set(0.6,0.24+i*0.3,1.32); bstack.add(bLed);
+      }
+      const hz=box(1.74,0.05,2.64,mat(0xffd23f,{emissive:0xffd23f,emissiveIntensity:.25})); hz.position.y=0.02; bstack.add(hz);
+      bstack.position.x=bx; groups.Batteries.add(bstack);
+    });
+
+    /* Rectifier + Inverter: finned power-conversion bricks (AC→DC, DC→AC) */
+    function powerBrick(col){
+      const g2=new THREE.Group();
+      g2.add(bevelBox(1.35,0.55,1.8,0.05,PAL.steel()));
+      const fins=HeatsinkBlock(1.2,1.6,10,0.12); fins.position.y=0.28; g2.add(fins);
+      const bLed=box(0.07,0.07,0.05,mat(col,{emissive:col,emissiveIntensity:1})); bLed.position.set(0.5,0.1,0.93); g2.add(bLed);
+      const strip=box(1.15,0.05,0.05,mat(col,{emissive:col,emissiveIntensity:.5})); strip.position.set(0,-0.2,0.93); g2.add(strip);
+      return g2;
+    }
+    groups.Rectifier.position.set(w*0.07,fTop+0.28,-d*0.22);
+    groups.Rectifier.add(powerBrick(0x39d98a));
+    groups.Inverter.position.set(w*0.34,fTop+0.28,-d*0.22);
+    groups.Inverter.add(powerBrick(0x36c2ff));
+    [-0.25,0.25].forEach(cx=>{const cap=pm(gCyl(0.14,0.5,12),mat(0x1b2430,{metalness:.6,roughness:.4}));
+      cap.position.set(cx,0.02,-1.15); groups.Inverter.add(cap);});
+
+    /* Bypass: static transfer switch — contactor block + copper links */
+    groups.Bypass.position.set(w*0.2,fTop+0.16,d*0.16);
+    const sbBox=bevelBox(1.6,0.32,1.0,0.04,mat(0x1f2733,{metalness:.6,roughness:.5})); groups.Bypass.add(sbBox);
+    const sbRk=box(0.45,0.12,0.3,mat(0xffd23f,{emissive:0xffd23f,emissiveIntensity:.45})); sbRk.position.y=0.2; groups.Bypass.add(sbRk);
+    [-1,1].forEach(s2=>{const bus2=box(0.5,0.1,0.16,mat(0xd7a94a,{metalness:.95,roughness:.25}));
+      bus2.position.set(s2*1.0,0.02,0); groups.Bypass.add(bus2);});
+
+    /* Control: BMS board w/ status screen + DCIM uplink */
+    groups.Control.position.set(w*0.32,fTop+0.05,d*0.3);
+    groups.Control.add(PCBPlane(1.5,1.1));
+    const cScr=box(0.7,0.3,0.06,PAL.glow(0x36c2ff,.8)); cScr.position.set(-0.15,0.26,0); cScr.rotation.x=-0.5; groups.Control.add(cScr);
+    const cRj=box(0.3,0.14,0.16,mat(0x1b2430,{metalness:.7,roughness:.35})); cRj.position.set(0.55,0.12,0.35); groups.Control.add(cRj);
+
+    k.periAnchor('battery',groups.Batteries,new THREE.Vector3(-1.2,1.7,0.5));
+    k.periAnchor('rect',   groups.Rectifier,new THREE.Vector3(-0.6,1.6,-0.7));
+    k.periAnchor('inv',    groups.Inverter, new THREE.Vector3(1.3,1.45,-0.4));
+    k.periAnchor('sbs',    groups.Bypass,   new THREE.Vector3(1.9,1.2,0.4));
+    k.periAnchor('ctrl',   groups.Control,  new THREE.Vector3(0.4,1.5,0.9));
+
+    return k.finish([groups.PCB,groups.Batteries,groups.Rectifier,groups.Inverter,groups.Bypass,groups.Control]);
   }
 
   /* ---- model-loading layer: lazy GLB swap (rack itself stays low-poly) ---- */
@@ -1187,7 +1394,10 @@
   function buildComponent(e){
     if(e.peris && e.peris.length){
       if(e.cat==='storage') return buildStorageArrayHiFi(e);
-      if(e.cat==='server' && e.h>=2) return buildServerHiFi(e);
+      if(e.cat==='server') return buildServerHiFi(e);
+      if(e.cat==='switch') return buildSwitchHiFi(e);
+      if(e.cat==='gpu')    return buildGpuNodeHiFi(e);
+      if(e.cat==='ups')    return buildUpsHiFi(e);
     }
     const w=innerW-0.25, h=e.h*U-0.08, d=RACK_D-0.7;
     const yc=yForBlock(e.u,e.h);
@@ -1272,6 +1482,42 @@
     lidOp:+(c._groups.GhostCover.children[0].material.opacity).toFixed(2),
     wallOp:+(c._groups.Tray.children[1].material.opacity).toFixed(2)})); };
 
+  /* hi-fi internals for the rPDU dissection — real sub-assemblies in the same
+     visual language as the rack modules, keyed by peri id */
+  function buildPduInternal(p,feedCol){
+    const g=new THREE.Group();
+    if(p.id==='inlet'){ // junction box + gland, cord tail, phase indicator
+      g.add(bevelBox(0.6,0.5,0.35,0.04,mat(0x1f2733,{metalness:.6,roughness:.5})));
+      const gl=pm(gCyl(0.12,0.35,12),mat(0x0c1118,{roughness:.8})); gl.rotation.x=Math.PI/2; gl.position.set(0,-0.33,0.05); g.add(gl);
+      const cord=pm(gCyl(0.09,0.5,10),mat(0x11161f,{roughness:.85})); cord.rotation.x=Math.PI/2; cord.position.set(0,-0.33,-0.35); g.add(cord);
+      const ring=pm(gCyl(0.14,0.06,12),mat(feedCol,{emissive:feedCol,emissiveIntensity:.6,metalness:.6})); ring.rotation.x=Math.PI/2; ring.position.set(0,-0.33,0.22); g.add(ring);
+      const ph=box(0.4,0.16,0.04,PAL.glow(feedCol,.8)); ph.position.set(0,0.1,0.19); g.add(ph);
+    } else if(p.id==='breaker'){ // DIN-rail bank of hydraulic-magnetic rockers
+      g.add(bevelBox(0.9,0.6,0.3,0.03,mat(0x1f2733,{metalness:.6,roughness:.5})));
+      for(let i=0;i<3;i++){
+        const bk=box(0.2,0.34,0.1,mat(0x0a0f16,{roughness:.85})); bk.position.set(-0.28+i*0.28,0,0.17); g.add(bk);
+        const sw2=box(0.08,0.12,0.05,mat(0xffd23f,{emissive:0xffd23f,emissiveIntensity:.5})); sw2.position.set(-0.28+i*0.28,0.06,0.22); g.add(sw2);
+      }
+      const lbl=box(0.8,0.08,0.02,PAL.slot()); lbl.position.set(0,-0.22,0.17); g.add(lbl);
+    } else if(p.id==='meter'){ // metering board: screen + status + DCIM uplink
+      g.add(bevelBox(0.9,0.7,0.08,0.02,PAL.pcb()));
+      const scr3=box(0.5,0.3,0.04,PAL.glow(feedCol,.95)); scr3.position.set(-0.08,0.1,0.06); g.add(scr3);
+      const rj2=box(0.2,0.14,0.1,mat(0x1b2430,{metalness:.7,roughness:.35})); rj2.position.set(0.28,-0.2,0.06); g.add(rj2);
+      const led3=box(0.05,0.05,0.04,mat(0x39d98a,{emissive:0x39d98a,emissiveIntensity:1})); led3.position.set(0.28,-0.02,0.06); g.add(led3);
+    } else if(p.id==='outlets'){ // strip segment: C13 column + C19, feed-lit edge
+      g.add(bevelBox(0.55,1.6,0.4,0.04,mat(0x161d28,{metalness:.5,roughness:.55})));
+      const edge2=box(0.06,1.56,0.42,PAL.glow(feedCol,.7)); edge2.position.x=-0.28; g.add(edge2);
+      for(let i=0;i<5;i++){const y2=0.6-i*0.26;
+        const ring2=box(0.24,0.22,0.02,mat(feedCol,{emissive:feedCol,emissiveIntensity:.35,transparent:true})); ring2.position.set(0.02,y2,0.2); g.add(ring2);
+        const o2=box(0.17,0.15,0.04,PAL.slot()); o2.position.set(0.02,y2,0.21); g.add(o2);}
+      const c19=box(0.3,0.22,0.04,PAL.slot()); c19.position.set(0.02,-0.62,0.21); g.add(c19);
+      const ring3=box(0.36,0.28,0.02,mat(feedCol,{emissive:feedCol,emissiveIntensity:.35,transparent:true})); ring3.position.set(0.02,-0.62,0.2); g.add(ring3);
+    } else {
+      return buildPeri(p,1,1,1);
+    }
+    return g;
+  }
+
   /* -------- rPDUs (vertical, zero-U) as dissectable components -------- */
   function buildPDU(pd){
     const comp=new THREE.Group();
@@ -1293,15 +1539,15 @@
 
     const peris=pd.peris||[]; const n=peris.length;
     peris.forEach((p,i)=>{
-      const pg=buildPeri(p,1,1,1); pg.scale.setScalar(0.7);
+      const pg=buildPduInternal(p,pd.color); pg.scale.setScalar(1.35);
       const ry=(-h/2+1.4)+(i/(Math.max(1,n-1)))*(h-2.8);
       pg.position.set(0,ry,0.1);
-      const R=2.6; const ang=(-0.7+(i/(Math.max(1,n-1)))*1.4);
       pg.userData.pick={type:'peri',comp,peri:p};
       pg.traverse(o=>{if(o.isMesh){o.userData.pick={type:'peri',comp,peri:p};pickable.push(o);}});
       pg.visible=false; pivot.add(pg);
+      // exploded: neat vertical service column between strip and rack center
       comp._peris.push({g:pg,def:p,rest:pg.position.clone(),
-        expl:new THREE.Vector3(pd.side*(1.6+Math.abs(ang)*0.6), ry+Math.sin(ang)*1.0, d/2+Math.cos(ang)*R*0.4+1.0)});
+        expl:new THREE.Vector3(-pd.side*2.0, (i-(n-1)/2)*2.3, d/2+2.6)});
       const geom=new THREE.BufferGeometry();geom.setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3));
       const line=new THREE.Line(geom,new THREE.LineDashedMaterial({color:pd.color,transparent:true,opacity:0,dashSize:0.22,gapSize:0.14}));
       pivot.add(line); comp._lines.push({line,peri:pg});
@@ -1481,9 +1727,21 @@
   }
   // component-specific camera presets — keep the right side clear for the inspector
   const CAM_PRESETS={ storage:{theta:0.52,phi:1.03,radius:15,off:3.0,ty:0.35,tzScale:0.8},
-                      server:{theta:0.52,phi:1.03,radius:16,off:3.0,ty:0.3,tzScale:0.75} };
+                      server:{theta:0.52,phi:1.03,radius:16,off:3.0,ty:0.3,tzScale:0.75},
+                      gpu:   {theta:0.52,phi:1.03,radius:17.5,off:3.0,ty:0.35,tzScale:0.75},
+                      switch:{theta:0.52,phi:1.05,radius:16,off:2.9,ty:0.4,tzScale:0.8},
+                      ups:   {theta:0.52,phi:1.03,radius:17,off:3.0,ty:0.5,tzScale:0.8} };
   function focusOn(comp,exploded){
     const p=new THREE.Vector3(); comp.getWorldPosition(p);
+    const def=comp.userData.def;
+    if(def && def.feed && exploded){ // zero-U strip: frame the service column, strip alongside, side-aware
+      const sd=p.x>0?1:-1, th=sd*0.5;
+      goal.theta=th; goal.phi=1.06; goal.radius=13;
+      goal.tx=sd*2.8+Math.sin(th+Math.PI/2)*1.5;
+      goal.ty=0.2;
+      goal.tz=3.0+Math.cos(th+Math.PI/2)*1.5;
+      return;
+    }
     const pre=exploded? CAM_PRESETS[comp.userData.def.cat] : null;
     const th=pre?pre.theta:0.55; goal.theta=th; goal.phi=pre?pre.phi:1.07;
     const off=exploded?(pre?pre.off:2.2):1.4; // bias left of the report panel, like the mockup
