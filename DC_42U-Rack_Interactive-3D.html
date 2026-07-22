@@ -59,23 +59,21 @@
   #btnFullRack{width:100%;margin-top:10px;background:var(--panel2);border:1px solid var(--line2);color:var(--ink);
     border-radius:10px;padding:10px;font-size:12.3px;cursor:pointer}
   #btnFullRack:hover{border-color:var(--accent)}
-  /* expandable per-device rows */
-  #rackList li.grp{display:block;padding:0;border:0}
-  #rackList li.grp:hover,#rackList li.grp.active{background:transparent}
-  #rackList .ghead{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:10px;
-    border:1px solid transparent;cursor:pointer;font-size:12.3px;color:#cdd8e6;line-height:1.3;
-    transition:background .15s,border-color .15s}
-  #rackList .ghead:hover{background:#141d2b}
-  #rackList li.grp.active .ghead{border-color:var(--accent);background:#10222c;color:#fff}
-  #rackList .chevr{color:var(--muted);font-size:9px;flex:0 0 auto;transition:transform .15s}
-  #rackList li.grp.exp .chevr{transform:rotate(90deg)}
-  #rackList .sub{list-style:none;margin:2px 0 4px;padding:0 0 0 16px;display:none}
-  #rackList li.grp.exp .sub{display:block}
-  #rackList .sub li{display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:11.8px;
-    border-radius:8px;border:1px solid transparent;cursor:pointer;color:#b9c7d6}
-  #rackList .sub li:hover{background:#141d2b}
-  #rackList .sub li.active{border-color:var(--accent);background:#10222c;color:#fff}
-  #rackList .sub .upos{margin-left:auto;color:var(--muted);font-size:10.5px;font-variant-numeric:tabular-nums;flex:0 0 auto}
+  /* equipment explorer: search + one row per physical device */
+  #expSearch{width:100%;margin:0 0 10px;background:var(--panel2);border:1px solid var(--line2);color:var(--ink);
+    border-radius:9px;padding:8px 10px;font-size:12px}
+  #expSearch::placeholder{color:var(--muted)}
+  #expSearch:focus{outline:none;border-color:var(--accent)}
+  #rackList li{align-items:flex-start}
+  #rackList li .dev{min-width:0;flex:1}
+  #rackList li .nm{font-size:12.3px;color:#cdd8e6;line-height:1.3}
+  #rackList li.active .nm{color:#fff}
+  #rackList li .ff{font-size:10.3px;color:var(--muted);margin-top:1px}
+  #rackList li .crit-tag{color:var(--crit);font-weight:600}
+  #rackList .upos{margin-left:auto;color:var(--muted);font-size:10.5px;font-variant-numeric:tabular-nums;
+    flex:0 0 auto;padding-top:2px}
+  #rackList li.hiddenrow{display:none}
+  #rackList li .sw{margin-top:4px}
   /* keyboard focus */
   .iconbtn:focus-visible,.ctl:focus-visible,#rackList .ghead:focus-visible,#rackList .sub li:focus-visible,
   .tab:focus-visible,#btnFullRack:focus-visible,#cardClose:focus-visible,#cardMin:focus-visible{
@@ -101,9 +99,13 @@
   #card{top:80px;right:16px;bottom:16px;width:440px;background:rgba(13,19,28,.94);border:1px solid var(--line);
     border-radius:var(--rad);display:flex;flex-direction:column;z-index:9;backdrop-filter:blur(8px);overflow:hidden}
   #cardHead{padding:16px 18px 0;position:relative}
-  #cardBack{display:none;background:none;border:0;color:var(--accent);font-size:11.5px;cursor:pointer;
-    padding:0;margin:0 0 8px;align-items:center;gap:5px}
-  #cardBack.show{display:inline-flex}
+  #crumb{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);
+    margin:0 0 8px;padding-right:70px;min-height:15px}
+  #crumb button{background:none;border:0;color:var(--accent);font-size:11.5px;cursor:pointer;padding:0}
+  #crumb button:hover{text-decoration:underline}
+  #crumb .sep{color:#33465e}
+  #crumb .cur{color:#fff}
+  #crumb button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   #cardName{margin:0 0 10px;font-size:20px;line-height:1.2;color:#fff;padding-right:28px}
   #cardClose{position:absolute;top:14px;right:14px;background:none;border:1px solid var(--line2);color:var(--muted);
     width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:14px;line-height:1}
@@ -137,6 +139,7 @@
   #cardBody .spec .k{color:var(--muted);flex:0 0 auto}
   #cardBody .spec .v{color:#fff;text-align:right;font-variant-numeric:tabular-nums}
   #cardBody .vend{padding:7px 0;border-bottom:1px solid #172130}
+  #cardBody .vendnote{color:var(--muted);font-size:11px;font-style:italic;margin:0 0 6px}
   #cardBody .vend .n{color:#fff;font-weight:600;font-size:12.5px}
   #cardBody .vend .d{color:var(--muted);font-size:11.8px;margin-top:1px}
   #cardBody .dep{display:flex;gap:9px;padding:7px 0;border-bottom:1px solid #172130}
@@ -198,6 +201,9 @@
     pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .2s}
   #err{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
     color:var(--muted);font-size:13px;text-align:center;padding:40px}
+  #trainHint{top:72px;left:50%;transform:translateX(-50%);background:rgba(13,19,28,.95);border:1px solid var(--accent);
+    color:#dbe6f2;font-size:12.5px;padding:8px 16px;border-radius:10px;z-index:13;max-width:min(560px,90vw);text-align:center}
+  #trainHint b{color:var(--accent)}
   #toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--panel2);
     border:1px solid var(--accent);color:#fff;font-size:12.5px;padding:9px 16px;border-radius:10px;
     opacity:0;transition:.25s;z-index:30;pointer-events:none}
@@ -222,15 +228,19 @@
   /* ---------- responsive ---------- */
   /* Desktop: sidebar + viewport + controls + inspector */
   @media (max-width:1560px){#stepper .step .txt{display:none}#stepper{gap:6px;padding:7px 12px}}
-  /* Tablet / iPad: viewport dominant, icon control dock, inspector docks bottom */
+  /* Tablet / iPad: viewport dominant, icon control dock, inspector docks above the metrics strip */
   @media (max-width:1100px){
     #controls{right:16px;top:80px;width:56px;padding:7px;gap:6px}
     #controls .ctl{justify-content:center;padding:10px 0;font-size:0}
     #controls .ctl .end,#controls .ctl .switch{display:none}
-    #card{top:auto;left:16px;right:16px;width:auto;height:44vh;bottom:16px}
+    #card{top:auto;left:16px;right:16px;width:auto;height:38vh;bottom:72px}
     #card.min{top:auto;height:auto}
     #sidebar{max-height:calc(100vh - 60vh)}
-    #bottombar{display:none}#brand p{display:none}
+    #bottombar{left:16px;right:16px;bottom:12px;height:50px;padding:0 4px}
+    .bb{padding:4px 10px}
+    .bb .v{font-size:11.5px}.bb .k{font-size:9.5px}
+    #btnNote{display:none}
+    #brand p{display:none}
   }
   /* Phone: compact header, no stepper, icon-only actions */
   @media (max-width:760px){
@@ -240,6 +250,7 @@
     #btnTraining,#btnHelp{font-size:0;gap:0;padding:0;min-width:40px;justify-content:center}
     #topActions{gap:6px;flex:0 0 auto}
     #sidebar{left:10px;width:min(260px,calc(100vw - 20px))}
+    #bottombar{display:none}
     #card{left:10px;right:10px;height:42vh;bottom:10px}
   }
 </style>
@@ -266,8 +277,9 @@
   </div>
 </header>
 
-<aside id="sidebar" class="hud" data-component="RackContentsSidebar"><!-- closed by default at every width: menu button toggles .open -->
-  <h2>Rack contents</h2>
+<aside id="sidebar" class="hud" data-component="EquipmentExplorer"><!-- open by default on desktop; drawer elsewhere; menu button toggles .open -->
+  <h2>Equipment explorer</h2>
+  <input id="expSearch" type="search" placeholder="Search name or U-position…" aria-label="Search equipment by name or U-position" autocomplete="off" />
   <ul id="rackList"></ul>
   <button id="btnFullRack">⤢&nbsp; View full rack</button>
 </aside>
@@ -284,7 +296,7 @@
 
 <aside id="card" class="hud" data-component="ComponentInspectorPanel">
   <div id="cardHead">
-    <button id="cardBack">◄ <span id="cardBackTxt">Back</span></button>
+    <nav id="crumb" aria-label="Breadcrumb"></nav>
     <h3 id="cardName">—</h3>
     <div id="cardChips"></div>
     <div id="roleRow"></div>
@@ -308,6 +320,8 @@
   <div class="bb"><div class="k">Weight (est.)</div><div class="v" id="bbWeight">—</div></div>
   <button class="iconbtn" id="btnNote"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Add note</button>
 </footer>
+
+<div id="trainHint" class="hud" hidden role="status"><span id="trainHintTxt"></span></div>
 
 <div id="ident" class="hud"><span class="st">★</span><span id="identTxt"></span></div>
 <div id="err">Couldn't load the 3D engine (needs internet for the Three.js CDN). The component list and specs are in the course build pack.</div>
@@ -1433,6 +1447,7 @@
 
   /* -------- build a detailed, dissectable component -------- */
   function buildComponent(e){
+    e.uid=e.cat+'-u'+e.u; // stable equipment identity — never label text or coordinates
     if(e.peris && e.peris.length){
       if(e.cat==='storage') return buildStorageArrayHiFi(e);
       if(e.cat==='server') return buildServerHiFi(e);
@@ -1564,7 +1579,7 @@
     const comp=new THREE.Group();
     const yc=0, w=0.5, h=RACK_H-0.4, d=0.5;
     comp.position.set(pd.side*(innerW/2-0.05), yc, -(RACK_D/2-0.75));
-    comp.userData.def={ critical:pd.critical, cat:pd.cat, name:pd.name, cls:pd.cls, summary:pd.summary,
+    comp.userData.def={ uid:'pdu-'+pd.feed.toLowerCase(), critical:pd.critical, cat:pd.cat, name:pd.name, cls:pd.cls, summary:pd.summary,
       why:pd.why, specs:pd.specs, vendors:pd.vendors, deploys:pd.deploys, course:pd.course, peris:pd.peris, feed:pd.feed };
     comp._t=0; comp._goal=0; comp._parts=[]; comp._peris=[]; comp._lines=[];
     const pivot=new THREE.Group(); comp.add(pivot); comp._pivot=pivot;
@@ -1673,6 +1688,7 @@
   function setStep(n){
     if(n===curStep) return; curStep=n;
     stepEls.forEach((el,i)=>{el.classList.toggle('active',i+1===n);el.classList.toggle('done',i+1<n);});
+    if(typeof updateTrainHint==='function') try{updateTrainHint();}catch(e){}
   }
   function updateBottomBar(d){
     const m=META[d.cat]||META.rack;
@@ -1695,47 +1711,55 @@
     {label:'rPDU B-feed',color:'#36c2ff',match:d=>d.feed==='B'}];
   function onKeyActivate(el){ el.addEventListener('keydown',e=>{
     if(e.key==='Enter'||e.key===' '){ e.preventDefault(); el.click(); } }); }
+  /* equipment explorer: flat list — one row per physical device, searchable by
+     name or U-position; selection identity is the device's stable uid */
+  let blankRow=null;
+  function catColor(def){ const g=GROUPS.find(g2=>g2.match&&g2.match(def)); return g?g.color:'#8aa0b8'; }
   function buildSidebar(){
     const ul=document.getElementById('rackList'); ul.innerHTML='';
-    GROUPS.forEach((g,gi)=>{
-      const devs = g.blank? [] : components.filter(c=>g.match(c.userData.def));
-      let cnt;
-      if(g.blank){ cnt=0; for(let u=1;u<=UNITS;u++) if(!occupied[u]) cnt++; }
-      else cnt=devs.length;
-      const li=document.createElement('li'); li.className='grp';
-      const head=document.createElement('div'); head.className='ghead';
-      head.setAttribute('role','button'); head.tabIndex=0;
-      head.innerHTML='<span class="sw" style="background:'+g.color+'"></span><span>'+g.label+'</span>'+
-        '<span class="cnt">'+cnt+'</span>'+(devs.length>1?'<span class="chevr">▶</span>':'');
-      li.appendChild(head);
-      if(devs.length>1){ // expandable: one row per installed device, U-position shown
-        const sub=document.createElement('ul'); sub.className='sub';
-        devs.forEach(c=>{
-          const d=c.userData.def;
-          const s=document.createElement('li'); s.setAttribute('role','button'); s.tabIndex=0;
-          const pos=d.feed? (d.feed+'-feed') : ('U'+(d.u-d.h+1)+(d.h>1?'–'+d.u:''));
-          s.innerHTML='<span>'+(d.critical?'★ ':'')+d.name+'</span><span class="upos">'+pos+'</span>';
-          s.addEventListener('click',ev=>{ ev.stopPropagation(); openComponent(c); });
-          onKeyActivate(s);
-          sub.appendChild(s); c._subRow=s;
-        });
-        li.appendChild(sub);
-      } else if(devs.length===1){ devs[0]._subRow=null; }
-      head.addEventListener('click',()=>{
-        if(g.blank){ let u0=0; for(let u=UNITS;u>=1;u--) if(!occupied[u]){u0=u;break;} if(u0) openBlank(u0); return; }
-        if(devs.length===1){ openComponent(devs[0]); return; }
-        const exp=li.classList.toggle('exp');
-        head.setAttribute('aria-expanded',exp?'true':'false');
-      });
-      onKeyActivate(head);
-      ul.appendChild(li); g.el=li;
+    const ordered=components.slice().sort((a,b)=>{
+      const da=a.userData.def, db=b.userData.def;
+      if(!!da.feed!==!!db.feed) return da.feed?1:-1;      // rack devices first, rPDUs last
+      if(da.feed) return da.feed<db.feed?-1:1;
+      return db.u-da.u;                                    // top of rack downward
+    });
+    ordered.forEach(c=>{
+      const d=c.userData.def;
+      const li=document.createElement('li'); li.setAttribute('role','button'); li.tabIndex=0;
+      li.dataset.uid=d.uid;
+      const pos=d.feed? (d.feed+'-feed') : ('U'+(d.u-d.h+1)+(d.h>1?'–'+d.u:''));
+      const ffTxt=((META[d.cat]&&META[d.cat].ff)||'')+(d.critical?' · <span class="crit-tag">critical</span>':'');
+      li.innerHTML='<span class="sw" style="background:'+catColor(d)+'"></span>'+
+        '<div class="dev"><div class="nm">'+(d.critical?'★ ':'')+d.name+'</div>'+
+        '<div class="ff">'+ffTxt+'</div></div><span class="upos">'+pos+'</span>';
+      if(d.critical) li.setAttribute('aria-label',d.name+', '+pos+', critical component');
+      li._search=(d.name+' '+pos).toLowerCase();
+      li.addEventListener('click',()=>openComponent(c));
+      onKeyActivate(li);
+      ul.appendChild(li); c._subRow=li;
+    });
+    // one row for the blanking panels (report-only)
+    let blanks=0; for(let u=1;u<=UNITS;u++) if(!occupied[u]) blanks++;
+    blankRow=document.createElement('li'); blankRow.setAttribute('role','button'); blankRow.tabIndex=0;
+    blankRow.innerHTML='<span class="sw" style="background:#2a3445"></span>'+
+      '<div class="dev"><div class="nm">Blanking panels</div><div class="ff">1U snap-in · airflow</div></div>'+
+      '<span class="upos">×'+blanks+'</span>';
+    blankRow._search='blanking panel airflow';
+    blankRow.addEventListener('click',()=>{ let u0=0; for(let u=UNITS;u>=1;u--) if(!occupied[u]){u0=u;break;} if(u0) openBlank(u0); });
+    onKeyActivate(blankRow);
+    ul.appendChild(blankRow);
+    // search filters by device name or U-position
+    document.getElementById('expSearch').addEventListener('input',function(){
+      const q=this.value.trim().toLowerCase();
+      [...ul.children].forEach(li=>li.classList.toggle('hiddenrow', !!q && li._search.indexOf(q)<0));
     });
     document.getElementById('btnFullRack').addEventListener('click',()=>{ closeCardFlow(); });
   }
   function markSidebar(def){
-    GROUPS.forEach(g=>{ const on=def? (g.blank? def.cat==='blank' : !!(g.match&&g.match(def))) : false;
-      if(g.el){ g.el.classList.toggle('active',on); if(on&&!g.blank) g.el.classList.add('exp'); } });
-    components.forEach(c=>{ if(c._subRow) c._subRow.classList.toggle('active', !!def && c.userData.def===def); });
+    components.forEach(c=>{ if(c._subRow){ const on=!!def && c.userData.def===def;
+      c._subRow.classList.toggle('active',on);
+      c._subRow.setAttribute('aria-current',on?'true':'false'); } });
+    if(blankRow) blankRow.classList.toggle('active', !!def && def.cat==='blank');
   }
   function setGlow(c,on){ if(!c._parts || (c.userData.def&&c.userData.def.feed)) return;
     c._parts.forEach(pt=>{ if(pt.m.material&&pt.m.material.emissive){
@@ -1761,10 +1785,22 @@
   document.getElementById('btnFull').addEventListener('click',()=>{
     if(document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen(); });
   let training=false;
+  /* training mode keeps the current instruction visibly on screen, per step */
+  const TRAIN_HINTS={
+    1:'Select a component — click a ★ critical device in the rack, or pick one in the Equipment explorer.',
+    2:'Pull out — the chassis is sliding out of the rack on its rails.',
+    3:'Open chassis — the casing lifts away to reveal the internals.',
+    4:'Inspect internals — click an internal part in 3D, or use the Internals tab → Inspect.'};
+  function updateTrainHint(){
+    const el=document.getElementById('trainHint');
+    el.hidden=!training;
+    if(training) document.getElementById('trainHintTxt').innerHTML='<b>Step '+curStep+' · </b>'+TRAIN_HINTS[curStep];
+  }
   document.getElementById('btnTraining').addEventListener('click',function(){
     training=!training; this.classList.toggle('active',training);
-    toast(training?'Training mode ON — follow steps 1→4 in the header':'Training mode off');
-    if(training && !active){ toast('Step 1: click a ★ critical component to dissect it'); } });
+    this.setAttribute('aria-pressed',training?'true':'false');
+    updateTrainHint();
+    toast(training?'Training mode ON — follow steps 1→4':'Training mode off'); });
   const helpEl=document.getElementById('help');
   document.getElementById('btnHelp').addEventListener('click',()=>helpEl.classList.add('open'));
   document.getElementById('helpClose').addEventListener('click',()=>helpEl.classList.remove('open'));
@@ -1863,8 +1899,10 @@
     curTab = hasDis? 'internals':'overview';
     markSidebar(e); setStep(hasDis?2:1);
     renderCard(e,null);
-    document.getElementById('sidebar').classList.remove('open'); // declutter during dissection
-    document.getElementById('menuBtn').setAttribute('aria-expanded','false');
+    if(window.innerWidth<1200){ // small screens: the drawer would cover the scene
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('menuBtn').setAttribute('aria-expanded','false');
+    }
   }
   function collapseAll(){
     if(active){ setExplode(active,0); }
@@ -1903,7 +1941,7 @@
   const card=document.getElementById('card');
   const cardClass=document.getElementById('cardClass'), cardName=document.getElementById('cardName'),
         cardU=document.getElementById('cardU'), cardBody=document.getElementById('cardBody'),
-        cardBack=document.getElementById('cardBack'), cardBackTxt=document.getElementById('cardBackTxt');
+        crumbEl=document.getElementById('crumb');
   const tabs=[...document.querySelectorAll('.tab')];
   let curTab='overview', curReport=null, curPeri=null;
 
@@ -1911,11 +1949,27 @@
   function opName(k){return ({meta:'Meta',goog:'Google',aws:'AWS',x:'xAI',oai:'OpenAI',msft:'Microsoft',all:'Industry'})[k]||k;}
 
   function closeCard(){ renderRackOverview(); }
+  /* breadcrumb: Rack › chassis › internal part — every level navigates */
+  function renderCrumb(r,peri){
+    if(r.cat==='rack'){ crumbEl.innerHTML='<span class="cur">Rack</span>'; return; }
+    let h='<button data-lvl="rack">Rack</button><span class="sep">›</span>';
+    if(peri) h+='<button data-lvl="chassis">'+r.name+'</button><span class="sep">›</span><span class="cur" aria-current="page">'+peri.name+'</span>';
+    else h+='<span class="cur" aria-current="page">'+r.name+'</span>';
+    crumbEl.innerHTML=h;
+  }
+  crumbEl.addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    if(b.dataset.lvl==='rack'){ closeCardFlow(); return; }
+    if(b.dataset.lvl==='chassis'){ selectedPeri=null; curPeri=null; if(active){focusOn(active,true);}
+      curTab=(curReport&&curReport.peris&&curReport.peris.length)?'internals':'overview';
+      renderCard(curReport,null); }
+  });
   function renderCard(r,peri,uLabel){
     curReport=r; curPeri=peri;
     const m=META[r.cat]||META.rack;
-    cardBack.classList.toggle('show', !!peri);
-    if(peri) cardBackTxt.textContent='Back to '+r.name;
+    renderCrumb(r,peri);
+    try{ renderer.domElement.setAttribute('role','img'); // textual alternative for the 3D scene
+      renderer.domElement.setAttribute('aria-label','3D rack viewport — showing '+(peri? peri.name+' inside '+r.name : r.name)); }catch(e2){}
     cardName.textContent = peri? peri.name : r.name;
     let ch;
     if(peri){ ch=[['c1',(peri.kind||'part').toUpperCase()],['c2','INSIDE: '+r.name.toUpperCase().slice(0,24)]]; }
@@ -1950,14 +2004,14 @@
       if(curTab==='specs'){ html+='<h4>Specs — '+p.name+'</h4>'+(p.specs||[]).map(s=>'<div class="spec"><span class="k">'+s[0]+'</span><span class="v">'+s[1]+'</span></div>').join('');
         html+='<h4 style="margin-top:16px">Host component</h4>'+(r.specs||[]).slice(0,4).map(s=>'<div class="spec"><span class="k">'+s[0]+'</span><span class="v">'+s[1]+'</span></div>').join(''); }
       if(curTab==='internals'){ html+=internalsGrid(r); }
-      if(curTab==='vendors'){ html+='<h4>Who makes it</h4>'+(p.vendors||[]).map(v=>'<div class="vend"><div class="n">'+v[0]+'</div>'+(v[1]?'<div class="d">'+v[1]+'</div>':'')+'</div>').join('');
+      if(curTab==='vendors'){ html+='<h4>Who makes it</h4><p class="vendnote">Training reference only — not a procurement recommendation.</p>'+(p.vendors||[]).map(v=>'<div class="vend"><div class="n">'+v[0]+'</div>'+(v[1]?'<div class="d">'+v[1]+'</div>':'')+'</div>').join('');
         html+='<p style="margin-top:12px;color:var(--muted);font-size:11.5px">Part of <b style="color:#fff">'+r.name+'</b> — open its Vendors tab for hyperscaler deployments.</p>'+courseCTA(r); }
     } else {
       if(curTab==='overview'){ html+='<p>'+r.summary+'</p>'+whyBox(r)+courseCTA(r); }
       if(curTab==='specs'){ html+='<h4>Specifications</h4>'+(r.specs||[]).map(s=>'<div class="spec"><span class="k">'+s[0]+'</span><span class="v">'+s[1]+'</span></div>').join('');
         html+='<p style="margin-top:12px;color:var(--muted);font-size:11.3px">Rack mechanical/thermal figures per EIA-310-D &amp; ASHRAE TC9.9 (project Spec Library). Density &amp; vendor figures: 2026 industry landscape.</p>'; }
       if(curTab==='internals'){ html+=internalsGrid(r)+whyBox(r); }
-      if(curTab==='vendors'){ html+='<h4>Global vendors</h4>'+(r.vendors||[]).map(v=>'<div class="vend"><div class="n">'+v[0]+'</div>'+(v[1]?'<div class="d">'+v[1]+'</div>':'')+'</div>').join('');
+      if(curTab==='vendors'){ html+='<h4>Global vendors</h4><p class="vendnote">Training reference only — not a procurement recommendation.</p>'+(r.vendors||[]).map(v=>'<div class="vend"><div class="n">'+v[0]+'</div>'+(v[1]?'<div class="d">'+v[1]+'</div>':'')+'</div>').join('');
         if(r.deploys&&r.deploys.length){ html+='<h4>How the hyperscalers deploy it</h4>'+r.deploys.map(d=>'<div class="dep"><span class="op '+opClass(d[0])+'">'+opName(d[0])+'</span><span class="t">'+d[1]+'</span></div>').join('');
           html+='<p style="margin-top:12px;color:var(--muted);font-size:11.3px">Deployment data reflects operational &amp; under-construction US AI infrastructure as of 2026.</p>'; }
         html+=courseCTA(r); }
@@ -1984,9 +2038,6 @@
   }
 
   tabs.forEach(t=>t.addEventListener('click',()=>{curTab=t.dataset.tab;drawTab();}));
-  cardBack.addEventListener('click',()=>{ selectedPeri=null; curPeri=null; if(active){focusOn(active,true);}
-    curTab=(curReport&&curReport.peris&&curReport.peris.length)?'internals':'overview'; // back to the parts grid
-    renderCard(curReport,null); });
   document.getElementById('cardMin').addEventListener('click',function(){
     const min=card.classList.toggle('min');
     this.textContent=min?'▸':'▾'; this.setAttribute('aria-expanded',min?'false':'true');
@@ -2040,12 +2091,20 @@
         btnAir=document.getElementById('btnAir'),btnLabels=document.getElementById('btnLabels'),
         btnU=document.getElementById('btnU'),btnReset=document.getElementById('btnReset'),btnExit=document.getElementById('btnExit');
   function setRotate(v){autoRotate=v;btnRotate.classList.toggle('on',v);btnRotate.setAttribute('aria-pressed',v?'true':'false');}
-  /* keyboard semantics for the clickable-div control dock */
+  /* keyboard semantics + accessible names for the clickable-div control dock
+     (compact layouts hide the text, so the name must survive as aria-label/title) */
   document.querySelectorAll('#controls .ctl').forEach(el=>{
     el.setAttribute('role','button'); el.tabIndex=0;
+    const nm=el.textContent.replace(/\s+/g,' ').trim();
+    if(nm){ el.setAttribute('aria-label',nm); el.title=nm; }
     if(el.querySelector('.switch')) el.setAttribute('aria-pressed',el.classList.contains('on')?'true':'false');
     onKeyActivate(el);
   });
+  /* desktop: the equipment explorer is a persistent panel by default */
+  if(window.innerWidth>=1200){
+    document.getElementById('sidebar').classList.add('open');
+    document.getElementById('menuBtn').setAttribute('aria-expanded','true');
+  }
   /* view-mode dim: save/restore each material's own transparency state —
      forcing transparent=false on restore corrupts ghost covers, fading walls
      and the contact-shadow planes (they render as solid black slabs) */
