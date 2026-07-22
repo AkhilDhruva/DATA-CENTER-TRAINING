@@ -1959,7 +1959,14 @@
         btnAir=document.getElementById('btnAir'),btnLabels=document.getElementById('btnLabels'),
         btnU=document.getElementById('btnU'),btnReset=document.getElementById('btnReset'),btnExit=document.getElementById('btnExit');
   function setRotate(v){autoRotate=v;btnRotate.classList.toggle('on',v);}
-  function dimMesh(o,on){ if(!o.material)return; o.material.opacity=on?1:0.1; o.material.transparent=!on; }
+  /* view-mode dim: save/restore each material's own transparency state —
+     forcing transparent=false on restore corrupts ghost covers, fading walls
+     and the contact-shadow planes (they render as solid black slabs) */
+  function dimMesh(o,on){ if(!o.material)return; const m2=o.material;
+    if(on){ const p=m2.userData._preMode;
+      if(p){ m2.transparent=p.t; m2.opacity=p.o; m2.depthWrite=p.dw; delete m2.userData._preMode; } }
+    else { if(m2.userData._preMode===undefined) m2.userData._preMode={t:m2.transparent,o:m2.opacity,dw:m2.depthWrite};
+      m2.transparent=true; m2.opacity=0.1; m2.depthWrite=false; } }
   function setMode(m){
     mode=(mode===m)?'all':m;
     btnPower.classList.toggle('active',mode==='power'); btnAir.classList.toggle('active',mode==='air');
