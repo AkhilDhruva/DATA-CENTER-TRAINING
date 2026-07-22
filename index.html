@@ -44,8 +44,9 @@
   #btnTraining.active,#btnHelp.active{border-color:var(--accent);color:#fff}
   /* ---------- sidebar ---------- */
   #sidebar{top:80px;left:16px;width:252px;background:rgba(13,19,28,.92);border:1px solid var(--line);
-    border-radius:var(--rad);padding:14px;z-index:8;backdrop-filter:blur(6px)}
-  #sidebar.hide{display:none}
+    border-radius:var(--rad);padding:14px;z-index:14;backdrop-filter:blur(6px);display:none;
+    max-height:calc(100vh - 180px);overflow-y:auto}
+  #sidebar.open{display:block}
   #sidebar h2{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:2px 0 10px}
   #rackList{list-style:none;margin:0;padding:0}
   #rackList li{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:10px;border:1px solid transparent;
@@ -58,6 +59,27 @@
   #btnFullRack{width:100%;margin-top:10px;background:var(--panel2);border:1px solid var(--line2);color:var(--ink);
     border-radius:10px;padding:10px;font-size:12.3px;cursor:pointer}
   #btnFullRack:hover{border-color:var(--accent)}
+  /* expandable per-device rows */
+  #rackList li.grp{display:block;padding:0;border:0}
+  #rackList li.grp:hover,#rackList li.grp.active{background:transparent}
+  #rackList .ghead{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:10px;
+    border:1px solid transparent;cursor:pointer;font-size:12.3px;color:#cdd8e6;line-height:1.3;
+    transition:background .15s,border-color .15s}
+  #rackList .ghead:hover{background:#141d2b}
+  #rackList li.grp.active .ghead{border-color:var(--accent);background:#10222c;color:#fff}
+  #rackList .chevr{color:var(--muted);font-size:9px;flex:0 0 auto;transition:transform .15s}
+  #rackList li.grp.exp .chevr{transform:rotate(90deg)}
+  #rackList .sub{list-style:none;margin:2px 0 4px;padding:0 0 0 16px;display:none}
+  #rackList li.grp.exp .sub{display:block}
+  #rackList .sub li{display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:11.8px;
+    border-radius:8px;border:1px solid transparent;cursor:pointer;color:#b9c7d6}
+  #rackList .sub li:hover{background:#141d2b}
+  #rackList .sub li.active{border-color:var(--accent);background:#10222c;color:#fff}
+  #rackList .sub .upos{margin-left:auto;color:var(--muted);font-size:10.5px;font-variant-numeric:tabular-nums;flex:0 0 auto}
+  /* keyboard focus */
+  .iconbtn:focus-visible,.ctl:focus-visible,#rackList .ghead:focus-visible,#rackList .sub li:focus-visible,
+  .tab:focus-visible,#btnFullRack:focus-visible,#cardClose:focus-visible,#cardMin:focus-visible{
+    outline:2px solid var(--accent);outline-offset:2px}
   /* ---------- controls ---------- */
   #controls{top:80px;right:472px;width:220px;display:flex;flex-direction:column;gap:4px;
     background:rgba(13,19,28,.92);border:1px solid var(--line);border-radius:var(--rad);padding:9px;z-index:8;backdrop-filter:blur(6px)}
@@ -86,6 +108,11 @@
   #cardClose{position:absolute;top:14px;right:14px;background:none;border:1px solid var(--line2);color:var(--muted);
     width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:14px;line-height:1}
   #cardClose:hover{border-color:var(--accent);color:#fff}
+  #cardMin{position:absolute;top:14px;right:48px;background:none;border:1px solid var(--line2);color:var(--muted);
+    width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:12px;line-height:1}
+  #cardMin:hover{border-color:var(--accent);color:#fff}
+  #card.min{bottom:auto;height:auto}
+  #card.min #tabs,#card.min #cardBody,#card.min #cardChips,#card.min #roleRow{display:none}
   #cardChips{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
   .chip2{font-size:10.3px;letter-spacing:.05em;padding:4px 10px;border-radius:8px;border:1px solid;white-space:nowrap}
   .chip2.c1{color:var(--accent);border-color:rgba(47,210,245,.45);background:rgba(47,210,245,.07)}
@@ -157,6 +184,8 @@
   .lbl{position:absolute;transform:translate(-50%,-50%);font-size:10px;color:var(--ink);
     background:rgba(10,14,20,.82);border:1px solid var(--line);padding:2px 6px;border-radius:5px;
     pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .18s}
+  .lbl.on{pointer-events:auto;cursor:pointer}
+  .lbl.on:hover{border-color:var(--accent);color:#fff}
   .lbl.crit{border-color:rgba(255,84,112,.55)}
   .peri-lbl{position:absolute;transform:translate(-50%,-150%);font-size:10.5px;color:#fff;
     background:rgba(13,19,28,.95);border:1px solid var(--line2);padding:3px 9px;border-radius:7px;
@@ -193,14 +222,25 @@
   /* ---------- responsive ---------- */
   /* Desktop: sidebar + viewport + controls + inspector */
   @media (max-width:1560px){#stepper .step .txt{display:none}#stepper{gap:6px;padding:7px 12px}}
-  @media (max-width:1440px){#sidebar{display:none}}
   /* Tablet / iPad: viewport dominant, icon control dock, inspector docks bottom */
   @media (max-width:1100px){
     #controls{right:16px;top:80px;width:56px;padding:7px;gap:6px}
     #controls .ctl{justify-content:center;padding:10px 0;font-size:0}
     #controls .ctl .end,#controls .ctl .switch{display:none}
     #card{top:auto;left:16px;right:16px;width:auto;height:44vh;bottom:16px}
+    #card.min{top:auto;height:auto}
+    #sidebar{max-height:calc(100vh - 60vh)}
     #bottombar{display:none}#brand p{display:none}
+  }
+  /* Phone: compact header, no stepper, icon-only actions */
+  @media (max-width:760px){
+    #topbar{gap:8px;padding:0 8px}
+    #stepper{display:none}
+    #brand h1{font-size:13px;overflow:hidden;text-overflow:ellipsis;max-width:34vw}
+    #btnTraining,#btnHelp{font-size:0;gap:0;padding:0;min-width:40px;justify-content:center}
+    #topActions{gap:6px;flex:0 0 auto}
+    #sidebar{left:10px;width:min(260px,calc(100vw - 20px))}
+    #card{left:10px;right:10px;height:42vh;bottom:10px}
   }
 </style>
 </head>
@@ -208,7 +248,7 @@
 <div id="app" data-component="ThreeDViewport"></div><!-- AppShell: absolute HUD panels over the viewport -->
 
 <header id="topbar" class="hud" data-component="TopHeader">
-  <button class="iconbtn sq" id="menuBtn" title="Toggle rack contents"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+  <button class="iconbtn sq" id="menuBtn" title="Toggle rack contents" aria-expanded="false" aria-controls="sidebar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
   <div id="brand">
     <div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 7l8-4 8 4-8 4-8-4z"/><path d="M4 12l8 4 8-4"/><path d="M4 17l8 4 8-4"/></svg></div>
     <div><h1>Interactive 42U AI Data Center Rack</h1><p>Vendor &amp; Deployment Training · Critical Component Dissection</p></div>
@@ -226,7 +266,7 @@
   </div>
 </header>
 
-<aside id="sidebar" class="hud hide" data-component="RackContentsSidebar"><!-- hidden by default: keep the rack render clean; menu button toggles -->
+<aside id="sidebar" class="hud" data-component="RackContentsSidebar"><!-- closed by default at every width: menu button toggles .open -->
   <h2>Rack contents</h2>
   <ul id="rackList"></ul>
   <button id="btnFullRack">⤢&nbsp; View full rack</button>
@@ -248,6 +288,7 @@
     <h3 id="cardName">—</h3>
     <div id="cardChips"></div>
     <div id="roleRow"></div>
+    <button id="cardMin" title="Collapse panel" aria-expanded="true">▾</button>
     <button id="cardClose" title="Back to rack overview">✕</button>
   </div>
   <div id="tabs">
@@ -1589,7 +1630,10 @@
     course:'L4',peris:[]};
 
   /* -------- HTML labels + U ruler -------- */
-  labelData.forEach(L=>{const el=document.createElement('div');el.className='lbl'+(L.crit?' crit':'');el.textContent=(L.crit?'★ ':'')+L.text;app.appendChild(el);L.el=el;});
+  labelData.forEach(L=>{const el=document.createElement('div');el.className='lbl'+(L.crit?' crit':'');el.textContent=(L.crit?'★ ':'')+L.text;
+    el.setAttribute('role','button'); el.title='Select '+L.text;
+    el.addEventListener('click',()=>openComponent(L.obj)); // labels are reliable select targets — no click-through to the mesh behind
+    app.appendChild(el);L.el=el;});
   for(let u=1;u<=UNITS;u++){if(u===1||u%5===0||u===UNITS){
     const el=document.createElement('div');el.className='uruler';el.textContent='U'+u;app.appendChild(el);
     uTicks.push({y:yForBlock(u,1),x:-(RACK_W/2)-0.2,el});
@@ -1639,7 +1683,7 @@
     else { bbPos.textContent='—'; bbU.textContent='42U (73.5 in)'; bbSize.textContent='600 × 1200 mm'; }
     bbDepth.textContent=m.depth; bbWeight.textContent=m.weight;
   }
-  function renderRackOverview(){ if(!active) setStep(1); renderCard(RACKREPORT,null); markSidebar(null); }
+  function renderRackOverview(){ if(!active) setStep(1); curTab='overview'; renderCard(RACKREPORT,null); markSidebar(null); }
 
   const GROUPS=[
     {label:'AI GPU compute node (GB200-class)',color:'#ff5470',match:d=>d.cat==='gpu'},
@@ -1649,25 +1693,49 @@
     {label:'Blanking panel (empty U)',color:'#2a3445',blank:true},
     {label:'rPDU A-feed',color:'#ff8c32',match:d=>d.feed==='A'},
     {label:'rPDU B-feed',color:'#36c2ff',match:d=>d.feed==='B'}];
+  function onKeyActivate(el){ el.addEventListener('keydown',e=>{
+    if(e.key==='Enter'||e.key===' '){ e.preventDefault(); el.click(); } }); }
   function buildSidebar(){
     const ul=document.getElementById('rackList'); ul.innerHTML='';
     GROUPS.forEach((g,gi)=>{
+      const devs = g.blank? [] : components.filter(c=>g.match(c.userData.def));
       let cnt;
       if(g.blank){ cnt=0; for(let u=1;u<=UNITS;u++) if(!occupied[u]) cnt++; }
-      else cnt=components.filter(c=>g.match(c.userData.def)).length;
-      const li=document.createElement('li');
-      li.innerHTML='<span class="sw" style="background:'+g.color+'"></span><span>'+g.label+'</span><span class="cnt">'+cnt+'</span>';
-      li.addEventListener('click',()=>{
-        if(g.blank){ let u0=0; for(let u=UNITS;u>=1;u--) if(!occupied[u]){u0=u;break;} if(u0) openBlank(u0); }
-        else { const c=components.find(cc=>g.match(cc.userData.def)); if(c) openComponent(c); }
+      else cnt=devs.length;
+      const li=document.createElement('li'); li.className='grp';
+      const head=document.createElement('div'); head.className='ghead';
+      head.setAttribute('role','button'); head.tabIndex=0;
+      head.innerHTML='<span class="sw" style="background:'+g.color+'"></span><span>'+g.label+'</span>'+
+        '<span class="cnt">'+cnt+'</span>'+(devs.length>1?'<span class="chevr">▶</span>':'');
+      li.appendChild(head);
+      if(devs.length>1){ // expandable: one row per installed device, U-position shown
+        const sub=document.createElement('ul'); sub.className='sub';
+        devs.forEach(c=>{
+          const d=c.userData.def;
+          const s=document.createElement('li'); s.setAttribute('role','button'); s.tabIndex=0;
+          const pos=d.feed? (d.feed+'-feed') : ('U'+(d.u-d.h+1)+(d.h>1?'–'+d.u:''));
+          s.innerHTML='<span>'+(d.critical?'★ ':'')+d.name+'</span><span class="upos">'+pos+'</span>';
+          s.addEventListener('click',ev=>{ ev.stopPropagation(); openComponent(c); });
+          onKeyActivate(s);
+          sub.appendChild(s); c._subRow=s;
+        });
+        li.appendChild(sub);
+      } else if(devs.length===1){ devs[0]._subRow=null; }
+      head.addEventListener('click',()=>{
+        if(g.blank){ let u0=0; for(let u=UNITS;u>=1;u--) if(!occupied[u]){u0=u;break;} if(u0) openBlank(u0); return; }
+        if(devs.length===1){ openComponent(devs[0]); return; }
+        const exp=li.classList.toggle('exp');
+        head.setAttribute('aria-expanded',exp?'true':'false');
       });
+      onKeyActivate(head);
       ul.appendChild(li); g.el=li;
     });
     document.getElementById('btnFullRack').addEventListener('click',()=>{ closeCardFlow(); });
   }
   function markSidebar(def){
     GROUPS.forEach(g=>{ const on=def? (g.blank? def.cat==='blank' : !!(g.match&&g.match(def))) : false;
-      if(g.el) g.el.classList.toggle('active',on); });
+      if(g.el){ g.el.classList.toggle('active',on); if(on&&!g.blank) g.el.classList.add('exp'); } });
+    components.forEach(c=>{ if(c._subRow) c._subRow.classList.toggle('active', !!def && c.userData.def===def); });
   }
   function setGlow(c,on){ if(!c._parts || (c.userData.def&&c.userData.def.feed)) return;
     c._parts.forEach(pt=>{ if(pt.m.material&&pt.m.material.emissive){
@@ -1687,7 +1755,9 @@
   function toast(msg){ toastEl.textContent=msg; toastEl.classList.add('show');
     clearTimeout(toastEl._t); toastEl._t=setTimeout(()=>toastEl.classList.remove('show'),2600); }
 
-  document.getElementById('menuBtn').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('hide'));
+  document.getElementById('menuBtn').addEventListener('click',function(){
+    const open=document.getElementById('sidebar').classList.toggle('open');
+    this.setAttribute('aria-expanded',open?'true':'false'); });
   document.getElementById('btnFull').addEventListener('click',()=>{
     if(document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen(); });
   let training=false;
@@ -1793,6 +1863,8 @@
     curTab = hasDis? 'internals':'overview';
     markSidebar(e); setStep(hasDis?2:1);
     renderCard(e,null);
+    document.getElementById('sidebar').classList.remove('open'); // declutter during dissection
+    document.getElementById('menuBtn').setAttribute('aria-expanded','false');
   }
   function collapseAll(){
     if(active){ setExplode(active,0); }
@@ -1810,16 +1882,17 @@
     const hit=ray.intersectObjects(vis,false);
     if(!hit.length) return;
     const pick=hit[0].object.userData.pick;
-    if(pick.type==='blank'){ active=null; collapseAll(); openBlank(pick.u); return; }
+    if(pick.type==='blank'){ openBlank(pick.u); return; }
     if(pick.type==='comp'){ openComponent(pick.comp); return; }
     if(pick.type==='peri'){
       if(active!==pick.comp){ openComponent(pick.comp); }
-      selectedPeri=pick.peri; renderCard(pick.comp.userData.def, pick.peri); focusOn(pick.comp,true); setStep(4);
+      selectedPeri=pick.peri; curTab='overview'; // inspecting a part opens its story, not the grid
+      renderCard(pick.comp.userData.def, pick.peri); focusOn(pick.comp,true); setStep(4);
     }
   });
 
   function openBlank(u){
-    active=null; selectedPeri=null; defaultView();
+    collapseAll(); // retract any dissected chassis before switching to the blank report
     const r=Object.assign({},blankReport,{u:u,h:1}); curTab='overview';
     markSidebar(r); setStep(1); renderCard(r,null);
   }
@@ -1894,7 +1967,9 @@
     cardBody.querySelectorAll('[data-peri]').forEach(btn=>btn.addEventListener('click',()=>{
       const r2=curReport; const comp=components.find(cc=>cc.userData.def===r2); if(!comp) return;
       if(active!==comp) openComponent(comp);
-      selectedPeri=r2.peris[+btn.dataset.peri]; renderCard(r2,selectedPeri); focusOn(comp,true); setStep(4);
+      selectedPeri=r2.peris[+btn.dataset.peri];
+      curTab='overview'; // Inspect jumps straight to the part's explanation; breadcrumb returns to the chassis
+      renderCard(r2,selectedPeri); focusOn(comp,true); setStep(4);
     }));
   }
   function courseCTA(r){
@@ -1909,7 +1984,13 @@
   }
 
   tabs.forEach(t=>t.addEventListener('click',()=>{curTab=t.dataset.tab;drawTab();}));
-  cardBack.addEventListener('click',()=>{ selectedPeri=null; curPeri=null; if(active){focusOn(active,true);} renderCard(curReport,null); });
+  cardBack.addEventListener('click',()=>{ selectedPeri=null; curPeri=null; if(active){focusOn(active,true);}
+    curTab=(curReport&&curReport.peris&&curReport.peris.length)?'internals':'overview'; // back to the parts grid
+    renderCard(curReport,null); });
+  document.getElementById('cardMin').addEventListener('click',function(){
+    const min=card.classList.toggle('min');
+    this.textContent=min?'▸':'▾'; this.setAttribute('aria-expanded',min?'false':'true');
+    this.title=min?'Expand panel':'Collapse panel'; });
   document.getElementById('cardClose').addEventListener('click',()=>{closeCardFlow();});
 
   /* course overlay */
@@ -1958,7 +2039,13 @@
   const btnRotate=document.getElementById('btnRotate'),btnPower=document.getElementById('btnPower'),
         btnAir=document.getElementById('btnAir'),btnLabels=document.getElementById('btnLabels'),
         btnU=document.getElementById('btnU'),btnReset=document.getElementById('btnReset'),btnExit=document.getElementById('btnExit');
-  function setRotate(v){autoRotate=v;btnRotate.classList.toggle('on',v);}
+  function setRotate(v){autoRotate=v;btnRotate.classList.toggle('on',v);btnRotate.setAttribute('aria-pressed',v?'true':'false');}
+  /* keyboard semantics for the clickable-div control dock */
+  document.querySelectorAll('#controls .ctl').forEach(el=>{
+    el.setAttribute('role','button'); el.tabIndex=0;
+    if(el.querySelector('.switch')) el.setAttribute('aria-pressed',el.classList.contains('on')?'true':'false');
+    onKeyActivate(el);
+  });
   /* view-mode dim: save/restore each material's own transparency state —
      forcing transparent=false on restore corrupts ghost covers, fading walls
      and the contact-shadow planes (they render as solid black slabs) */
@@ -1969,7 +2056,9 @@
       m2.transparent=true; m2.opacity=0.1; m2.depthWrite=false; } }
   function setMode(m){
     mode=(mode===m)?'all':m;
+    if(active && mode!=='all') collapseAll(); // a rack-wide view over a dissected chassis reads as corruption
     btnPower.classList.toggle('active',mode==='power'); btnAir.classList.toggle('active',mode==='air');
+    btnPower.setAttribute('aria-pressed',mode==='power'); btnAir.setAttribute('aria-pressed',mode==='air');
     // dim frame components by category
     components.forEach(comp=>{
       const cat=comp.userData.def.cat; let on=true;
@@ -1989,8 +2078,8 @@
   btnRotate.onclick=()=>setRotate(!autoRotate);
   btnPower.onclick=()=>setMode('power');
   btnAir.onclick=()=>setMode('air');
-  btnLabels.onclick=()=>{showLabels=!showLabels;btnLabels.classList.toggle('on',showLabels);};
-  btnU.onclick=()=>{showU=!showU;btnU.classList.toggle('on',showU);};
+  btnLabels.onclick=()=>{showLabels=!showLabels;btnLabels.classList.toggle('on',showLabels);btnLabels.setAttribute('aria-pressed',showLabels?'true':'false');};
+  btnU.onclick=()=>{showU=!showU;btnU.classList.toggle('on',showU);btnU.setAttribute('aria-pressed',showU?'true':'false');};
   btnExit.onclick=()=>{closeCardFlow();};
   btnReset.onclick=()=>{
     mode='all'; setMode('all'); mode='all';
@@ -2065,11 +2154,12 @@
   function updateLabels(){
     labelData.forEach(L=>{
       const showComp = active ? active===L.obj : showLabels; // dissection: selected label always; otherwise honor the toggle
-      if(!showComp){L.el.style.opacity=0;}
+      if(!showComp){L.el.style.opacity=0;L.el.classList.remove('on');}
       else{
         L.obj.getWorldPosition(_v); _v.x-=2.2; _v.project(camera);
         const on=_v.z<1;
         L.el.style.opacity=on?1:0;
+        L.el.classList.toggle('on',on); // only visible labels take pointer events
         L.el.style.left=((_v.x*0.5+0.5)*window.innerWidth)+'px';
         L.el.style.top=((-_v.y*0.5+0.5)*window.innerHeight)+'px';
       }
