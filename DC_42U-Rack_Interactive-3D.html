@@ -1,9 +1,75 @@
 <!DOCTYPE html>
+<!--
+===============================================================================
+  INTERACTIVE 42U AI DATA CENTER RACK
+  Rack to Runtime — Vendor & Deployment Training Courseware
+
+  Copyright (c) 2026 Akhil Gaddam. All rights reserved.
+
+  Author / sole copyright holder : Akhil Gaddam
+  Work first created             : 2026-07-04
+  Canonical repository           : github.com/AkhilDhruva/DATA-CENTER-TRAINING
+  Canonical deployment           : data-center-training.vercel.app
+
+  PROPRIETARY AND CONFIDENTIAL. This file is licensed, not sold. Viewing this
+  source in a browser grants no right to copy, modify, redistribute, host,
+  rebrand, or commercially exploit it, in whole or in part. See the LICENSE
+  file in the canonical repository for the full terms.
+
+  The authorship and provenance notices embedded in this Work — including this
+  header, the document metadata, the structured data, and the rendered viewport
+  watermark — constitute copyright management information. Removing or altering
+  them is a separate violation under 17 U.S.C. 1202 and its international
+  equivalents, independent of the underlying infringement.
+
+  Licensing, teaching-rights, and partnership enquiries are welcome via the
+  canonical repository.
+===============================================================================
+-->
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Interactive 42U AI Data Center Rack — Rack to Runtime</title>
+
+<!-- ownership & provenance metadata -->
+<meta name="author" content="Akhil Gaddam" />
+<meta name="copyright" content="Copyright (c) 2026 Akhil Gaddam. All rights reserved." />
+<meta name="license" content="Proprietary — All Rights Reserved. See LICENSE." />
+<meta name="description" content="Interactive 3D 42U AI data center rack trainer with critical-component dissection. Created and owned by Akhil Gaddam." />
+<meta name="robots" content="index, follow, noarchive" />
+<link rel="license" href="/LICENSE" />
+<link rel="author" href="/humans.txt" />
+<meta name="dcterms.rightsHolder" content="Akhil Gaddam" />
+<meta name="dcterms.creator" content="Akhil Gaddam" />
+<meta name="dcterms.created" content="2026-07-04" />
+<meta name="dcterms.rights" content="Copyright (c) 2026 Akhil Gaddam. All rights reserved." />
+<meta property="og:title" content="Interactive 42U AI Data Center Rack" />
+<meta property="og:description" content="Interactive 3D rack trainer with critical-component dissection — by Akhil Gaddam." />
+<meta property="og:site_name" content="Rack to Runtime — Akhil Gaddam" />
+<meta property="article:author" content="Akhil Gaddam" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Interactive 42U AI Data Center Rack",
+  "alternateName": "Rack to Runtime — Critical Component Dissection",
+  "applicationCategory": "EducationalApplication",
+  "operatingSystem": "Any modern web browser",
+  "url": "https://data-center-training.vercel.app",
+  "codeRepository": "https://github.com/AkhilDhruva/DATA-CENTER-TRAINING",
+  "author": { "@type": "Person", "name": "Akhil Gaddam" },
+  "creator": { "@type": "Person", "name": "Akhil Gaddam" },
+  "copyrightHolder": { "@type": "Person", "name": "Akhil Gaddam" },
+  "copyrightYear": 2026,
+  "copyrightNotice": "Copyright (c) 2026 Akhil Gaddam. All rights reserved.",
+  "dateCreated": "2026-07-04",
+  "license": "https://github.com/AkhilDhruva/DATA-CENTER-TRAINING/blob/main/LICENSE",
+  "usageInfo": "Proprietary. All rights reserved. No copying, redistribution, rehosting, rebranding, or derivative use without the prior written permission of Akhil Gaddam.",
+  "isAccessibleForFree": true,
+  "inLanguage": "en"
+}
+</script>
 <style>
   :root{
     --bg:#070b12; --panel:#0d131d; --panel2:#111927; --line:#1e2a3b; --line2:#27364a;
@@ -45,7 +111,7 @@
   /* ---------- sidebar ---------- */
   #sidebar{top:80px;left:16px;width:252px;background:rgba(13,19,28,.92);border:1px solid var(--line);
     border-radius:var(--rad);padding:14px;z-index:14;backdrop-filter:blur(6px);display:none;
-    max-height:calc(100vh - 180px);overflow-y:auto}
+    max-height:calc(100vh - 215px);overflow-y:auto} /* stops clear of the authorship mark */
   #sidebar.open{display:block}
   #sidebar h2{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:2px 0 10px}
   #rackList{list-style:none;margin:0;padding:0}
@@ -201,6 +267,27 @@
     pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .2s}
   #err{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
     color:var(--muted);font-size:13px;text-align:center;padding:40px}
+  /* ---------- authorship mark (copyright management information) ---------- */
+  #brand .byline{color:#9db4cc}
+  #owner{left:16px;bottom:94px;z-index:11;display:flex;align-items:center;gap:6px;
+    background:rgba(10,14,20,.78);border:1px solid var(--line2);border-radius:8px;
+    padding:4px 6px 4px 9px;font-size:11px;color:#a9bccf;backdrop-filter:blur(6px);
+    user-select:none;letter-spacing:.01em}
+  #owner .oc{color:var(--accent);font-size:12px}
+  #owner .on{font-weight:600;color:#dbe6f2;white-space:nowrap}
+  #owner button{background:none;border:0;color:var(--muted);cursor:pointer;font-size:11px;
+    padding:1px 3px;border-radius:5px;line-height:1}
+  #owner button:hover{color:var(--accent)}
+  #owner button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  @media (max-width:1100px){#owner{bottom:auto;top:74px;left:16px}}
+  @media (max-width:760px){#owner{top:70px;left:10px;font-size:10px;padding:3px 5px 3px 7px}}
+  #ownBox .oline{display:flex;justify-content:space-between;gap:14px;padding:6px 0;
+    border-bottom:1px solid #172130;font-size:12.8px}
+  #ownBox .oline .k{color:var(--muted);flex:0 0 auto}
+  #ownBox .oline .v{color:#fff;text-align:right;word-break:break-word}
+  #ownBox .legal{margin-top:16px;background:var(--panel2);border:1px solid var(--line2);
+    border-left:3px solid var(--crit);border-radius:9px;padding:12px 14px;font-size:12.4px;
+    line-height:1.6;color:#cdd8e6}
   #trainHint{top:72px;left:50%;transform:translateX(-50%);background:rgba(13,19,28,.95);border:1px solid var(--accent);
     color:#dbe6f2;font-size:12.5px;padding:8px 16px;border-radius:10px;z-index:13;max-width:min(560px,90vw);text-align:center}
   #trainHint b{color:var(--accent)}
@@ -209,20 +296,20 @@
     opacity:0;transition:.25s;z-index:30;pointer-events:none}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   /* ---------- overlays ---------- */
-  #course,#help{position:fixed;inset:0;background:rgba(6,9,14,.72);display:none;align-items:center;
-    justify-content:center;z-index:20;padding:24px;backdrop-filter:blur(3px)}
-  #course.open,#help.open{display:flex}
-  #courseBox,#helpBox{background:var(--panel);border:1px solid var(--line);border-radius:16px;max-width:640px;
+  #course,#help,#own{position:fixed;inset:0;background:rgba(6,9,14,.72);display:none;align-items:center;
+    justify-content:center;z-index:22;padding:24px;backdrop-filter:blur(3px)}
+  #course.open,#help.open,#own.open{display:flex}
+  #courseBox,#helpBox,#ownBox{background:var(--panel);border:1px solid var(--line);border-radius:16px;max-width:640px;
     width:100%;max-height:86vh;overflow-y:auto;padding:26px 28px}
   #courseBox .kick{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
   #courseBox h2{margin:6px 0 2px;font-size:21px}
   #courseBox .prog{color:var(--muted);font-size:12.5px;margin-bottom:14px}
-  #courseBox h3,#helpBox h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 0 8px}
-  #courseBox p,#helpBox p{font-size:13.5px;line-height:1.6;color:#cdd8e6;margin:0 0 10px}
+  #courseBox h3,#helpBox h3,#ownBox h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 0 8px}
+  #courseBox p,#helpBox p,#ownBox p{font-size:13.5px;line-height:1.6;color:#cdd8e6;margin:0 0 10px}
   #courseBox .obj{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--accent);
     border-radius:9px;padding:12px 14px;font-size:13px;color:#dbe6f2}
   #courseBox .foot{margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  #courseClose,#helpClose{background:var(--accent);border:0;color:#04121c;font-weight:700;border-radius:9px;
+  #courseClose,#helpClose,#ownClose{background:var(--accent);border:0;color:#04121c;font-weight:700;border-radius:9px;
     padding:10px 18px;cursor:pointer;font-size:13px}
   #helpBox ul{margin:0;padding-left:18px;font-size:13px;line-height:1.8;color:#cdd8e6}
   /* ---------- responsive ---------- */
@@ -262,7 +349,7 @@
   <button class="iconbtn sq" id="menuBtn" title="Toggle rack contents" aria-expanded="false" aria-controls="sidebar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
   <div id="brand">
     <div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 7l8-4 8 4-8 4-8-4z"/><path d="M4 12l8 4 8-4"/><path d="M4 17l8 4 8-4"/></svg></div>
-    <div><h1>Interactive 42U AI Data Center Rack</h1><p>Vendor &amp; Deployment Training · Critical Component Dissection</p></div>
+    <div><h1>Interactive 42U AI Data Center Rack</h1><p>Vendor &amp; Deployment Training · <span class="byline">© 2026 Akhil Gaddam</span></p></div>
   </div>
   <ol id="stepper" data-component="DissectionStepper">
     <li class="step s1 active"><span class="num">1</span><span class="txt">Select component</span></li><li class="chev">›</li>
@@ -321,6 +408,14 @@
   <button class="iconbtn" id="btnNote"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Add note</button>
 </footer>
 
+<!-- Persistent authorship mark. Part of the copyright management information
+     for this Work; see LICENSE. Programmatically restored if removed. -->
+<div id="owner" class="hud" data-owner="Akhil Gaddam">
+  <span class="oc">©</span>
+  <span class="on">Akhil Gaddam</span>
+  <button id="ownerInfo" type="button" title="Ownership, licence and provenance" aria-label="Ownership, licence and provenance">ⓘ</button>
+</div>
+
 <div id="trainHint" class="hud" hidden role="status"><span id="trainHintTxt"></span></div>
 
 <div id="ident" class="hud"><span class="st">★</span><span id="identTxt"></span></div>
@@ -346,6 +441,40 @@
   <button id="helpClose">Close</button>
 </div></div>
 
+<div id="own" role="dialog" aria-modal="true" aria-labelledby="ownTitle"><div id="ownBox">
+  <div class="kick" style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)">Ownership &amp; licence</div>
+  <h2 id="ownTitle" style="margin:6px 0 14px;font-size:21px">Akhil Gaddam</h2>
+  <p>This application — its 3D models, dissection choreography, interface, instructional
+     content and research — is the original work of <b>Akhil Gaddam</b>, and is published
+     as proprietary courseware. It is made viewable for learning and evaluation; it is not
+     placed in the public domain.</p>
+
+  <h3>Provenance</h3>
+  <div class="oline"><span class="k">Author &amp; copyright holder</span><span class="v">Akhil Gaddam</span></div>
+  <div class="oline"><span class="k">Work first created</span><span class="v">4 July 2026</span></div>
+  <div class="oline"><span class="k">This build published</span><span class="v" id="ownBuild">—</span></div>
+  <div class="oline"><span class="k">Session opened</span><span class="v" id="ownOpened">—</span></div>
+  <div class="oline"><span class="k">Canonical source</span><span class="v">github.com/AkhilDhruva/DATA-CENTER-TRAINING</span></div>
+  <div class="oline"><span class="k">Canonical deployment</span><span class="v">data-center-training.vercel.app</span></div>
+  <div class="oline"><span class="k">Licence</span><span class="v">Proprietary — all rights reserved</span></div>
+
+  <div class="legal">
+    <b>Copyright © 2026 Akhil Gaddam. All rights reserved.</b><br />
+    Viewing this page or its client-side source grants no right to copy, modify, rehost,
+    rebrand, redistribute or commercially exploit this work, in whole or in part. The
+    authorship notices embedded throughout it are copyright management information;
+    removing or altering them is a separate violation under 17 U.S.C. § 1202 and its
+    international equivalents.<br /><br />
+    Authorship is independently verifiable from the public, timestamped commit history of
+    the canonical repository. Licensing and teaching-rights enquiries are welcome there.
+  </div>
+
+  <div class="foot" style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <button id="ownClose">Close</button>
+    <a href="https://github.com/AkhilDhruva/DATA-CENTER-TRAINING/blob/main/LICENSE" target="_blank" rel="noopener">Read the full licence ↗</a>
+  </div>
+</div></div>
+
 <div id="course"><div id="courseBox">
   <div class="kick" id="courseKick">Rack to Runtime · Program P2</div>
   <h2 id="courseTitle">Lesson</h2>
@@ -361,6 +490,106 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
+/* =============================================================================
+   PROVENANCE / COPYRIGHT MANAGEMENT INFORMATION
+   Copyright (c) 2026 Akhil Gaddam. All rights reserved.
+
+   Declares authorship at runtime, timestamps the build and the session, and
+   keeps the on-screen authorship mark present. This is attribution integrity,
+   not access control: the client source of any web page is readable, and this
+   code makes no attempt to pretend otherwise. Its purpose is to ensure the
+   Work always travels with an accurate, verifiable statement of who made it.
+============================================================================= */
+window.__PROVENANCE = Object.freeze({
+  work:      'Interactive 42U AI Data Center Rack',
+  author:    'Akhil Gaddam',
+  copyright: 'Copyright (c) 2026 Akhil Gaddam. All rights reserved.',
+  created:   '2026-07-04',
+  built:     '2026-07-28T22:34:03Z',
+  licence:   'Proprietary — All Rights Reserved',
+  source:    'https://github.com/AkhilDhruva/DATA-CENTER-TRAINING',
+  canonical: 'https://data-center-training.vercel.app'
+});
+(function(P){
+  'use strict';
+  var opened = new Date();
+  var fmt = function(d){ try{ return d.toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'}); }
+                         catch(e){ return d.toISOString(); } };
+
+  /* 1 — console notice for anyone reading the source */
+  try{
+    console.log('%c ' + P.work + ' ', 'background:#0e2b36;color:#2fd2f5;font-weight:700;padding:3px 6px;border-radius:3px');
+    console.log('%c' + P.copyright + '\n%cAuthor: ' + P.author +
+      '\nCreated: ' + P.created + '  ·  Build: ' + P.built +
+      '\nLicence: ' + P.licence + '  ·  Source: ' + P.source +
+      '\n\nThis work is proprietary. Reading this source grants no right to copy, modify,\n' +
+      'rehost, rebrand or redistribute it. Authorship is verifiable from the public,\n' +
+      'timestamped commit history of the canonical repository. Licensing enquiries\n' +
+      'are welcome there.',
+      'color:#e8eef7;font-weight:600', 'color:#8aa0b8');
+  }catch(e){}
+
+  /* 2 — stamp the document so the mark survives DOM serialisation / "save page as" */
+  try{
+    var r = document.documentElement;
+    r.setAttribute('data-author', P.author);
+    r.setAttribute('data-copyright', P.copyright);
+    r.setAttribute('data-built', P.built);
+    r.setAttribute('data-source', P.source);
+  }catch(e){}
+
+  /* 3 — fill the ownership dialog's timestamps and wire it up */
+  function ready(fn){ if(document.readyState!=='loading') fn();
+                      else document.addEventListener('DOMContentLoaded',fn); }
+  ready(function(){
+    var b=document.getElementById('ownBuild'), o=document.getElementById('ownOpened');
+    if(b) b.textContent = fmt(new Date(P.built)) + ' UTC-stamped';
+    if(o) o.textContent = fmt(opened);
+
+    var dlg=document.getElementById('own');
+    var openDlg=function(){ if(dlg){ dlg.classList.add('open');
+      var c=document.getElementById('ownClose'); if(c) c.focus(); } };
+    var closeDlg=function(){ if(dlg) dlg.classList.remove('open'); };
+    var info=document.getElementById('ownerInfo');
+    if(info) info.addEventListener('click',openDlg);
+    var oc=document.getElementById('ownClose');
+    if(oc) oc.addEventListener('click',closeDlg);
+    if(dlg) dlg.addEventListener('click',function(e){ if(e.target===dlg) closeDlg(); });
+    document.addEventListener('keydown',function(e){
+      if(e.key==='Escape' && dlg && dlg.classList.contains('open')){ e.stopPropagation(); closeDlg(); }
+    },true);
+    window.__showOwnership=openDlg;
+
+    /* 4 — keep the authorship mark present. If the node is removed or hidden,
+           it is rebuilt. Casual removal in devtools does not persist. */
+    var host=document.body;
+    var rebuild=function(){
+      if(document.getElementById('owner')) return;
+      var d=document.createElement('div');
+      d.id='owner'; d.className='hud'; d.setAttribute('data-owner',P.author);
+      d.innerHTML='<span class="oc">©</span><span class="on">'+P.author+'</span>'+
+        '<button id="ownerInfo" type="button" title="Ownership, licence and provenance" '+
+        'aria-label="Ownership, licence and provenance">ⓘ</button>';
+      host.appendChild(d);
+      var nb=document.getElementById('ownerInfo');
+      if(nb) nb.addEventListener('click',openDlg);
+    };
+    var enforce=function(){
+      rebuild();
+      var el=document.getElementById('owner'); if(!el) return;
+      var cs=getComputedStyle(el);
+      if(cs.display==='none'||cs.visibility==='hidden'||parseFloat(cs.opacity)<0.5){
+        el.style.setProperty('display','flex','important');
+        el.style.setProperty('visibility','visible','important');
+        el.style.setProperty('opacity','1','important');
+      }
+    };
+    try{ new MutationObserver(enforce).observe(host,{childList:true,subtree:true,attributes:true}); }catch(e){}
+    setInterval(enforce, 2000);
+    enforce();
+  });
+})(window.__PROVENANCE);
+
 (function(){
   if(!window.THREE){document.getElementById('err').style.display='flex';return;}
   const THREE = window.THREE;
@@ -2253,6 +2482,48 @@
     renderer.setSize(window.innerWidth,window.innerHeight);
   });
 
+  /* =========================================================================
+     VIEWPORT WATERMARK — authorship composited into the rendered frame itself
+     (an orthographic overlay pass), so screenshots, canvas captures and screen
+     recordings of the 3D view carry the attribution with them. Deliberately
+     low-contrast: legible on inspection, never competing with the model.
+  ==========================================================================*/
+  const drawWatermark=(function(){
+    const P=window.__PROVENANCE||{author:'Akhil Gaddam'};
+    const text='© '+P.author;
+    const cv=document.createElement('canvas'), cx=cv.getContext('2d');
+    const DPR=Math.min(2,window.devicePixelRatio||1);
+    cv.width=Math.ceil(300*DPR); cv.height=Math.ceil(46*DPR);
+    cx.scale(DPR,DPR);
+    cx.font='600 15px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif';
+    cx.textBaseline='middle'; cx.textAlign='right';
+    cx.shadowColor='rgba(0,0,0,.8)'; cx.shadowBlur=4;
+    cx.fillStyle='rgba(232,238,247,.50)';
+    cx.fillText(text,296,15);
+    cx.font='500 10.5px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif';
+    cx.fillStyle='rgba(170,192,214,.42)';
+    cx.fillText('data-center-training.vercel.app',296,33);
+
+    const tex=new THREE.CanvasTexture(cv);
+    tex.minFilter=THREE.LinearFilter; tex.magFilter=THREE.LinearFilter;
+    const mat=new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false,depthWrite:false});
+    const sprite=new THREE.Sprite(mat);
+    const oScene=new THREE.Scene(); oScene.add(sprite);
+    const oCam=new THREE.OrthographicCamera(0,1,1,0,0,10); oCam.position.z=1;
+
+    return function(){
+      const w=renderer.domElement.clientWidth||window.innerWidth;
+      const h=renderer.domElement.clientHeight||window.innerHeight;
+      oCam.right=w; oCam.top=h; oCam.updateProjectionMatrix();
+      sprite.scale.set(300,46,1);
+      // ortho origin is bottom-left, so a small y sits at the bottom of the frame
+      sprite.position.set(w-166,38,0);          // bottom-right of the rendered frame
+      const prevAuto=renderer.autoClear; renderer.autoClear=false;
+      renderer.render(oScene,oCam);
+      renderer.autoClear=prevAuto;
+    };
+  })();
+
   let nowT=0;
   function tick(ts){
     if(window.__dbg && document.hidden){ setTimeout(function(){tick(performance.now());},50); } // debug: keep animating in hidden tabs
@@ -2269,6 +2540,7 @@
     try{updateLabels();}catch(err){}
     if(D)LS('P4-render');
     renderer.render(scene,camera);
+    drawWatermark();   // composited into the WebGL output, so it travels with any capture
     if(D)LS('P5-done');
   }
   setRotate(!REDUCED); buildSidebar(); renderRackOverview(); applyCamera();

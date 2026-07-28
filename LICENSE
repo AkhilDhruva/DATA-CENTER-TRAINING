@@ -1,0 +1,87 @@
+PROPRIETARY SOFTWARE LICENSE — ALL RIGHTS RESERVED
+
+Interactive 42U AI Data Center Rack ("the Work")
+Rack to Runtime — Vendor & Deployment Training Courseware
+
+Copyright (c) 2026 Akhil Gaddam. All rights reserved.
+
+Author and sole copyright holder: Akhil Gaddam
+Work first created:               2026-07-04
+Canonical source repository:      https://github.com/AkhilDhruva/DATA-CENTER-TRAINING
+Canonical deployment:             https://data-center-training.vercel.app
+
+
+1. OWNERSHIP
+
+The Work — including but not limited to its source code, three-dimensional
+models and procedural geometry, dissection choreography, user interface design,
+information architecture, instructional content, component specifications,
+vendor and deployment research, written copy, and all accompanying
+documentation — is the original work of Akhil Gaddam and is protected by
+copyright law and applicable international treaties.
+
+No transfer of ownership, title, or intellectual property rights is granted by
+the publication of this Work, by its availability at a public URL, or by the
+visibility of its client-side source in a web browser.
+
+
+2. GRANT OF USE
+
+Permission is granted to any person to VIEW the Work in a web browser at its
+canonical deployment for personal, educational, and evaluation purposes.
+
+No other rights are granted. Specifically, without the prior written permission
+of the copyright holder, no person may:
+
+  (a) copy, reproduce, or republish the Work or any substantial part of it;
+  (b) modify, adapt, translate, or create derivative works from it;
+  (c) redistribute, sublicense, sell, rent, lease, or otherwise commercially
+      exploit it;
+  (d) host, mirror, or deploy it under any other domain or account;
+  (e) embed or frame it within any other site or application in a manner that
+      obscures, removes, or misrepresents its authorship;
+  (f) remove, obscure, alter, or circumvent any copyright notice, author
+      attribution, watermark, license header, or provenance metadata contained
+      within it;
+  (g) use it, in whole or in part, as training courseware, a commercial
+      product, a portfolio piece, or a client deliverable represented as the
+      work of any person or organization other than the copyright holder.
+
+
+3. ATTRIBUTION INTEGRITY
+
+The Work embeds authorship and provenance metadata in multiple forms, including
+source headers, HTML metadata, structured data, a rendered viewport watermark,
+and a public version-control history with signed, timestamped commits.
+
+Removing or altering these notices does not extinguish the copyright and may
+constitute an additional violation under laws governing the integrity of
+copyright management information, including 17 U.S.C. § 1202 in the United
+States and its equivalents in other jurisdictions.
+
+
+4. PERMISSIONS AND LICENSING ENQUIRIES
+
+Requests for licensing, reuse, teaching rights, or partnership should be
+directed to the copyright holder. Reasonable requests — particularly for
+non-commercial educational use — are welcomed and are frequently granted.
+
+
+5. NO WARRANTY
+
+THE WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHOR BE LIABLE
+FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM, OUT OF, OR IN
+CONNECTION WITH THE WORK OR ITS USE.
+
+The Work is instructional courseware. Its specifications, figures, and vendor
+references are provided for training purposes and must not be relied upon as
+engineering, procurement, or safety guidance.
+
+
+6. THIRD-PARTY COMPONENTS
+
+The Work renders using Three.js (https://threejs.org), which is distributed
+under the MIT License and remains the property of its respective authors. This
+license applies to the Work itself and not to that third-party library.

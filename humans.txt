@@ -1,0 +1,29 @@
+/* AUTHOR */
+
+    Name       : Akhil Gaddam
+    Role       : Creator, designer, developer and author of all content
+    Site       : https://data-center-training.vercel.app
+    Source     : https://github.com/AkhilDhruva/DATA-CENTER-TRAINING
+
+/* WORK */
+
+    Title      : Interactive 42U AI Data Center Rack
+    Programme  : Rack to Runtime — Vendor & Deployment Training
+    Created    : 2026-07-04
+    Build      : 2026-07-28
+    Licence    : Proprietary — All Rights Reserved. See /LICENSE.
+
+    Copyright (c) 2026 Akhil Gaddam. All rights reserved.
+
+    This work is published for viewing, learning and evaluation. It is not
+    placed in the public domain. Copying, modifying, rehosting, rebranding,
+    redistributing or commercially exploiting it — in whole or in part —
+    requires the prior written permission of the author.
+
+    Licensing, teaching-rights and partnership enquiries are welcome via the
+    canonical repository.
+
+/* BUILT WITH */
+
+    Three.js (MIT) — https://threejs.org
+    Hand-authored procedural geometry, dissection choreography and courseware.
