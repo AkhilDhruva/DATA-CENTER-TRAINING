@@ -1,5 +1,9 @@
 # Interactive 3D 42U AI Data Center Rack
 
+> **Created and owned by [Akhil Gaddam](https://github.com/AkhilDhruva).**
+> Copyright © 2026 Akhil Gaddam. All rights reserved. Proprietary — see [LICENSE](LICENSE).
+> First created 4 July 2026. Authorship is verifiable from this repository's timestamped commit history.
+
 A self-contained, browser-based **interactive 3D server rack** built for technical upskilling courseware. Rotate, zoom, and click any component to read its spec. **Critical components dissect** — they slide out of the rack, the casing splits open, and the internal peripherals separate and label themselves. Each part opens a detailed report card with global vendors, hyperscaler deployments, and a course link.
 
 **▶ Live demo:** https://data-center-training.vercel.app
@@ -27,3 +31,27 @@ A self-contained, browser-based **interactive 3D server rack** built for technic
 Open `index.html` in any modern browser, or visit the live demo above. Part of the *Rack to Runtime* data-center upskilling program.
 
 *Standards figures trace to the cited Spec Library (`01_DC_Spec-Library_SME-Source.md`). Vendor and data-center-project figures reflect the 2026 industry landscape and should be re-verified before publish.*
+
+---
+
+## Ownership, licence and provenance
+
+**Author and sole copyright holder: Akhil Gaddam.**
+Copyright © 2026 Akhil Gaddam. All rights reserved.
+
+| | |
+|---|---|
+| Work first created | 4 July 2026 |
+| Canonical source | https://github.com/AkhilDhruva/DATA-CENTER-TRAINING |
+| Canonical deployment | https://data-center-training.vercel.app |
+| Licence | Proprietary — All Rights Reserved ([LICENSE](LICENSE)) |
+
+This project — its 3D models and procedural geometry, dissection choreography, interface, information architecture, instructional content, component specifications, vendor and deployment research, and written copy — is the original work of Akhil Gaddam.
+
+It is published so it can be **viewed, learned from and evaluated**. It is **not** placed in the public domain. Without prior written permission you may not copy, modify, redistribute, rehost, rebrand, or commercially exploit it — in whole or in part — nor present it as your own work or a client deliverable. See [LICENSE](LICENSE) for the full terms.
+
+Authorship is asserted in several independently checkable places: this README, the [LICENSE](LICENSE), the source header and metadata of `index.html`, [schema.org structured data](https://schema.org/SoftwareApplication), `humans.txt`, HTTP response headers, a watermark composited into the rendered 3D viewport, and — most durably — the **public, timestamped commit history of this repository**, which records the work from its first commit onward.
+
+Removing or altering those notices does not extinguish the copyright, and is a separate violation of the provisions protecting copyright management information (17 U.S.C. § 1202 in the United States, and its equivalents elsewhere).
+
+**Licensing enquiries are welcome.** Requests to teach from, adapt, or build on this work — particularly non-commercial educational use — are read and frequently granted. Open an issue on this repository.

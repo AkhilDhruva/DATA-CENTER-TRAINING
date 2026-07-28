@@ -2,14 +2,19 @@
 
 Implements the `claude-code-ui-handoff` specification against the production trainer (`index.html`). The Three.js scene, hi-fi rack models, equipment data, training copy and dissection content are preserved unchanged; the surrounding shell and state model were rebuilt. The interactive mockup URL was unreachable from the build environment (network 403), so this implementation follows `UI_IMPLEMENTATION_SPEC.md` + `ACCEPTANCE_CRITERIA.md`, which fully describe the target information architecture.
 
-Run the acceptance suite with the app served locally:
+Run the suites with the app served locally:
 
 ```
 npx http-server -p 8123 .   # or python3 -m http.server 8123
 APP_URL=http://127.0.0.1:8123/index.html node tests/acceptance.js
+APP_URL=http://127.0.0.1:8123/index.html node tests/provenance.js
 ```
 
-Result at time of writing: **74 passed, 0 failed** (`tests/acceptance.js`).
+Result at time of writing: **74 passed, 0 failed** (`tests/acceptance.js`) and **38 passed, 0 failed** (`tests/provenance.js`).
+
+## Ownership and attribution integrity
+
+Authorship (Akhil Gaddam, work first created 2026-07-04) is asserted in nine independent places, covered by `tests/provenance.js`: the `LICENSE`, the `README`, the `index.html` source header, HTML `<meta>` + Dublin Core tags, schema.org JSON-LD, `humans.txt`, HTTP response headers, an on-screen mark that is rebuilt if removed or hidden, and a watermark composited into the rendered WebGL frame. `vercel.json` adds a Content-Security-Policy with `frame-ancestors 'self'` plus `X-Frame-Options`, which blocks third parties from embedding the deployment inside their own page — the suite boots the app under those exact production headers to prove the policy does not break it.
 
 ## Acceptance criteria → implementation
 
