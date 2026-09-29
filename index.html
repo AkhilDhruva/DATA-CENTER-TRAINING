@@ -2697,7 +2697,7 @@ window.__PROVENANCE = Object.freeze({
     HALL.group.visible=true; dragging=false; setRotate(false);
     ident.style.opacity=0; renderer.domElement.style.cursor='';
     document.body.classList.add('intro-on'); introCap.classList.add('on'); focusRideControl();
-    setRideAria();
+    setRideAria(); shadowDirty=true;
   }
   function focusTrainer(){               // after a ride, keep keyboard focus on something that is still on screen
     const a=document.activeElement;
@@ -2723,6 +2723,7 @@ window.__PROVENANCE = Object.freeze({
       if(fromRide){ cancelAutoOpen(); const go=()=>{ autoOpenTimer=0;
           if(overlayOpen()){ autoOpenTimer=setTimeout(go,500); return; }   // wait for the dialog to close
           const gpu=components.find(c=>c.userData.def.cat==='gpu'); if(gpu&&!active&&!introOn){ DIVE.enter({auto:true}); } else endCarry(); };
+        try{ DIVE.prebuild(); }catch(e){}                  // absorbed by the parked view before the pull-out starts
         autoOpenTimer=setTimeout(go,1100);
         // keep it one continuous shot: no chrome, a caption for the "open the server" beat
         document.body.classList.add('ride-carry'); introCap.classList.add('on'); curChapter=-1;
@@ -3755,7 +3756,7 @@ window.__PROVENANCE = Object.freeze({
     }
     function draw(i,cam,target){ renderer.setRenderTarget(target); renderer.render(i===0?scene:SC[i-1],cam); renderer.setRenderTarget(null); }
     function ensureRT(){ renderer.getDrawingBufferSize(_sz);
-      if(!rt){ rt=new THREE.WebGLRenderTarget(_sz.x,_sz.y,{minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,format:THREE.RGBAFormat});
+      if(!rt){ rt=new THREE.WebGLRenderTarget(_sz.x,_sz.y,{minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,format:THREE.RGBAFormat,stencilBuffer:true});
         quadM.map=rt.texture; quadM.needsUpdate=true; }
       else if(rt.width!==_sz.x||rt.height!==_sz.y) rt.setSize(_sz.x,_sz.y); }
 
@@ -3870,6 +3871,7 @@ window.__PROVENANCE = Object.freeze({
     return { on:()=>st.on, pending:()=>!!st.pending, enter, exit, back, step, delta, stopAuto, render, tickPending,
       cancelPending(){ st.pending=null; }, go(q){ stopAuto(); st.qT=clamp01(q); }, fovM:()=>st.fovM, finale,
       chapters:()=>(CH||[]).map(c=>({q:c.q,title:c.title})),
+      prebuild:build, seek(q){ stopAuto(); st.q=st.qT=clamp01(q); },   // deterministic placement (captures, tests)
       state:()=>({on:st.on,q:st.q,qT:st.qT,auto:st.auto,ci:st.ci,pending:!!st.pending,fovM:st.fovM,stops:STOPS&&STOPS.slice()}) };
   })();
 
@@ -4370,10 +4372,10 @@ window.__PROVENANCE = Object.freeze({
     const sprite=new THREE.Sprite(mat);
     const oScene=new THREE.Scene(); oScene.add(sprite);
     const oCam=new THREE.OrthographicCamera(0,1,1,0,0,10); oCam.position.z=1;
+    const _wm=new THREE.Vector2();
 
     return function(){
-      const w=renderer.domElement.clientWidth||window.innerWidth;
-      const h=renderer.domElement.clientHeight||window.innerHeight;
+      renderer.getSize(_wm); const w=_wm.x||window.innerWidth, h=_wm.y||window.innerHeight;   // no forced layout
       oCam.right=w; oCam.top=h; oCam.updateProjectionMatrix();
       sprite.scale.set(300,46,1);
       // ortho origin is bottom-left, so a small y sits at the bottom of the frame
@@ -4409,7 +4411,7 @@ window.__PROVENANCE = Object.freeze({
     fovMk.style.top=(clamp01((FOV_TOP-Math.log10(m))/(FOV_TOP-FOV_BOT))*100)+'%';
   }
 
-  let nowT=0;
+  let nowT=0, shadowDirty=true;
   function tick(ts){
     if(window.__dbg && document.hidden){ setTimeout(function(){tick(performance.now());},50); } // debug: keep animating in hidden tabs
     else requestAnimationFrame(tick);
@@ -4427,6 +4429,10 @@ window.__PROVENANCE = Object.freeze({
     if(D)LS('P3-labels');
     try{updateLabels();}catch(err){}
     if(D)LS('P4-render');
+    // rides: freeze the shadow map (no caster moves) and refresh it only when the rack itself animates
+    const frozen=introOn||DIVE.on();
+    renderer.shadowMap.autoUpdate=!frozen;
+    if(frozen && (shadowDirty || components.some(c=>c._t!==c._goal))){ renderer.shadowMap.needsUpdate=true; shadowDirty=false; }
     if(!(DIVE.on() && DIVE.render(dt))) renderer.render(scene,camera);
     drawWatermark();   // composited into the WebGL output, so it travels with any capture
     updateFov();
@@ -4445,6 +4451,9 @@ window.__PROVENANCE = Object.freeze({
   }catch(e){}
   if(skipRide){ HALL.group.visible=false; }
   else { introOn=true; pT=pC=0; setRotate(false); document.body.classList.add('intro-on'); setRideAria();
+    // prebuild the silicon dive while the hook screen is static
+    (window.requestIdleCallback||function(f){ return setTimeout(f,1200); })(()=>{
+      if(introOn&&pT===0&&pC===0&&!DIVE.on()) try{ DIVE.prebuild(); }catch(e){} },{timeout:3000});
     introHook.classList.add('on');       // visible before focus, or focus() is ignored
     try{ document.getElementById('introStart').focus({preventScroll:true}); }catch(e){} }
   if(window.__dbg) tick(performance.now()); else requestAnimationFrame(tick);
