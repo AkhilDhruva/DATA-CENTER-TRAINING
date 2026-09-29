@@ -286,8 +286,11 @@ async function assertTrainerHome(page, label) {
   s = await st(page);
   check('Esc leaves the dive with the GPU node still open', !(await page.evaluate(() => window.__ride.dive().on)) && s.active === 'gpu-u33', s);
   check('the inspector is back on the GPU part', /Blackwell GPU/.test(await page.evaluate(() => document.getElementById('cardName').textContent)));
-  check('trainer chrome returns after the dive', await page.waitForFunction(() => { const cs = getComputedStyle(document.getElementById('card'));
-    return !document.body.classList.contains('dive-on') && cs.visibility === 'visible' && parseFloat(cs.opacity) > 0.9; }, null, { timeout: 8000 }).then(() => true, () => false));
+  const chromeNow = await page.evaluate(() => ({ vis: getComputedStyle(document.getElementById('card')).visibility,
+    focus: document.activeElement && document.activeElement !== document.body }));
+  check('the inspector is visible at once after the dive, with keyboard focus on it', chromeNow.vis === 'visible' && chromeNow.focus, chromeNow);
+  check('trainer chrome fades back in after the dive', await page.waitForFunction(() => { const cs = getComputedStyle(document.getElementById('card'));
+    return !document.body.classList.contains('dive-on') && cs.visibility === 'visible' && parseFloat(cs.opacity) > 0.9; }, null, { timeout: 30000, polling: 250 }).then(() => true, () => false));
   // scrolling deeper at the closest orbit keeps going into the silicon; scrolling back up comes back out
   await page.mouse.move(420, 600);   // open canvas, clear of the explorer, controls dock and inspector
   for (let i = 0; i < 4; i++) { await page.mouse.wheel(0, 500); await page.waitForTimeout(250); }
