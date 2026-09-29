@@ -2719,7 +2719,7 @@ window.__PROVENANCE = Object.freeze({
   const rideNextEl=document.getElementById('rideNext'), capSkipEl=document.getElementById('capSkip');
   let curChapter=-1;
   function showRideNext(){ rideNextEl.classList.add('on'); clearTimeout(rideNextEl._t);
-    rideNextEl._t=setTimeout(hideRideNext,12000); }
+    rideNextEl._t=setTimeout(hideRideNext,20000); }
   function hideRideNext(){ rideNextEl.classList.remove('on'); }
   function setRideAria(){
     const c=CHAPTERS[Math.max(0,curChapter)];
@@ -3033,7 +3033,8 @@ window.__PROVENANCE = Object.freeze({
               {text:'Tensor Core',sub:'',pos:TC,from:0.56,to:0.95,cls:'bx'}] };
     })());
 
-    /* ---- 4 · pass through the wiring (1 unit = 1 µm) --------------------- */
+    /* ---- 4 · into the electron microscope: the wiring is polished away, rows of logic
+            cells, then gates and fins (1 unit = 1 µm) ------------------------------------ */
     S.push((function(){
       const g=new THREE.Group();
       const cu=(o)=>SM(0xe0935a,Object.assign({roughness:.35,metalness:.4,transparent:true},o||{}));
@@ -3051,27 +3052,34 @@ window.__PROVENANCE = Object.freeze({
         for(let i=0;i<n;i++){ const x=(r()-0.5)*b.span, z=(r()-0.5)*b.span, h=a.y-b.y;
           vias.push({x,y:(a.y+b.y)/2,z,sx:b.w*0.8,sy:h,sz:b.w*0.8}); } }
       const viaM=SM(0x9aa4ae,{roughness:.35,metalness:.8,transparent:true}); inst(UBOX,viaM,vias,g);
-      // standard-cell rows with gold gate lines on top (the next level's transistors)
-      const cells=[],gates=[];
+      // rows of standard cells in electron-microscope greys; gate lines across them, fins along them
+      const cells=[],gates=[],fins=[];
       for(let row=-12;row<12;row++){ let x=-6; const z=row*0.28;
-        while(x<6){ const w=0.2+Math.floor(r()*5)*0.1; cells.push({x:x+w/2,y:1.4,z,sx:w-0.03,sy:2.8,sz:0.25,c:r()<0.5?0x5f6b7a:0x6c7a8b});
-          for(let k=0.05;k<w-0.04;k+=0.051) gates.push({x:x+k+0.02,y:2.86,z,sx:0.016,sy:0.1,sz:0.24}); x+=w; } }
-      inst(UBOX,SM(0xffffff,{roughness:.5,metalness:.3}),cells,g);
-      inst(UBOX,SM(0xd9b34a,{roughness:.3,metalness:.7,emissive:0x3a2a08,emissiveIntensity:.8}),gates,g);
-      const sub=new THREE.Mesh(UBOX,SM(0x39424c,{roughness:.7,metalness:.2})); sub.scale.set(60,0.4,60); sub.position.y=-0.2; g.add(sub);
-      return { key:'wiring', mpu:1e-6, bg:0x0a0e14, fog:[40,160], group:g,
-        keys:[{t:0,pos:[-34,92,54],tgt:[0,9,0],fov:45},{t:0.35,pos:[-8,26,11],tgt:[0,7,0],fov:45},
+        [-0.07,0.07].forEach(o=>fins.push({x:0,y:2.83,z:z+o,sx:12,sy:0.035,sz:0.022}));
+        while(x<6){ const w=0.2+Math.floor(r()*5)*0.1; cells.push({x:x+w/2,y:1.4,z,sx:w-0.03,sy:2.8,sz:0.25,c:r()<0.5?0x8e969f:0x9ea6b0});
+          for(let k=0.05;k<w-0.04;k+=0.051) gates.push({x:x+k+0.02,y:2.87,z,sx:0.016,sy:0.1,sz:0.24,c:0xd7dce2}); x+=w; } }
+      inst(UBOX,SM(0xffffff,{roughness:.55,metalness:.2}),cells,g);
+      inst(UBOX,SM(0xb9c0c8,{roughness:.45,metalness:.25}),fins,g);
+      const gateIM=inst(UBOX,SM(0xffffff,{roughness:.4,metalness:.2,emissive:0x0c1a0c,emissiveIntensity:.6}),gates,g);
+      const GON=0x6fe08a, GOFF=0xd7dce2, NG=gates.length, gr=rng(41), onSet=new Uint8Array(NG); let nextFlip=0;
+      const sub=new THREE.Mesh(UBOX,SM(0x6d747d,{roughness:.8,metalness:.1})); sub.scale.set(60,0.4,60); sub.position.y=-0.2; g.add(sub);
+      return { key:'wiring', mpu:1e-6, bg:0x0a0e14, group:g,
+        keys:[{t:0,pos:[-19,55,30],tgt:[0,9,0],fov:45},{t:0.35,pos:[-8,26,11],tgt:[0,7,0],fov:45},
               {t:0.68,pos:[-1.8,9.2,2.6],tgt:[0,3.6,0],fov:45},{t:1,pos:[-0.45,3.9,0.75],tgt:[0,2.9,0],fov:45}],
-        caps:[{t:0,title:'Pass through the wiring',sub:'Stacked copper layers — thick up top, finest at the bottom — route signals between billions of gates'},
-              {t:0.66,title:'Logic cells',sub:'Rows of standard cells · each gold line is a transistor gate'}],
-        tags:[{text:'Global wiring',sub:'power · clock',pos:[-9,16.8,-6.75],from:0.04,to:0.3,cls:'o'},
+        caps:[{t:0,title:'Into the electron microscope',sub:'Polished down to the transistors — the wiring above is removed · illustrative'},
+              {t:0.62,title:'Rows of logic cells, then gates and fins',sub:'Every gate switches on (green) and off · the transistors come into view'}],
+        tags:[{text:'Copper wiring',sub:'polished away',pos:[-9,16.8,-6.75],from:0.04,to:0.3,cls:'o'},
               {text:'Via',sub:'layer to layer',pos:[3,10.5,2],from:0.3,to:0.5,cls:'g'},
-              {text:'Local wiring',sub:'finest pitch',pos:[1.2,5.5,-1.1],from:0.46,to:0.7,cls:'o'},
-              {text:'Transistor gates',sub:'',pos:[0.4,3.0,0.3],from:0.72,to:0.98,cls:'y'}],
-        update(t,time,cam){ // each layer dissolves as the camera passes through it
+              {text:'Local wiring',sub:'finest pitch',pos:[1.2,5.5,-1.1],from:0.46,to:0.66,cls:'o'},
+              {text:'Logic cells',sub:'rows of standard cells',pos:[-3.2,3.0,-1.54],from:0.66,to:0.86,cls:'g'},
+              {text:'Gates',sub:'switching',pos:[0.4,3.0,0.3],from:0.8,to:0.99,cls:'g'}],
+        update(t,time,cam){ // each layer is polished away as the camera passes through it
           const cy=cam.position.y;
           layers.forEach(l=>{ const a=Math.max(0,Math.min(1,(cy-l.y-l.th)/2.2)); l.m.opacity=a; l.m.depthWrite=a>0.6; l.m.visible=a>0.01; });
-          viaM.opacity=Math.max(0,Math.min(1,(cy-5)/3)); viaM.visible=viaM.opacity>0.01; } };
+          viaM.opacity=Math.max(0,Math.min(1,(cy-5)/3)); viaM.visible=viaM.opacity>0.01;
+          if(time>=nextFlip && t>0.5){ nextFlip=time+0.18;                 // gates switch on (green) and off
+            for(let i=0;i<180;i++){ const k=Math.floor(gr()*NG); onSet[k]^=1; gateIM.setColorAt(k,_c.set(onSet[k]?GON:GOFF)); }
+            gateIM.instanceColor.needsUpdate=true; } } };
     })());
 
     /* ---- 5 · one transistor, cut in half (1 unit = 10 nm) ---------------- */

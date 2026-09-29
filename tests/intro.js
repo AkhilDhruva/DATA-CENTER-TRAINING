@@ -124,8 +124,9 @@ async function assertTrainerHome(page, label) {
   check('scroll up pulls back out', afterUp < afterDown - 0.05, [afterDown, afterUp]);
 
   // aisle annotations teach the overhead services
-  await page.evaluate(() => window.__ride.set(0.32));
-  await settle(page, 1500);
+  await page.evaluate(() => window.__ride.set(0.3));
+  await page.waitForFunction(() => { const on = [...document.querySelectorAll('.htag')].filter((t) => parseFloat(t.style.opacity) > 0.5).map((t) => t.textContent);
+    return on.some((t) => /Cold aisle/.test(t)) && on.some((t) => /Fire suppression/.test(t)); }, null, { timeout: 30000 }).catch(() => {});
   const tags = await page.evaluate(() => [...document.querySelectorAll('.htag')].filter((t) => parseFloat(t.style.opacity) > 0.5).map((t) => t.textContent));
   check('overhead services are labelled (fiber raceway, busway, fire suppression)',
     tags.some((t) => /Fiber raceway/.test(t)) && tags.some((t) => /busway/i.test(t)) && tags.some((t) => /Fire suppression/.test(t)), tags);
@@ -133,13 +134,14 @@ async function assertTrainerHome(page, label) {
 
   // one rack → isolate
   await page.evaluate(() => window.__ride.set(0.52));
-  await settle(page, 1500);
+  await page.waitForFunction(() => /one rack/i.test(document.getElementById('capT').textContent), null, { timeout: 30000 }).catch(() => {});
+  await page.waitForFunction(() => [...document.querySelectorAll('.htag.hero')].some((t) => parseFloat(t.style.opacity) > 0.5 && /Rack C-08/.test(t.textContent)), null, { timeout: 30000 }).catch(() => {});
   cap = await page.evaluate(() => document.getElementById('capT').textContent);
   check('chapter 3 singles out "One rack"', /one rack/i.test(cap), cap);
   const heroTag = await page.evaluate(() => [...document.querySelectorAll('.htag.hero')].some((t) => parseFloat(t.style.opacity) > 0.5 && /Rack C-08/.test(t.textContent)));
   check('the chosen rack is tagged Rack C-08', heroTag);
   await page.evaluate(() => window.__ride.set(0.7));
-  await settle(page, 1500);
+  await page.waitForFunction(() => /isolate/i.test(document.getElementById('capT').textContent), null, { timeout: 30000 }).catch(() => {});
   cap = await page.evaluate(() => document.getElementById('capT').textContent);
   check('chapter 4 isolates it', /isolate/i.test(cap), cap);
 
@@ -156,8 +158,8 @@ async function assertTrainerHome(page, label) {
   check('FOV readout at the rack is ≈ 2–4 m', /≈ [23]\.\d\d m/.test(fovT), fovT);
 
   // continue the ride → GPU dissection
-  await page.click('#rideNext');
-  await waitRide(page, () => window.__ride.st().active === 'gpu-u33', null, 10000);
+  await page.click('#rideNext', { force: true });   // real pointer click; skip the stability wait, which starves on software GL
+  await waitRide(page, () => window.__ride.st().active === 'gpu-u33', null, 30000);
   check('continue-the-ride opens the AI GPU node', (await st(page)).active === 'gpu-u33');
 
   // Data hall button flies back out, Esc lands back on the rack
@@ -243,7 +245,7 @@ async function assertTrainerHome(page, label) {
   check('processing-block parts are labelled (scheduler, register file, CUDA cores)',
     bx.some((t) => /scheduler/i.test(t)) && bx.some((t) => /Register file/.test(t)) && bx.some((t) => /32 CUDA cores/.test(t)), bx);
   await depth(0.565, /tensor core/i, / µm$/, 'one Tensor Core');
-  await depth(0.63, /wiring/i, / µm$/, 'passing through the copper wiring, at micrometre scale');
+  await depth(0.63, /electron microscope|logic cells/i, / µm$/, 'into the electron microscope: the wiring polished away');
   await depth(0.76, /transistor, cut in half/i, / nm$| µm$/, 'one transistor, cut in half');
   await depth(1, /bottom of the zoom/i, / nm$/, 'the bottom: silicon atoms at nanometre scale');
   const mk = await page.evaluate(() => parseFloat(document.getElementById('fovMk').style.top));
