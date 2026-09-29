@@ -349,7 +349,7 @@ async function assertTrainerHome(page, label) {
   await waitRide(page, () => window.__ride.dive().on, null, 20000);
   await page.keyboard.press('ArrowDown'); await settle(page, 2500);
   const rd = await page.evaluate(() => window.__ride.dive());
-  check('reduced motion: the dive cuts level to level', rd.q === rd.qT && rd.q > 0.07, rd);
+  check('reduced motion: the dive cuts level to level', rd.q === rd.qT && rd.q === rd.stops.find((q) => q > 0), rd);
   check('hint animation is off', await page.evaluate(() => getComputedStyle(document.querySelector('.mouse'), '::after').animationName === 'none'));
   await page.close();
 
