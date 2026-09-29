@@ -2717,7 +2717,8 @@ window.__PROVENANCE = Object.freeze({
   const introHook=document.getElementById('introHook'), introCap=document.getElementById('introCap');
   const capT=document.getElementById('capT'), capS=document.getElementById('capS'), capN=document.getElementById('capN');
   const rideNextEl=document.getElementById('rideNext'), capSkipEl=document.getElementById('capSkip');
-  let curChapter=-1;
+  let curChapter=-1, finaleOn=false;
+  const FINALE={t:'Back to the hall',s:'From a 0.235 nm silicon bond back out to the whole hall — about eleven orders of magnitude, one continuous zoom'};
   function showRideNext(){ rideNextEl.classList.add('on'); clearTimeout(rideNextEl._t);
     rideNextEl._t=setTimeout(hideRideNext,20000); }
   function hideRideNext(){ rideNextEl.classList.remove('on'); }
@@ -2742,10 +2743,11 @@ window.__PROVENANCE = Object.freeze({
     const hookOn=pC<0.04 && pT<0.04;
     introHook.classList.toggle('on',hookOn);
     let ci=0; for(let i=CHAPTERS.length-1;i>0;i--){ if(pC>=CHAPTERS[i].p-(i===3?0.03:0.075)){ ci=i; break; } }
-    if(ci!==curChapter){ curChapter=ci; const c=CHAPTERS[ci];
-      capT.textContent=c.t; capS.textContent=c.s; capN.textContent=ci+' / '+(CHAPTERS.length-1);
+    if(finaleOn) ci=-2;                                                    // the reel's last beat: back out to the hall
+    if(ci!==curChapter){ curChapter=ci; const c=ci===-2?FINALE:CHAPTERS[ci];
+      capT.textContent=c.t; capS.textContent=c.s; capN.textContent=ci===-2?'':ci+' / '+(CHAPTERS.length-1);
       introCap.classList.remove('pop'); void introCap.offsetWidth; introCap.classList.add('pop'); setRideAria(); }
-    introCap.classList.toggle('on',!hookOn && ci>0);
+    introCap.classList.toggle('on',!hookOn && (ci>0||ci===-2));
     const W=window.innerWidth, H=window.innerHeight;
     hallTags.forEach(h=>{
       const a=h.show(pC); const vis=a>0.01;
@@ -3178,7 +3180,7 @@ window.__PROVENANCE = Object.freeze({
     const quadM=new THREE.MeshBasicMaterial({transparent:true,depthTest:false,depthWrite:false,fog:false});
     const qScene=new THREE.Scene(), qCam=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
     qScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),quadM));
-    const st={on:false,q:0,qT:0,auto:false,ai:1,hold:0,pending:null,rewind:false,ci:-1,fovM:1,acc:0,wacc:0};
+    const st={on:false,q:0,qT:0,auto:false,ai:1,hold:0,pending:null,rewind:false,ci:-1,fovM:1,acc:0,wacc:0,over:0};
     const tags=[];
     const TAN=2*Math.tan(Math.PI/8);            // 2·tan(45°/2)
     const gpuComp=()=>components.find(c=>c.userData.def.cat==='gpu');
@@ -3264,9 +3266,10 @@ window.__PROVENANCE = Object.freeze({
       if(st.rewind){ st.qT=Math.max(0,st.qT-dt*0.55); if(REDUCED||(st.qT<=0&&st.q<0.003)){ exit(); return; } }
       else if(st.auto&&!overlayOpen()){
         const stop=STOPS[st.ai];
-        if(REDUCED){ st.hold+=dt; if(st.hold>2.8){ st.hold=0; st.qT=stop; if(st.ai<STOPS.length-1) st.ai++; else st.auto=false; } }
+        if(REDUCED){ st.hold+=dt; if(st.hold>2.8){ st.hold=0; st.qT=stop; if(st.ai<STOPS.length-1) st.ai++; else { finale(); return; } } }
         else if(st.qT<stop){ st.qT=Math.min(stop,st.qT+SPEED*dt); st.hold=0; }
-        else if(Math.abs(st.q-stop)<0.006){ st.hold+=dt; if(st.hold>HOLD){ st.hold=0; if(st.ai<STOPS.length-1) st.ai++; else st.auto=false; } }
+        else if(Math.abs(st.q-stop)<0.006){ st.hold+=dt; if(st.hold>(st.ai<STOPS.length-1?HOLD:HOLD*2.2)){ st.hold=0;
+          if(st.ai<STOPS.length-1) st.ai++; else { finale(); return; } } }
       }
       if(REDUCED) st.q=st.qT;
       else { st.q+=(st.qT-st.q)*(1-Math.exp(-dt*(st.rewind?6:3.2))); if(Math.abs(st.qT-st.q)<1e-5) st.q=st.qT; }
@@ -3313,7 +3316,11 @@ window.__PROVENANCE = Object.freeze({
       if(curReport) renderCard(curReport,curPeri);                                  // restores the trainer's aria text
     }
     function stopAuto(){ st.auto=false; st.rewind=false; }
+    function finale(){                    // the reel's last frame: all the way back out to the data hall
+      exit(); enterHall(0.32); finaleOn=true; curChapter=-1;
+    }
     function step(dir){ stopAuto(); if(!STOPS) return;
+      if(dir>0 && st.qT>=0.999 && st.q>0.99){ finale(); return; }
       if(dir>0){ const n=STOPS.find(s=>s>st.qT+0.004); st.qT=n==null?1:n; }
       else { const prev=STOPS.filter(s=>s<st.qT-0.004); if(prev.length) st.qT=prev[prev.length-1]; else if(st.q<0.004) exit(); else st.qT=0; } }
     function delta(d){ // d > 0: deeper; pulling back past the start returns to the trainer
@@ -3321,11 +3328,13 @@ window.__PROVENANCE = Object.freeze({
       if(REDUCED){ st.wacc+=d; if(Math.abs(st.wacc)>=120){ step(st.wacc>0?1:-1); st.wacc=0; } return; }
       st.qT+=d/3800;
       if(st.qT<0){ st.acc+=-st.qT; st.qT=0; if(st.acc>0.05&&st.q<0.01) exit(); } else st.acc=0;
+      if(st.qT>1){ st.over+=st.qT-1; if(st.over>0.12&&st.q>0.995){ st.over=0; finale(); return; } } else st.over=0;
       st.qT=Math.min(1,st.qT);
     }
     function back(){ if(!st.on) return; st.auto=false; if(REDUCED) exit(); else st.rewind=true; }
     return { on:()=>st.on, pending:()=>!!st.pending, enter, exit, back, step, delta, stopAuto, render, tickPending,
-      cancelPending(){ st.pending=null; }, go(q){ stopAuto(); st.qT=clamp01(q); }, fovM:()=>st.fovM,
+      cancelPending(){ st.pending=null; }, go(q){ stopAuto(); st.qT=clamp01(q); }, fovM:()=>st.fovM, finale,
+      chapters:()=>(CH||[]).map(c=>({q:c.q,title:c.title})),
       state:()=>({on:st.on,q:st.q,qT:st.qT,auto:st.auto,ci:st.ci,pending:!!st.pending,fovM:st.fovM,stops:STOPS&&STOPS.slice()}) };
   })();
 
@@ -3638,7 +3647,7 @@ window.__PROVENANCE = Object.freeze({
   rideNextEl.addEventListener('click',()=>{ hideRideNext();
     const gpu=components.find(c=>c.userData.def.cat==='gpu'); if(gpu) openComponent(gpu); });
   // any deliberate input cancels the ride's pending hand-off into the GPU node
-  ['pointerdown','wheel','keydown'].forEach(ev=>window.addEventListener(ev,()=>{ cancelAutoOpen(); DIVE.cancelPending(); endCarry(); },{capture:true,passive:true}));
+  ['pointerdown','wheel','keydown'].forEach(ev=>window.addEventListener(ev,()=>{ cancelAutoOpen(); DIVE.cancelPending(); endCarry(); finaleOn=false; },{capture:true,passive:true}));
   /* dive keyboard: arrows/space/page keys step levels, Esc returns to the GPU node */
   window.addEventListener('keydown',e=>{
     if(!DIVE.on()) return;

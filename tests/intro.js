@@ -18,7 +18,7 @@ const HOOK =
   'active:active?active.userData.def.uid:null,step:curStep,tab:curTab,hall:HALL.group.visible,' +
   'radius:cam.radius,goalR:goal.radius,theta:cam.theta,phi:cam.phi,fov:camera.fov,far:camera.far,fogN:scene.fog.near,fogF:scene.fog.far,' +
   'allT:components.map(function(c){return c._t})};},' +
-  'set:function(p){pT=pC=p;},dive:function(){return DIVE.state();},diveGo:function(q){DIVE.go(q);},' +
+  'set:function(p){pT=pC=p;},dive:function(){return DIVE.state();},diveGo:function(q){DIVE.go(q);},chapters:function(){return DIVE.chapters();},' +
   'open:function(uid){var c=components.find(function(c2){return c2.userData.def.uid===uid});if(c)openComponent(c);}' +
   '};' + HOOK_ANCHOR;
 
@@ -228,25 +228,53 @@ async function assertTrainerHome(page, label) {
   await settle(page, 1200);
   let dcap = await page.evaluate(() => ({ t: document.getElementById('capT').textContent, f: document.getElementById('fovVal').textContent }));
   check('chapter "Into the GPU" at metre scale', /into the gpu/i.test(dcap.t) && / m$/.test(dcap.f), dcap);
+  // every chapter of the dive, in the reel's order — located from the dive's own chapter list, then checked on screen
+  const chs = await page.evaluate(() => window.__ride.chapters());
+  const visibleBx = () => page.evaluate(() => [...document.querySelectorAll('.htag.bx')].filter((t) => parseFloat(t.style.opacity) > 0.5).map((t) => t.textContent));
+  const chapter = async (re, unit, label, after) => {
+    const i = chs.findIndex((c) => re.test(c.title));
+    if (i < 0) { check(label + ' (chapter exists)', false, chs.map((c) => c.title)); return; }
+    const q = (chs[i].q + (i + 1 < chs.length ? chs[i + 1].q : 1)) / 2;
+    await page.evaluate((q) => window.__ride.diveGo(q), q);
+    await waitRide(page, (q) => Math.abs(window.__ride.dive().q - q) < 0.004, q, 60000);
+    await page.waitForFunction((src) => new RegExp(src, 'i').test(document.getElementById('capT').textContent), re.source, { timeout: 30000 }).catch(() => {});
+    await settle(page, 700);
+    const c = await page.evaluate(() => ({ t: document.getElementById('capT').textContent, f: document.getElementById('fovVal').textContent }));
+    check(label, re.test(c.t) && unit.test(c.f), c);
+    if (after) await after();
+  };
+  const labelled = (label, res) => async () => { const bx = await visibleBx(); check(label, res.every((r) => bx.some((t) => r.test(t))), bx); };
+  await chapter(/one blackwell gpu/i, / cm$/, 'the GPU package, at centimetre scale');
+  await chapter(/104 billion transistors/i, / cm$| mm$/, 'one die: 104 billion transistors');
+  await chapter(/l2 cache/i, / mm$/, 'the L2 cache corridor, at millimetre scale');
+  await chapter(/one streaming multiprocessor/i, / mm$/, 'one streaming multiprocessor: 128 CUDA cores, 4 Tensor Cores');
+  await chapter(/^one processing block/i, / mm$| µm$/, 'one processing block: 32 CUDA cores, 64 KB register file');
+  await chapter(/inside the processing block/i, / µm$/, 'inside the processing block, at micrometre scale',
+    labelled('processing-block parts are labelled (scheduler, register file, CUDA cores)', [/scheduler/i, /Register file/, /32 CUDA cores/]));
+  await chapter(/register file/i, / µm$/, 'the register file: 16,384 × 32-bit');
+  await chapter(/one bank/i, / µm$/, 'one bank: two 128 × 128 arrays, decoder, sense amplifiers');
+  await chapter(/memory cells/i, / µm$| nm$/, 'memory cells, each storing one bit');
+  await chapter(/six transistors/i, / nm$/, 'one memory cell: six transistors',
+    labelled('the 6T cell is labelled (access, pull-down, pull-up, Q)', [/Access/, /Pull-down/, /Pull-up/, /Q = 1/]));
+  await chapter(/reading the bit/i, / nm$/, 'reading the bit: wordline and bitlines');
+  await chapter(/^one cuda core/i, / µm$/, 'back out to one CUDA core');
+  await chapter(/inside one cuda core/i, / µm$/, 'inside one CUDA core: a fused multiply-add unit',
+    labelled('the FMA unit is labelled (multiplier, adder, alignment shifter)', [/Multiplier/, /Adder/, /Alignment/]));
+  await chapter(/electron microscope/i, / µm$/, 'into the electron microscope');
+  await chapter(/rows of logic cells/i, / µm$| nm$/, 'rows of logic cells, then gates and fins');
+  await chapter(/tile we zoom into/i, / µm$| nm$/, 'the tile we zoom into');
+  await chapter(/one full-adder tile/i, / nm$/, 'one full-adder tile: sum and carry',
+    labelled('the full-adder cells are labelled (XOR, majority)', [/XOR/, /Majority/]));
+  await chapter(/one logic cell/i, / nm$/, 'one logic cell (XOR): gates cross fins');
+  await chapter(/transistor, cut in half/i, / nm$/, 'one transistor, cut in half');
+  await chapter(/atoms 0.235 nm/i, / nm$/, 'silicon atoms 0.235 nm apart');
   const depth = async (q, re, unit, label) => {
     await page.evaluate((q) => window.__ride.diveGo(q), q);
-    await waitRide(page, (q) => Math.abs(window.__ride.dive().q - q) < 0.004, q, 30000);
+    await waitRide(page, (q) => Math.abs(window.__ride.dive().q - q) < 0.004, q, 60000);
     await settle(page, 700);
     const c = await page.evaluate(() => ({ t: document.getElementById('capT').textContent, f: document.getElementById('fovVal').textContent }));
     check(label, re.test(c.t) && unit.test(c.f), c);
   };
-  await depth(0.15, /one blackwell gpu/i, / cm$/, 'the GPU package, at centimetre scale');
-  await depth(0.22, /104 billion transistors/i, / cm$| mm$/, 'one die: 104 billion transistors');
-  await depth(0.3, /l2 cache/i, / mm$/, 'the L2 cache corridor, at millimetre scale');
-  await depth(0.4, /one streaming multiprocessor/i, / mm$/, 'one streaming multiprocessor: 128 CUDA cores, 4 Tensor Cores');
-  await depth(0.47, /one processing block/i, / mm$| µm$/, 'one processing block: 32 CUDA cores, 64 KB register file');
-  await depth(0.53, /inside the processing block/i, / µm$/, 'inside the processing block, at micrometre scale');
-  const bx = await page.evaluate(() => [...document.querySelectorAll('.htag.bx')].filter((t) => parseFloat(t.style.opacity) > 0.5).map((t) => t.textContent));
-  check('processing-block parts are labelled (scheduler, register file, CUDA cores)',
-    bx.some((t) => /scheduler/i.test(t)) && bx.some((t) => /Register file/.test(t)) && bx.some((t) => /32 CUDA cores/.test(t)), bx);
-  await depth(0.565, /tensor core/i, / µm$/, 'one Tensor Core');
-  await depth(0.63, /electron microscope|logic cells/i, / µm$/, 'into the electron microscope: the wiring polished away');
-  await depth(0.76, /transistor, cut in half/i, / nm$| µm$/, 'one transistor, cut in half');
   await depth(1, /bottom of the zoom/i, / nm$/, 'the bottom: silicon atoms at nanometre scale');
   const mk = await page.evaluate(() => parseFloat(document.getElementById('fovMk').style.top));
   check('FOV ruler marker reaches the bottom decade', mk > 85, mk);
@@ -273,6 +301,21 @@ async function assertTrainerHome(page, label) {
   await page.click('#btnDiveBack');
   await waitRide(page, () => !window.__ride.dive().on, null, 30000).then(() => {}, () => {});
   check('"Back to the rack" rewinds and returns to the trainer', !(await page.evaluate(() => window.__ride.dive().on)));
+  // the reel's last frame: going on past the bottom of the zoom flies all the way back out to the data hall
+  await page.click('.tab[data-tab="overview"]').catch(() => {});
+  await page.evaluate(() => { const b = document.querySelector('#cardBody [data-dive]'); if (b) b.click(); });
+  await waitRide(page, () => window.__ride.dive().on, null, 30000);
+  await page.evaluate(() => window.__ride.diveGo(1));
+  await waitRide(page, () => window.__ride.dive().q > 0.995, null, 60000);
+  await page.keyboard.press('ArrowDown');
+  await waitRide(page, () => window.__ride.st().on, null, 30000).then(() => {}, () => {});
+  await page.waitForFunction(() => /back to the hall/i.test(document.getElementById('capT').textContent), null, { timeout: 20000 }).catch(() => {});
+  s = await st(page);
+  const fin = await page.evaluate(() => document.getElementById('capT').textContent);
+  check('past the bottom of the zoom, the camera flies back out to the data hall', s.on && s.hall && !(await page.evaluate(() => window.__ride.dive().on)), s);
+  check('the finale is captioned "Back to the hall"', /back to the hall/i.test(fin), fin);
+  await page.keyboard.press('Escape');
+  await settle(page, 1500);
   check('dive: no console errors', page.errors.length === 0, page.errors);
   await page.close();
 
