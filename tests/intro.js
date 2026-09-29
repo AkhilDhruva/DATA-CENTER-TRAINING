@@ -1,5 +1,6 @@
-/* Data-hall ride tests — the God's-eye intro that flies from the whole hall
-   down to one rack and hands over to the trainer. Run with the app served:
+/* Ride tests — the God's-eye intro that flies from the whole hall down to one
+   rack and hands over to the trainer, and the silicon dive that continues from
+   the GPU down to a single silicon atom. Run with the app served:
      APP_URL=http://127.0.0.1:8123/index.html node tests/intro.js
    Requires: playwright. If the three.js CDN is unreachable, set THREE_LOCAL to
    a local three.min.js (same convention as tests/acceptance.js). */
@@ -17,7 +18,7 @@ const HOOK =
   'active:active?active.userData.def.uid:null,step:curStep,tab:curTab,hall:HALL.group.visible,' +
   'radius:cam.radius,goalR:goal.radius,theta:cam.theta,phi:cam.phi,fov:camera.fov,far:camera.far,fogN:scene.fog.near,fogF:scene.fog.far,' +
   'allT:components.map(function(c){return c._t})};},' +
-  'set:function(p){pT=pC=p;},' +
+  'set:function(p){pT=pC=p;},dive:function(){return DIVE.state();},diveGo:function(q){DIVE.go(q);},' +
   'open:function(uid){var c=components.find(function(c2){return c2.userData.def.uid===uid});if(c)openComponent(c);}' +
   '};' + HOOK_ANCHOR;
 
@@ -195,12 +196,73 @@ async function assertTrainerHome(page, label) {
   page = await boot(browser, 1280, 800);
   const t0 = Date.now();
   await page.click('#introStart');
-  await waitRide(page, () => { const r = window.__ride.st(); return !r.on; }, null, 90000);
+  await waitRide(page, () => { const r = window.__ride.st(); return !r.on; }, null, 300000); // software GL can be slow
   const secs = (Date.now() - t0) / 1000;
   check('the ride is a real flight, not a cut (≥ 8 s)', secs >= 8, secs);
   await waitRide(page, () => window.__ride.st().active === 'gpu-u33', null, 15000);
   check('the ride carries on into the GPU node dissection', (await st(page)).active === 'gpu-u33');
+  await waitRide(page, () => window.__ride.dive().on, null, 90000).then(() => {}, () => {});
+  check('…and on into the silicon dive, hands-free', await page.evaluate(() => window.__ride.dive().on));
   check('hands-free: no console errors', page.errors.length === 0, page.errors);
+  await page.close();
+
+  console.log('\n== Silicon dive: GPU → die → L2 → SM → wiring → transistor → atoms ==');
+  page = await boot(browser, 1280, 800, { query: '?intro=0' });
+  await page.evaluate(() => window.__ride.open('gpu-u33'));
+  await page.waitForFunction(() => { const s = window.__ride.st(); return s.active === 'gpu-u33' && Math.max(...s.allT) >= 1; }, null, { timeout: 30000 });
+  await settle(page, 800);
+  check('the GPU node offers "Zoom into the silicon"', await page.evaluate(() => !!document.querySelector('#cardBody [data-dive]')));
+  await page.click('#cardBody [data-dive]');
+  await waitRide(page, () => window.__ride.dive().on, null, 30000);
+  let dv = await page.evaluate(() => window.__ride.dive());
+  check('the dive starts from the open GPU node', dv.on && dv.q < 0.05, dv);
+  const diveChrome = await page.waitForFunction(() => document.body.classList.contains('dive-on') &&
+    getComputedStyle(document.getElementById('sidebar')).visibility === 'hidden', null, { timeout: 8000 }).then(() => true, () => false);
+  check('trainer chrome steps aside for the dive', diveChrome);
+  check('"Back to the rack" is offered', await shown(page, 'btnDiveBack'));
+  await settle(page, 1200);
+  let dcap = await page.evaluate(() => ({ t: document.getElementById('capT').textContent, f: document.getElementById('fovVal').textContent }));
+  check('chapter "Into the GPU" at metre scale', /into the gpu/i.test(dcap.t) && / m$/.test(dcap.f), dcap);
+  const depth = async (q, re, unit, label) => {
+    await page.evaluate((q) => window.__ride.diveGo(q), q);
+    await waitRide(page, (q) => Math.abs(window.__ride.dive().q - q) < 0.004, q, 30000);
+    await settle(page, 700);
+    const c = await page.evaluate(() => ({ t: document.getElementById('capT').textContent, f: document.getElementById('fovVal').textContent }));
+    check(label, re.test(c.t) && unit.test(c.f), c);
+  };
+  await depth(0.15, /one blackwell gpu/i, / cm$/, 'the GPU package, at centimetre scale');
+  await depth(0.3, /104 billion transistors/i, / cm$| mm$/, 'one die: 104 billion transistors');
+  await depth(0.4, /l2 cache/i, / mm$/, 'the L2 cache corridor, at millimetre scale');
+  await depth(0.5, /tensor core/i, / mm$| µm$/, 'one Tensor Core');
+  await depth(0.63, /wiring/i, / µm$/, 'passing through the copper wiring, at micrometre scale');
+  await depth(0.76, /transistor, cut in half/i, / nm$| µm$/, 'one transistor, cut in half');
+  await depth(1, /bottom of the zoom/i, / nm$/, 'the bottom: silicon atoms at nanometre scale');
+  const mk = await page.evaluate(() => parseFloat(document.getElementById('fovMk').style.top));
+  check('FOV ruler marker reaches the bottom decade', mk > 85, mk);
+  await page.keyboard.press('Escape');
+  await settle(page, 900);
+  s = await st(page);
+  check('Esc leaves the dive with the GPU node still open', !(await page.evaluate(() => window.__ride.dive().on)) && s.active === 'gpu-u33', s);
+  check('the inspector is back on the GPU part', /Blackwell GPU/.test(await page.evaluate(() => document.getElementById('cardName').textContent)));
+  check('trainer chrome returns after the dive', await page.waitForFunction(() => { const cs = getComputedStyle(document.getElementById('card'));
+    return !document.body.classList.contains('dive-on') && cs.visibility === 'visible' && parseFloat(cs.opacity) > 0.9; }, null, { timeout: 8000 }).then(() => true, () => false));
+  // scrolling deeper at the closest orbit keeps going into the silicon; scrolling back up comes back out
+  await page.mouse.move(640, 400);
+  for (let i = 0; i < 4; i++) { await page.mouse.wheel(0, 500); await page.waitForTimeout(250); }
+  await waitRide(page, () => window.__ride.dive().on, null, 30000).then(() => {}, () => {});
+  check('scrolling deeper on the GPU node enters the dive', await page.evaluate(() => window.__ride.dive().on));
+  await settle(page, 900);
+  await page.mouse.wheel(0, -700);
+  await waitRide(page, () => !window.__ride.dive().on, null, 20000).then(() => {}, () => {});
+  check('scrolling back up out of the dive returns to the trainer', !(await page.evaluate(() => window.__ride.dive().on)));
+  // "Back to the rack" rewinds out of the silicon
+  await page.click('#cardBody [data-dive]').catch(async () => { await page.click('.tab[data-tab="overview"]'); await page.click('#cardBody [data-dive]'); });
+  await waitRide(page, () => window.__ride.dive().on, null, 30000);
+  await page.evaluate(() => window.__ride.diveGo(0.6)); await settle(page, 2500);
+  await page.click('#btnDiveBack');
+  await waitRide(page, () => !window.__ride.dive().on, null, 30000).then(() => {}, () => {});
+  check('"Back to the rack" rewinds and returns to the trainer', !(await page.evaluate(() => window.__ride.dive().on)));
+  check('dive: no console errors', page.errors.length === 0, page.errors);
   await page.close();
 
   console.log('\n== Skip ==');
@@ -222,6 +284,14 @@ async function assertTrainerHome(page, label) {
   await settle(page, 300);
   s = await st(page);
   check('a scroll step jumps a whole chapter', s.pT === 0.36 && s.pC === 0.36, s);
+  await page.keyboard.press('End'); await settle(page, 3500);
+  await page.evaluate(() => window.__ride.open('gpu-u33'));
+  await page.waitForFunction(() => Math.max(...window.__ride.st().allT) >= 1, null, { timeout: 20000 });
+  await page.evaluate(() => document.querySelector('#cardBody [data-dive]').click());
+  await waitRide(page, () => window.__ride.dive().on, null, 20000);
+  await page.keyboard.press('ArrowDown'); await settle(page, 400);
+  const rd = await page.evaluate(() => window.__ride.dive());
+  check('reduced motion: the dive cuts level to level', rd.q === rd.qT && rd.q > 0.07, rd);
   check('hint animation is off', await page.evaluate(() => getComputedStyle(document.querySelector('.mouse'), '::after').animationName === 'none'));
   await page.close();
 

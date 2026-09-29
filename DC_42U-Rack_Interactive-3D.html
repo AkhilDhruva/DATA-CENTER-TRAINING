@@ -317,12 +317,23 @@
      the authorship mark (#owner) is deliberately never hidden. */
   #sidebar,#controls,#card,#bottombar,#stepper,#btnTraining,#menuBtn{transition:opacity .6s,visibility .6s}
   body.intro-on #sidebar,body.intro-on #controls,body.intro-on #card,body.intro-on #bottombar,
-  body.intro-on #stepper,body.intro-on #btnTraining,body.intro-on #menuBtn,body.intro-on #trainHint{
+  body.intro-on #stepper,body.intro-on #btnTraining,body.intro-on #menuBtn,body.intro-on #trainHint,body.intro-on #ident{
     opacity:0;visibility:hidden;pointer-events:none}
   body.intro-on #btnTraining,body.intro-on #menuBtn{display:none}   /* free the header for Skip on small screens */
   body.intro-on #topbar{background:linear-gradient(180deg,rgba(7,11,18,.72),rgba(7,11,18,0));border-bottom-color:transparent;backdrop-filter:none}
   #btnSkipIntro{display:none}
   body.intro-on #btnSkipIntro{display:flex}
+  /* silicon dive: same cinematic hand-off as the hall ride */
+  body.dive-on #sidebar,body.dive-on #controls,body.dive-on #card,body.dive-on #bottombar,body.dive-on #stepper,
+  body.dive-on #trainHint,body.dive-on #ident{opacity:0;visibility:hidden;pointer-events:none}
+  body.dive-on #btnTraining,body.dive-on #menuBtn{display:none}
+  body.dive-on #topbar{background:linear-gradient(180deg,rgba(7,11,18,.72),rgba(7,11,18,0));border-bottom-color:transparent;backdrop-filter:none}
+  #btnDiveBack{display:none}
+  body.dive-on #btnDiveBack{display:flex}
+  .cta.dive{border-color:#ffd23f;background:linear-gradient(135deg,#231c07,#33290b)}
+  .cta.dive:hover{background:linear-gradient(135deg,#2e250a,#43360f)}
+  .cta.dive .lead,.cta.dive .go{color:#ffd23f}
+  .cta.dive:focus-visible{outline:2px solid #ffd23f;outline-offset:2px}
   .ride-t{font-family:"Arial Narrow","Roboto Condensed","Helvetica Neue",Arial,sans-serif;font-stretch:condensed;
     font-weight:800;text-transform:uppercase;letter-spacing:.02em;color:#fff}
   #introHook,#introCap{left:max(32px,4.5vw);bottom:136px;z-index:10;opacity:0;visibility:hidden;pointer-events:none;
@@ -368,16 +379,17 @@
     font-variant-numeric:tabular-nums;transition:opacity .5s}
   #fov .fh{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:#9fb0c3;text-align:right}
   #fov .fv{font-size:15px;font-weight:700;color:#fff;text-align:right;margin:4px 0 10px;white-space:nowrap}
-  #fov .fs{position:relative;height:250px;width:64px;margin-left:auto;border-right:1px solid rgba(232,238,247,.35)}
+  #fov .fs{position:relative;height:290px;width:64px;margin-left:auto;border-right:1px solid rgba(232,238,247,.35)}
   #fov .tk{position:absolute;right:0;height:1px;width:6px;background:rgba(232,238,247,.35)}
   #fov .tk.mj{width:12px;background:rgba(232,238,247,.7)}
   #fov .tl{position:absolute;right:17px;transform:translateY(-50%);font-size:9.5px;color:#9fb0c3;white-space:nowrap}
   #fov .mk{position:absolute;right:-5px;width:24px;height:2px;margin-top:-1px;background:#ffd23f;
     box-shadow:0 0 8px rgba(255,210,63,.85);transition:top .12s linear}
-  body:not(.intro-on) #fov{right:472px;top:auto;bottom:98px;transform:none;width:110px;padding:10px 12px 12px;
+  body:not(.intro-on):not(.dive-on) #fov{right:472px;top:auto;bottom:98px;transform:none;width:110px;padding:10px 12px 12px;
     background:rgba(13,19,28,.88);border:1px solid var(--line);border-radius:var(--rad);backdrop-filter:blur(6px)}
-  body:not(.intro-on) #fov .fs{height:150px}
-  @media (max-height:800px){body:not(.intro-on) #fov{display:none}}
+  body:not(.intro-on):not(.dive-on) #fov .fs{height:150px}
+  body:not(.intro-on):not(.dive-on) #fov .tl.alt{display:none}
+  @media (max-height:800px){body:not(.intro-on):not(.dive-on) #fov{display:none}}
   /* hall annotations projected from 3D */
   .htag{position:absolute;transform:translate(-50%,-100%);pointer-events:none;opacity:0;transition:opacity .35s;
     font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#dbe6f2;white-space:nowrap;text-align:center;
@@ -414,7 +426,7 @@
     .bb .v{font-size:11.5px}.bb .k{font-size:9.5px}
     #btnNote{display:none}
     #brand p{display:none}
-    body:not(.intro-on) #fov{display:none}
+    body:not(.intro-on):not(.dive-on) #fov{display:none}
     #rideNext{bottom:auto;top:128px;left:50%}
   }
   /* Phone: compact header, no stepper, icon-only actions */
@@ -432,11 +444,14 @@
     #introHook .kick{font-size:10px;letter-spacing:.14em}
     #introCap .cs{font-size:10.5px;letter-spacing:.12em}
     #fov{right:10px;top:84px;transform:none;width:78px}
-    #fov .fs{height:130px;width:52px}
+    #fov .fs{height:170px;width:52px}
+    #fov .tl.alt{display:none}
     #fov .fv{font-size:13px;margin-bottom:6px}
     #rideNext{top:118px;max-width:92vw}
     #btnSkipIntro{font-size:0;gap:0;padding:0 12px}
     #btnSkipIntro::after{content:"Skip";font-size:12px}
+    #btnDiveBack{font-size:0;gap:0;padding:0 12px}
+    #btnDiveBack::after{content:"‹ Back";font-size:12px}
   }
 </style>
 </head>
@@ -457,6 +472,7 @@
   </ol>
   <div id="topActions">
     <button class="iconbtn" id="btnSkipIntro" type="button" aria-label="Skip intro">Skip intro&nbsp;›</button>
+    <button class="iconbtn" id="btnDiveBack" type="button" aria-label="Back to the rack">‹&nbsp;Back to the rack</button>
     <button class="iconbtn" id="btnTraining"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10L12 5 2 10l10 5 10-5zM6 12v5c0 1 3 3 6 3s6-2 6-3v-5"/></svg>Training mode</button>
     <button class="iconbtn" id="btnHelp"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 015.8 1c0 2-3 3-3 3M12 17h.01"/></svg>Help</button>
     <button class="iconbtn sq" id="btnFull" title="Fullscreen"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg></button>
@@ -566,6 +582,7 @@
     <li>The trainer opens on a God's-eye view of a full data hall. <b>Scroll down / swipe up / ↓</b> to zoom in, row by row, until one rack is isolated.</li>
     <li><b>Start the ride</b> plays it hands-free and carries on into the GPU node. <b>Esc</b> or <b>Skip</b> jumps straight to the rack.</li>
     <li>Scroll back up past the full-rack view (or use <b>Data hall</b>) to fly back out to the hall.</li>
+    <li>Open the <b>AI GPU node</b> and choose <b>Zoom into the silicon</b> (or keep scrolling deeper) to dive from the GPU to the die, the L2 cache, a Tensor Core, the copper wiring, one transistor and finally the silicon atoms. <b>Back to the rack</b> rewinds.</li>
   </ul>
   <h3>Controls</h3>
   <ul>
@@ -2591,6 +2608,12 @@ window.__PROVENANCE = Object.freeze({
   const blend={t:1,pos:new THREE.Vector3(),tgt:new THREE.Vector3(),fov:45};
   const introLook=new THREE.Vector3(), _ip=new THREE.Vector3(), _it=new THREE.Vector3(), _shift=new THREE.Vector3();
   const clamp01=v=>Math.max(0,Math.min(1,v));
+  const overlayOpen=()=>['help','course','own'].some(id=>{ const el=document.getElementById(id); return !!el&&el.classList.contains('open'); });
+  let rotPref=!REDUCED;                  // the learner's auto-rotate choice survives trips to the hall
+  function focusRideControl(){           // keep keyboard focus on a live control when the chrome steps aside
+    const ae=document.activeElement;
+    if(ae&&ae.closest&&ae.closest('#controls,#card,#sidebar,#bottombar')){ const n=document.getElementById('capNext');
+      if(n) n.focus({preventScroll:true}); else ae.blur(); } }
   const smooth=x=>{ x=clamp01(x); return x*x*(3-2*x); };
 
   function ridePose(p,outPos,outTgt){
@@ -2623,7 +2646,7 @@ window.__PROVENANCE = Object.freeze({
   }
   const AUTO_SPEED=0.085, AUTO_HOLD=1.35;
   function autoStep(dt){
-    if(!auto.on) return;
+    if(!auto.on||overlayOpen()) return;  // a hands-free ride waits while a dialog is open
     const stop=STOPS[auto.i];
     if(REDUCED){ // reduced motion: chapter cuts on a timer instead of a flight
       auto.hold+=dt; if(auto.hold>2.8){ auto.hold=0; pT=stop; if(auto.i<STOPS.length-1) auto.i++; }
@@ -2634,14 +2657,16 @@ window.__PROVENANCE = Object.freeze({
   }
 
   function enterHall(dest){
-    cancelAutoOpen(); hideRideNext();
+    cancelAutoOpen(); hideRideNext(); DIVE.cancelPending(); if(DIVE.on()) DIVE.exit();
     if(introOn){ auto.on=false; pT=clamp01(dest); return; }
     if(mode!=='all') setMode(mode);                     // back to the full view (toggle off power/airflow)
     if(active || curReport!==RACKREPORT) closeCardFlow();
     blend.pos.copy(camera.position); blend.tgt.copy(target); blend.fov=camera.fov; blend.t=REDUCED?1:0;
     introOn=true; auto.on=false; endHold=0; pC=1; pT=clamp01(dest); if(REDUCED) pC=pT;
+    rotPref=autoRotate;
     HALL.group.visible=true; dragging=false; setRotate(false);
-    document.body.classList.add('intro-on');
+    ident.style.opacity=0; renderer.domElement.style.cursor='';
+    document.body.classList.add('intro-on'); focusRideControl();
     setRideAria();
   }
   function endIntro(instant,fromRide){
@@ -2655,11 +2680,14 @@ window.__PROVENANCE = Object.freeze({
     document.body.classList.remove('intro-on');
     introHook.classList.remove('on'); introCap.classList.remove('on'); hallTags.forEach(h=>{h.el.style.opacity=0;});
     wheelQuietUntil=nowT+0.8;                           // swallow scroll momentum at the hand-over
-    setRotate(!REDUCED);
+    dragging=false; pinchD=0;                            // …and end the swipe that finished the ride
+    setRotate(rotPref);
     if(!instant){
       if(!active) renderRackOverview();
-      if(fromRide){ cancelAutoOpen(); autoOpenTimer=setTimeout(()=>{ autoOpenTimer=0;
-          const gpu=components.find(c=>c.userData.def.cat==='gpu'); if(gpu&&!active&&!introOn){ openComponent(gpu); toast('Pulling the AI GPU node out of the rack…'); } },1100); }
+      if(fromRide){ cancelAutoOpen(); const go=()=>{ autoOpenTimer=0;
+          if(overlayOpen()){ autoOpenTimer=setTimeout(go,500); return; }   // wait for the dialog to close
+          const gpu=components.find(c=>c.userData.def.cat==='gpu'); if(gpu&&!active&&!introOn){ DIVE.enter({auto:true}); toast('Pulling the AI GPU node out of the rack…'); } };
+        autoOpenTimer=setTimeout(go,1100); }
       else showRideNext();
     }
   }
@@ -2667,7 +2695,7 @@ window.__PROVENANCE = Object.freeze({
   /* HUD for the ride: hook, reel-style captions, projected hall annotations */
   const introHook=document.getElementById('introHook'), introCap=document.getElementById('introCap');
   const capT=document.getElementById('capT'), capS=document.getElementById('capS'), capN=document.getElementById('capN');
-  const rideNextEl=document.getElementById('rideNext');
+  const rideNextEl=document.getElementById('rideNext'), capSkipEl=document.getElementById('capSkip');
   let curChapter=-1;
   function showRideNext(){ rideNextEl.classList.add('on'); clearTimeout(rideNextEl._t);
     rideNextEl._t=setTimeout(hideRideNext,12000); }
@@ -2724,7 +2752,7 @@ window.__PROVENANCE = Object.freeze({
     // light the chosen rack with the trainer's own stage lights as it is singled out
     stage.intensity=0.6*st.spot; stageRim.intensity=0.75*st.spot; stageAccent.intensity=0.35*st.spot;
     updateRideUI();
-    if(pT>=1 && pC>=0.999){ endHold+=dt; if(!auto.on || endHold>(REDUCED?2.4:1.3)) endIntro(false,auto.on); }
+    if(pT>=1 && pC>=0.999){ if(!overlayOpen()) endHold+=dt; if(!auto.on || endHold>(REDUCED?2.4:1.3)) endIntro(false,auto.on); }
     else endHold=0;
   }
 
@@ -2733,8 +2761,13 @@ window.__PROVENANCE = Object.freeze({
     if(REDUCED){ wheelAcc+=d; if(Math.abs(wheelAcc)>=120){ stepChapter(wheelAcc>0?1:-1); wheelAcc=0; } return; }
     pT=clamp01(pT+d/2800);
   }
+  let diveAcc=0;
   function orbitZoom(d){ // d > 0: deeper (dolly in); pulling back past the full rack flies out to the hall
     if(nowT<wheelQuietUntil) return;
+    // already as close as the orbit goes on the open GPU node: keep scrolling to dive into the silicon
+    if(d>0 && active && active.userData.def.cat==='gpu' && active._t>=1 && goal.radius<=11.05){
+      diveAcc+=d; if(diveAcc>420){ diveAcc=0; DIVE.enter({}); } return; }
+    diveAcc=0;
     goal.radius=Math.max(11,Math.min(60,goal.radius-d*0.02));
     if(d<0 && !active && goal.radius>=59.5){ pullBack+=-d; if(pullBack>260){ pullBack=0; enterHall(0.86); } }
     else pullBack=0;
@@ -2747,7 +2780,7 @@ window.__PROVENANCE = Object.freeze({
     touchPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(touchPts.size===2){ dragging=false; pinchD=pinchDist(); return; }
     dragging=true;px=e.clientX;py=e.clientY;moved=0;
-    if(introOn){ auto.on=false; cancelAutoOpen(); return; }
+    if(introOn||DIVE.on()){ auto.on=false; DIVE.stopAuto(); cancelAutoOpen(); return; }
     setRotate(false);
   });
   const endPtr=e=>{ touchPts.delete(e.pointerId); if(touchPts.size<2) pinchD=0; dragging=false; };
@@ -2756,10 +2789,11 @@ window.__PROVENANCE = Object.freeze({
   window.addEventListener('pointermove',e=>{
     if(touchPts.has(e.pointerId)) touchPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(touchPts.size===2 && pinchD){ const d=pinchDist(); if(d>0){ const g=Math.log(d/pinchD)*900; pinchD=d;
-        if(introOn) rideDelta(g); else orbitZoom(g); } return; }
+        if(introOn) rideDelta(g); else if(DIVE.on()) DIVE.delta(g); else orbitZoom(g); } return; }
     if(dragging){
       const dx=e.clientX-px,dy=e.clientY-py; moved+=Math.abs(dx)+Math.abs(dy);
       if(introOn){ rideDelta(-dy*2.2); px=e.clientX; py=e.clientY; return; } // swipe up = deeper
+      if(DIVE.on()){ DIVE.delta(-dy*2.2); px=e.clientX; py=e.clientY; return; }
       goal.theta-=dx*0.008; goal.phi-=dy*0.006;
       goal.phi=Math.max(0.22,Math.min(Math.PI-0.22,goal.phi));
       cam.theta-=dx*0.008; cam.phi=Math.max(0.22,Math.min(Math.PI-0.22,cam.phi-dy*0.006));
@@ -2769,13 +2803,482 @@ window.__PROVENANCE = Object.freeze({
   });
   function wheelDelta(e){ let d=e.deltaY; if(e.deltaMode===1) d*=16; else if(e.deltaMode===2) d*=window.innerHeight;
     return e.ctrlKey? -3*d : d; }         // trackpad pinch: spreading (zoom in) arrives as ctrl + negative deltaY
-  renderer.domElement.addEventListener('wheel',e=>{ e.preventDefault(); if(!introOn) orbitZoom(wheelDelta(e)); },{passive:false});
+  renderer.domElement.addEventListener('wheel',e=>{ e.preventDefault(); if(!introOn && !DIVE.on()) orbitZoom(wheelDelta(e)); },{passive:false});
   // during the ride the whole screen scrolls the ride (headline and captions sit over the canvas)
   window.addEventListener('wheel',e=>{
-    if(!introOn) return;
+    if(!introOn && !DIVE.on()) return;
     if(e.target.closest && e.target.closest('#help,#course,#own')) return; // let open overlays scroll natively
-    e.preventDefault(); rideDelta(wheelDelta(e));
+    e.preventDefault(); if(DIVE.on()) DIVE.delta(wheelDelta(e)); else rideDelta(wheelDelta(e));
   },{passive:false});
+
+  /* =========================================================================
+     SILICON DIVE — the ride's second half: from the GPU in the node down to a
+     single silicon bond. Twelve orders of magnitude cannot share one float32
+     scene, so each level is its own small scene in its own units (mpu =
+     metres per world unit); the controller cross-fades adjacent levels at a
+     matched field of view, so it reads as one continuous zoom. Layouts are
+     illustrative (labelled as such on screen); counts and dimensions quoted in
+     captions are the published Blackwell / TSMC 4NP / silicon figures.
+  ==========================================================================*/
+  function buildDiveStages(){
+    const UBOX=new THREE.BoxGeometry(1,1,1);
+    const _m=new THREE.Matrix4(), _q=new THREE.Quaternion(), _e=new THREE.Euler(), _p=new THREE.Vector3(), _s=new THREE.Vector3(), _c=new THREE.Color();
+    const SM=(hex,o)=>{ const m=new THREE.MeshStandardMaterial(Object.assign({color:hex,roughness:.5,metalness:.3},o||{}));
+      m.metalness=Math.min(m.metalness,0.42); return m; };  // no env map here: high metalness would render black
+    function inst(geo,material,list,parent){ // list: [{x,y,z,sx,sy,sz,rx,ry,rz,c}]
+      const im=new THREE.InstancedMesh(geo,material,Math.max(1,list.length)); im.frustumCulled=false;
+      list.forEach((o,i)=>{ _e.set(o.rx||0,o.ry||0,o.rz||0); _q.setFromEuler(_e);
+        im.setMatrixAt(i,_m.compose(_p.set(o.x,o.y,o.z),_q,_s.set(o.sx,o.sy,o.sz)));
+        if(o.c!=null) im.setColorAt(i,_c.set(o.c)); });
+      im.count=list.length; if(im.instanceColor) im.instanceColor.needsUpdate=true;
+      parent.add(im); return im;
+    }
+    function tex(w,h,draw){ const cv=document.createElement('canvas'); cv.width=w; cv.height=h; draw(cv.getContext('2d'),w,h);
+      const t=new THREE.CanvasTexture(cv); t.anisotropy=8; return t; }
+    function rng(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed);
+      t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+    const S=[];
+
+    /* ---- 1 · the GPU package (1 unit = 1 cm) ---------------------------- */
+    S.push((function(){
+      const g=new THREE.Group();
+      const sub=new THREE.Mesh(UBOX,SM(0x16211d,{roughness:.75,metalness:.15})); sub.scale.set(11,0.3,8.4); sub.position.y=-0.15; g.add(sub);
+      const ip=new THREE.Mesh(UBOX,SM(0x5d666f,{roughness:.3,metalness:.75})); ip.scale.set(8.2,0.12,4.4); ip.position.y=0.06; g.add(ip);
+      // die tops foreshadow the floorplan the next level flies into
+      const dieTop=tex(256,320,(c,w,h)=>{ c.fillStyle='#161b22'; c.fillRect(0,0,w,h);
+        c.fillStyle='#2a3139'; c.fillRect(w*0.44,10,w*0.12,h-20);
+        for(let s=0;s<2;s++) for(let r=0;r<2;r++) for(let k=0;k<2;k++){ const x=(s?w*0.58:w*0.06)+k*w*0.18, y=12+r*(h-24)/2;
+          c.fillStyle='#232a31'; c.fillRect(x,y,w*0.16,(h-24)/2-6);
+          for(let i=0;i<5;i++){ c.fillStyle='rgba(217,179,74,.35)'; c.fillRect(x+4,y+6+i*((h-24)/2-12)/5,w*0.16-8,5); } }
+        c.fillStyle='rgba(217,120,46,.6)'; c.fillRect(2,10,6,h-20); });
+      const dieSide=SM(0x0d1117,{roughness:.25,metalness:.8});
+      const dieMat=[dieSide,dieSide,SM(0xffffff,{map:dieTop,roughness:.22,metalness:.55}),dieSide,dieSide,dieSide];
+      [-1,1].forEach(s=>{ const d=new THREE.Mesh(UBOX,dieMat); d.scale.set(2.6,0.08,3.3); d.position.set(s*1.36,0.16,0);
+        if(s>0) d.rotation.y=Math.PI; g.add(d); });
+      const seam=new THREE.Mesh(UBOX,SM(0x2fd2f5,{emissive:0x2fd2f5,emissiveIntensity:1.2})); seam.scale.set(0.06,0.05,3.3); seam.position.y=0.16; g.add(seam);
+      // 8 × HBM3e stacks: four beside each die, layered sides
+      const hbmSide=tex(64,32,(c,w,h)=>{ for(let i=0;i<12;i++){ c.fillStyle=i%2?'#3a424c':'#8d97a2'; c.fillRect(0,i*h/12,w,h/12); } });
+      const hbmSideM=SM(0xffffff,{map:hbmSide,roughness:.4,metalness:.5}), hbmTopM=SM(0xc3ccd6,{roughness:.3,metalness:.3});
+      const hbmMat=[hbmSideM,hbmSideM,hbmTopM,hbmSideM,hbmSideM,hbmSideM];
+      [-1,1].forEach(s=>{ for(let i=0;i<4;i++){ const hb=new THREE.Mesh(UBOX,hbmMat); hb.scale.set(1.08,0.26,0.96);
+        hb.position.set(s*3.32,0.25,-1.53+i*1.02); g.add(hb); } });
+      // decoupling capacitors around the package edge
+      const caps=[], r=rng(7);
+      for(let i=0;i<46;i++){ const side=i%4, u=-0.9+1.8*r();
+        const x=side<2?u*5.1:(side===2?-5.05:5.05), z=side<2?(side?3.7:-3.7):u*3.7;
+        caps.push({x,y:0.05,z,sx:side<2?0.32:0.16,sy:0.1,sz:side<2?0.16:0.32,c:r()<0.5?0xb8a27a:0x8f98a3}); }
+      inst(UBOX,SM(0xffffff,{roughness:.5,metalness:.3}),caps,g);
+      // copper cold plate with coolant tubes — lifts off to reveal the silicon
+      const plate=new THREE.Group(); g.add(plate);
+      const cu=SM(0xd08a4e,{roughness:.38,metalness:.4,transparent:true}), tube=SM(0x8fb4d8,{roughness:.25,metalness:.8,transparent:true});
+      const pb=new THREE.Mesh(UBOX,cu); pb.scale.set(8.4,0.7,4.6); plate.add(pb);
+      const fins=[]; for(let i=0;i<22;i++) fins.push({x:-3.9+i*0.37,y:0.52,z:0,sx:0.12,sy:0.34,sz:4.2});
+      const finIM=inst(UBOX,cu,fins,plate);
+      [-1,1].forEach(s=>{ const t=new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.34,3.2,18),tube); t.rotation.x=Math.PI/2;
+        t.position.set(s*2.6,0.7,-3.6); plate.add(t); });
+      plate.position.y=0.78;
+      let lastK=-1;
+      return { key:'package', mpu:0.01, bg:0x0a0e14, fog:[30,90], group:g,
+        keys:[{t:0,pos:[-7,17,16],tgt:[0,0.2,0],fov:45},{t:0.45,pos:[-6,9.5,9],tgt:[-0.3,0.2,0],fov:45},
+              {t:1,pos:[-2.2,2.9,1.7],tgt:[-1.36,0.2,0],fov:45}],
+        caps:[{t:0,title:'One Blackwell GPU',sub:'Two reticle-sized dies work as one GPU · 208 billion transistors · 8 HBM3e stacks = 192 GB · TSMC 4NP'}],
+        tags:[{text:'Cold plate',sub:'direct-to-chip liquid',pos:[2.6,1.4,-1.8],from:0.02,to:0.2,cls:'o'},
+              {text:'HBM3e stack',sub:'memory, 12-high',pos:[-3.32,0.45,1.53],from:0.34,to:0.8,cls:'g'},
+              {text:'GPU die',sub:'1 of 2',pos:[-1.36,0.25,-1.2],from:0.32,to:0.84,cls:'y'},
+              {text:'Die-to-die link',sub:'10 TB/s',pos:[0,0.22,1.4],from:0.36,to:0.8,cls:'c'}],
+        update(t){ const k=Math.max(0,Math.min(1,(t-0.04)/0.34)); if(k===lastK) return; lastK=k;
+          const e=k*k*(3-2*k); plate.position.set(-e*1.2,0.78+e*9,-e*2.5); plate.rotation.set(-e*0.5,0,e*0.25);
+          cu.opacity=tube.opacity=1-e; cu.depthWrite=tube.depthWrite=e<0.6; plate.visible=e<1; } };
+    })());
+
+    /* ---- 2 · one die → the L2 corridor (1 unit = 1 mm) ------------------- */
+    S.push((function(){
+      const g=new THREE.Group();
+      const base=new THREE.Mesh(UBOX,SM(0x1b2129,{roughness:.55,metalness:.45})); base.scale.set(27,0.5,34); base.position.y=-0.25; g.add(base);
+      const ring=[]; [[0,-16.8,26.6,0.25],[0,16.8,26.6,0.25]].forEach(([x,z,sx,sz])=>ring.push({x,y:0.06,z,sx,sy:0.12,sz}));
+      [[-13.2,0],[13.2,0]].forEach(([x,z])=>ring.push({x,y:0.06,z,sx:0.25,sy:0.12,sz:33.6}));
+      inst(UBOX,SM(0x6b747e,{roughness:.3,metalness:.8}),ring,g);
+      // I/O bumps along the edges
+      const bumps=[]; for(let i=0;i<14;i++){ bumps.push({x:-10.4+i*1.6,y:0.18,z:-15.9,sx:0.8,sy:0.36,sz:0.5}); bumps.push({x:-10.4+i*1.6,y:0.18,z:15.9,sx:0.8,sy:0.36,sz:0.5}); }
+      inst(UBOX,SM(0x9aa4ae,{roughness:.35,metalness:.7}),bumps,g);
+      // HBM PHY + memory controllers (orange) · die-to-die interface (cyan)
+      const phy=[]; for(let i=0;i<6;i++) phy.push({x:-11.9,y:0.2,z:-13.1+i*5.24,sx:1.5,sy:0.4,sz:4.9});
+      inst(UBOX,SM(0xd9782e,{roughness:.45,metalness:.3,emissive:0x3a1a06,emissiveIntensity:.8}),phy,g);
+      const d2d=new THREE.Mesh(UBOX,SM(0x2fd2f5,{emissive:0x2fd2f5,emissiveIntensity:.8,roughness:.3})); d2d.scale.set(0.9,0.3,29); d2d.position.set(12.1,0.15,0); g.add(d2d);
+      // L2 cache: two columns of tiles with a dark seam — the corridor
+      const l2=[]; for(let r=0;r<24;r++) for(let c=0;c<2;c++) l2.push({x:c?0.9:-0.9,y:0.15,z:-13.9+r*1.21,sx:1.62,sy:0.3,sz:1.14});
+      inst(UBOX,SM(0xd3d9e0,{roughness:.35,metalness:.2,emissive:0x1d2630,emissiveIntensity:.6}),l2,g);
+      // eight GPCs (two banks of four), ten SMs each — raised blocks with gold Tensor strips
+      const smBase=[],gold=[],green=[],rf=[],l1=[],gpc=[];
+      const GPC_W=4.0, GPC_D=14.25;
+      [-1,1].forEach(side=>{ for(let col=0;col<2;col++) for(let row=0;row<2;row++){
+        const gx=side*(2.3+GPC_W/2+col*(GPC_W+0.3)), gz=-7.2+row*14.4;
+        gpc.push({x:gx,y:0.05,z:gz,sx:GPC_W,sy:0.1,sz:GPC_D});
+        for(let sc=0;sc<2;sc++) for(let sr=0;sr<5;sr++){
+          const sx=gx-1.0+sc*2.0, sz=gz-5.6+sr*2.8;
+          smBase.push({x:sx,y:0.17,z:sz,sx:1.84,sy:0.16,sz:2.62});
+          for(let p=0;p<4;p++){ const px=sx-0.45+(p%2)*0.9, pz=sz-0.72+(p>>1)*1.1;
+            gold.push({x:px,y:0.33,z:pz-0.3,sx:0.74,sy:0.16,sz:0.26});
+            green.push({x:px,y:0.29,z:pz+0.1,sx:0.74,sy:0.08,sz:0.42});
+            rf.push({x:px,y:0.3,z:pz+0.42,sx:0.74,sy:0.1,sz:0.16}); }
+          l1.push({x:sx,y:0.3,z:sz+1.12,sx:1.64,sy:0.12,sz:0.28}); } } });
+      inst(UBOX,SM(0x2a323b,{roughness:.6,metalness:.4}),gpc,g);
+      inst(UBOX,SM(0x39424c,{roughness:.55,metalness:.45}),smBase,g);
+      inst(UBOX,SM(0xd9b34a,{roughness:.35,metalness:.6,emissive:0x3a2a08,emissiveIntensity:.7}),gold,g);
+      inst(UBOX,SM(0x7fa37a,{roughness:.5,metalness:.3}),green,g);
+      inst(UBOX,SM(0x8d97a2,{roughness:.4,metalness:.5}),rf,g);
+      inst(UBOX,SM(0xe6ebf0,{roughness:.35,metalness:.2}),l1,g);
+      // data packets streaming along the L2 (illustrative)
+      const PK=36, pr=rng(19), packets=[];
+      for(let i=0;i<PK;i++) packets.push({lane:(i%4), off:pr()*29, v:2.2+pr()*3.4*(i%2?1:-1)});
+      const pkM=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false});
+      const pk=new THREE.InstancedMesh(UBOX,pkM,PK); pk.frustumCulled=false; pk.instanceMatrix.setUsage(THREE.DynamicDrawUsage); g.add(pk);
+      packets.forEach((p,i)=>pk.setColorAt(i,_c.set(i%3?0x6fe3ff:0xffd23f))); pk.instanceColor.needsUpdate=true;
+      return { key:'die', mpu:0.001, bg:0x0a0e14, fog:[40,110], group:g,
+        keys:[{t:0,pos:[-10,30,18],tgt:[0,0,0],fov:45},{t:0.3,pos:[-17,13,15],tgt:[-3,0,1],fov:45},
+              {t:0.56,pos:[0,2.8,19.5],tgt:[0,0.3,8],fov:50},{t:0.8,pos:[0,1.0,3.2],tgt:[0,0.35,-3],fov:52},
+              {t:1,pos:[3.3,3.4,-1],tgt:[5.2,0.25,-3.2],fov:45}],
+        caps:[{t:0,title:'104 billion transistors',sub:'One Blackwell die · TSMC 4NP · logical block layout — illustrative, not a silicon floorplan'},
+              {t:0.52,title:'L2 cache',sub:'Shared by both banks of GPCs · data movement shown is illustrative'}],
+        tags:[{text:'HBM interface',sub:'memory controllers',pos:[-11.9,0.5,-5.2],from:0.08,to:0.42,cls:'o'},
+              {text:'Die-to-die link',sub:'to the second die',pos:[12.1,0.4,6],from:0.08,to:0.42,cls:'c'},
+              {text:'GPC',sub:'10 SMs',pos:[-4.45,0.5,-7.2],from:0.1,to:0.44,cls:'y'},
+              {text:'L2 cache',sub:'',pos:[0,0.4,-10],from:0.14,to:0.46,cls:'g'}],
+        update(t,time){ packets.forEach((p,i)=>{ const z=((p.off+time*p.v)%29+29)%29-14.5;
+            _m.compose(_p.set(-1.35+p.lane*0.9,0.36,z),_q.identity(),_s.set(0.22,0.06,0.55)); pk.setMatrixAt(i,_m); });
+          pk.instanceMatrix.needsUpdate=true; } };
+    })());
+
+    /* ---- 3 · logical block layout: one GPC → one SM (1 unit = 0.1 mm) ---- */
+    S.push((function(){
+      const g=new THREE.Group();
+      const floor=new THREE.Mesh(UBOX,SM(0x1b2129,{roughness:.6,metalness:.4})); floor.scale.set(80,0.6,160); floor.position.y=-0.3; g.add(floor);
+      const base=[],gold=[],cuda=[],rf=[],l1=[],tex4=[],sched=[];
+      const ctr=[0,0,0];
+      for(let sc=0;sc<2;sc++) for(let sr=-2;sr<=2;sr++){
+        const sx=-10+sc*20, sz=sr*28;
+        base.push({x:sx,y:0.9,z:sz,sx:18.4,sy:1.8,sz:26.2});
+        for(let p=0;p<4;p++){ const px=sx-4.5+(p%2)*9, pz=sz-7.2+(p>>1)*11;
+          gold.push({x:px,y:3.0,z:pz-3.0,sx:7.4,sy:2.4,sz:2.6});
+          for(let cx=0;cx<8;cx++) for(let cz=0;cz<3;cz++) cuda.push({x:px-3.15+cx*0.9,y:2.3,z:pz-0.6+cz*0.95,sx:0.72,sy:1.0,sz:0.72});
+          rf.push({x:px,y:2.2,z:pz+2.9,sx:7.4,sy:0.9,sz:1.5});
+          sched.push({x:px,y:2.0,z:pz+4.2,sx:7.4,sy:0.5,sz:0.7}); }
+        l1.push({x:sx,y:2.4,z:sz+11.2,sx:16.4,sy:1.2,sz:2.8});
+        for(let k=0;k<4;k++) tex4.push({x:sx-6+k*4,y:2.0,z:sz-12.2,sx:3.2,sy:0.6,sz:1.1});
+      }
+      inst(UBOX,SM(0x2f3740,{roughness:.55,metalness:.45}),base,g);
+      // the Tensor Core surface carries fine wiring, so the next level's copper reads as a continuation
+      const tcTex=tex(256,256,(c,w,h)=>{ c.fillStyle='#d9b34a'; c.fillRect(0,0,w,h);
+        for(let i=0;i<32;i++){ c.fillStyle=i%2?'rgba(120,80,20,.35)':'rgba(255,230,160,.25)'; c.fillRect(0,i*8,w,3); }
+        for(let i=0;i<16;i++){ c.fillStyle='rgba(90,60,15,.25)'; c.fillRect(i*16,0,2,h); } });
+      const goldM=SM(0xffffff,{map:tcTex,roughness:.3,metalness:.65,emissive:0x2a1e05,emissiveIntensity:.8});
+      inst(UBOX,goldM,gold,g);
+      inst(UBOX,SM(0x86b07f,{roughness:.45,metalness:.25}),cuda,g);
+      inst(UBOX,SM(0x8d97a2,{roughness:.4,metalness:.5}),rf,g);
+      inst(UBOX,SM(0xb9c6d4,{roughness:.4,metalness:.4}),sched,g);
+      inst(UBOX,SM(0xe6ebf0,{roughness:.3,metalness:.2}),l1,g);
+      inst(UBOX,SM(0x6f8fb5,{roughness:.4,metalness:.4}),tex4,g);
+      // target: top-left partition's Tensor Core of the centre-left SM
+      const T=[-14.5,4.2,-10.2];
+      return { key:'sm', mpu:0.0001, bg:0x0a0e14, fog:[60,220], group:g,
+        keys:[{t:0,pos:[-26,34,28],tgt:[-6,0,0],fov:45},{t:0.45,pos:[-19,15,4],tgt:[-12,2,-6],fov:45},
+              {t:0.75,pos:[-15.6,8.4,-6.6],tgt:[-14.5,3.0,-10],fov:45},{t:1,pos:[-14.8,5.4,-9.6],tgt:T,fov:45}],
+        caps:[{t:0,title:'Logical block layout',sub:'One GPC of SMs · each SM has four processing blocks · illustrative, not a silicon floorplan'},
+              {t:0.5,title:'One Tensor Core',sub:'The matrix engine that does most of AI’s math — one in each processing block'}],
+        tags:[{text:'Tensor Core',sub:'matrix math',pos:[-14.5,4.3,-10.2],from:0.18,to:0.62,cls:'y'},
+              {text:'CUDA cores',sub:'general math',pos:[-5.5,3.0,-7.3],from:0.18,to:0.6,cls:'g'},
+              {text:'Register file',sub:'',pos:[-5.5,2.8,3.9],from:0.2,to:0.58,cls:'g'},
+              {text:'L1 / shared memory',sub:'',pos:[-10,3.2,11.2],from:0.2,to:0.5,cls:'c'}] };
+    })());
+
+    /* ---- 4 · pass through the wiring (1 unit = 1 µm) --------------------- */
+    S.push((function(){
+      const g=new THREE.Group();
+      const cu=(o)=>SM(0xe0935a,Object.assign({roughness:.35,metalness:.4,transparent:true},o||{}));
+      // layers top → bottom: thick global wiring down to the finest local wires
+      const L=[{y:16,w:2.0,p:4.5,th:1.2,dir:'x',span:60},{y:12,w:1.2,p:2.6,th:0.8,dir:'z',span:44},
+               {y:9,w:0.7,p:1.5,th:0.5,dir:'x',span:30},{y:6.8,w:0.4,p:0.9,th:0.32,dir:'z',span:20},
+               {y:5.2,w:0.22,p:0.5,th:0.18,dir:'x',span:12},{y:4.1,w:0.12,p:0.28,th:0.12,dir:'z',span:7}];
+      const layers=L.map((l,li)=>{ const list=[], n=Math.floor(l.span/l.p);
+        for(let i=-n/2;i<n/2;i++){ const o=(i+0.5)*l.p;
+          list.push(l.dir==='x'?{x:0,y:l.y,z:o,sx:l.span,sy:l.th,sz:l.w}:{x:o,y:l.y,z:0,sx:l.w,sy:l.th,sz:l.span}); }
+        const m=cu(); const im=inst(UBOX,m,list,g); return {m,y:l.y,th:l.th}; });
+      // vias between layers
+      const vias=[], r=rng(29);
+      for(let li=0;li<L.length-1;li++){ const a=L[li], b=L[li+1], n=Math.round(40*(li+1));
+        for(let i=0;i<n;i++){ const x=(r()-0.5)*b.span, z=(r()-0.5)*b.span, h=a.y-b.y;
+          vias.push({x,y:(a.y+b.y)/2,z,sx:b.w*0.8,sy:h,sz:b.w*0.8}); } }
+      const viaM=SM(0x9aa4ae,{roughness:.35,metalness:.8,transparent:true}); inst(UBOX,viaM,vias,g);
+      // standard-cell rows with gold gate lines on top (the next level's transistors)
+      const cells=[],gates=[];
+      for(let row=-12;row<12;row++){ let x=-6; const z=row*0.28;
+        while(x<6){ const w=0.2+Math.floor(r()*5)*0.1; cells.push({x:x+w/2,y:1.4,z,sx:w-0.03,sy:2.8,sz:0.25,c:r()<0.5?0x5f6b7a:0x6c7a8b});
+          for(let k=0.05;k<w-0.04;k+=0.051) gates.push({x:x+k+0.02,y:2.86,z,sx:0.016,sy:0.1,sz:0.24}); x+=w; } }
+      inst(UBOX,SM(0xffffff,{roughness:.5,metalness:.3}),cells,g);
+      inst(UBOX,SM(0xd9b34a,{roughness:.3,metalness:.7,emissive:0x3a2a08,emissiveIntensity:.8}),gates,g);
+      const sub=new THREE.Mesh(UBOX,SM(0x39424c,{roughness:.7,metalness:.2})); sub.scale.set(60,0.4,60); sub.position.y=-0.2; g.add(sub);
+      return { key:'wiring', mpu:1e-6, bg:0x0a0e14, fog:[40,160], group:g,
+        keys:[{t:0,pos:[-34,92,54],tgt:[0,9,0],fov:45},{t:0.35,pos:[-8,26,11],tgt:[0,7,0],fov:45},
+              {t:0.68,pos:[-1.8,9.2,2.6],tgt:[0,3.6,0],fov:45},{t:1,pos:[-0.45,3.9,0.75],tgt:[0,2.9,0],fov:45}],
+        caps:[{t:0,title:'Pass through the wiring',sub:'Stacked copper layers — thick up top, finest at the bottom — route signals between billions of gates'},
+              {t:0.66,title:'Logic cells',sub:'Rows of standard cells · each gold line is a transistor gate'}],
+        tags:[{text:'Global wiring',sub:'power · clock',pos:[-9,16.8,-6.75],from:0.04,to:0.3,cls:'o'},
+              {text:'Via',sub:'layer to layer',pos:[3,10.5,2],from:0.3,to:0.5,cls:'g'},
+              {text:'Local wiring',sub:'finest pitch',pos:[1.2,5.5,-1.1],from:0.46,to:0.7,cls:'o'},
+              {text:'Transistor gates',sub:'',pos:[0.4,3.0,0.3],from:0.72,to:0.98,cls:'y'}],
+        update(t,time,cam){ // each layer dissolves as the camera passes through it
+          const cy=cam.position.y;
+          layers.forEach(l=>{ const a=Math.max(0,Math.min(1,(cy-l.y-l.th)/2.2)); l.m.opacity=a; l.m.depthWrite=a>0.6; l.m.visible=a>0.01; });
+          viaM.opacity=Math.max(0,Math.min(1,(cy-5)/3)); viaM.visible=viaM.opacity>0.01; } };
+    })());
+
+    /* ---- 5 · one transistor, cut in half (1 unit = 10 nm) ---------------- */
+    S.push((function(){
+      const g=new THREE.Group();
+      // everything ends at the cut plane z = 0; faces nearer the viewer sit a hair proud to avoid z-fighting
+      const Si=SM(0x9fb0c2,{roughness:.45,metalness:.25}), oxide=SM(0x9d8cc4,{roughness:.6,metalness:.1,transparent:true,opacity:.85});
+      const sub=new THREE.Mesh(UBOX,SM(0x7f8fa1,{roughness:.55,metalness:.2})); sub.scale.set(46,6,40); sub.position.set(0,-3,-20); g.add(sub);
+      const sti=new THREE.Mesh(UBOX,oxide); sti.scale.set(46,2.2,39.9); sti.position.set(0,1.1,-20.05); g.add(sti);
+      const FX=[-7.5,-4.5,-1.5,1.5,4.5,7.5];
+      inst(UBOX,Si,FX.map(x=>({x,y:2.5,z:-19.97,sx:0.7,sy:5,sz:40.06})),g);        // fins (30 nm pitch)
+      const GZ=[0,-5.1,-10.2,-15.3,-20.4,-25.5,-30.6,-35.7];                       // gates (51 nm pitch); the first is cut through
+      const hik=[],gates=[],spc=[],epi=[],ct=[],m0=[];
+      GZ.forEach((z,i)=>{ const half=i===0, zc=half?-0.4:z, len=half?0.8:1.6;
+        FX.forEach(x=>hik.push({x,y:2.6,z:zc+(half?0.01:0),sx:1.0,sy:5.3,sz:len+(half?0.02:0)}));
+        gates.push({x:0,y:4.4,z:zc,sx:20,sy:6.2,sz:len});
+        if(!half) [-1,1].forEach(s=>spc.push({x:0,y:4.4,z:z+s*1.05,sx:20,sy:6.2,sz:0.5}));
+        if(i<GZ.length-1){ const zm=z-2.55; FX.forEach(x=>epi.push({x,y:4.6,z:zm,sx:1.9,sy:1.9,sz:2.6,rz:Math.PI/4}));
+          ct.push({x:0,y:7.6,z:zm,sx:18,sy:2.6,sz:1.6}); } });
+      inst(UBOX,SM(0xb46bd9,{roughness:.4,metalness:.2}),hik,g);                      // high-k dielectric
+      inst(UBOX,SM(0xe3bd55,{roughness:.32,metalness:.35,emissive:0x3a2a08,emissiveIntensity:.7}),gates,g);
+      inst(UBOX,SM(0xdfe5ec,{roughness:.5,metalness:.2}),spc,g);
+      inst(UBOX,SM(0xd98b6a,{roughness:.45,metalness:.25}),epi,g);                    // source / drain epitaxy
+      inst(UBOX,SM(0x7d858f,{roughness:.35,metalness:.85}),ct,g);                     // contacts
+      for(let i=0;i<7;i++) m0.push({x:-9+i*3,y:11.2,z:-19.9,sx:1.4,sy:1.4,sz:39.8});
+      inst(UBOX,SM(0xe0935a,{roughness:.35,metalness:.4}),m0,g);
+      // cut-plane frame
+      const fr=[]; [[0,8.5,24,0.12],[0,-5.9,24,0.12]].forEach(([x,y,sx,sy])=>fr.push({x,y,z:0.06,sx,sy,sz:0.05}));
+      [[-11.9,1.3],[11.9,1.3]].forEach(([x,y])=>fr.push({x,y,z:0.06,sx:0.12,sy:14.4,sz:0.05}));
+      inst(UBOX,new THREE.MeshBasicMaterial({color:0x2fd2f5}),fr,g);
+      return { key:'transistor', mpu:1e-8, bg:0x0a0e14, fog:[60,260], group:g,
+        keys:[{t:0,pos:[-44,92,64],tgt:[0,3,-18],fov:45},{t:0.4,pos:[-10,14,19],tgt:[0,4,-2],fov:45},
+              {t:0.74,pos:[-3.4,5.6,6.4],tgt:[-1.5,3.2,0],fov:45},{t:1,pos:[-1.62,3.35,1.9],tgt:[-1.5,3.1,0],fov:45}],
+        caps:[{t:0,title:'One transistor, cut in half',sub:'A FinFET · the gold gate wraps three sides of a silicon fin · 5 nm-class, illustrative'},
+              {t:0.72,title:'The channel',sub:'A silicon fin only a few nanometres wide — current flows through it when the gate says so'}],
+        tags:[{text:'Gate',sub:'metal',pos:[-6,7.6,-0.4],from:0.26,to:0.7,cls:'y'},
+              {text:'Fin',sub:'silicon channel',pos:[-4.5,5.1,0],from:0.3,to:0.7,cls:'g'},
+              {text:'Source / drain',sub:'',pos:[4.5,5.8,-2.55],from:0.26,to:0.66,cls:'o'},
+              {text:'Contact',sub:'',pos:[6,9,-2.55],from:0.26,to:0.62,cls:'g'},
+              {text:'High-k dielectric',sub:'~1 nm',pos:[-1.0,5.3,0],from:0.7,to:0.95,cls:'c'}] };
+    })());
+
+    /* ---- 6 · silicon atoms, 0.235 nm apart (1 unit = 1 Å) ---------------- */
+    S.push((function(){
+      const g=new THREE.Group();
+      const A=5.431, Q=A/4, N=5;                          // lattice constant; nearest neighbour = √3·A/4 = 2.352 Å
+      const T=new THREE.Vector3(0,0,0), V=new THREE.Vector3(-6.5,8,10).normalize();  // cut face turned to the camera
+      const keep=p=>p.clone().sub(T).dot(V)<=1.2;       // keeps the hub's four partners
+      const fcc=[[0,0,0],[0,.5,.5],[.5,0,.5],[.5,.5,0]];
+      const atomsA=[],atomsB=[];
+      for(let i=-N;i<N;i++) for(let j=-N;j<N;j++) for(let k=-N;k<N;k++) fcc.forEach(f=>{
+        const a=new THREE.Vector3((i+f[0])*A,(j+f[1])*A,(k+f[2])*A); if(a.length()<N*A*0.95 && keep(a)) atomsA.push(a);
+        const b=a.clone().addScalar(Q); if(b.length()<N*A*0.95 && keep(b)) atomsB.push(b); });
+      const key=p=>p.x.toFixed(2)+','+p.y.toFixed(2)+','+p.z.toFixed(2), setB=new Set(atomsB.map(key));
+      const DIRS=[[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]].map(d=>new THREE.Vector3(d[0]*Q,d[1]*Q,d[2]*Q));
+      const bonds=[]; atomsA.forEach(a=>DIRS.forEach(d=>{ const b=a.clone().add(d); if(setB.has(key(b))) bonds.push([a,b]); }));
+      const all=atomsA.concat(atomsB);
+      const sph=new THREE.SphereGeometry(1,14,10);
+      const atomM=SM(0xaeb9c6,{roughness:.35,metalness:.35});
+      inst(sph,atomM,all.map(p=>({x:p.x,y:p.y,z:p.z,sx:0.62,sy:0.62,sz:0.62})),g);
+      const cyl=new THREE.CylinderGeometry(1,1,1,8,1,true), up=new THREE.Vector3(0,1,0);
+      function bondList(list,rad){ return list.map(([a,b])=>{ const mid=a.clone().add(b).multiplyScalar(0.5), dir=b.clone().sub(a);
+        _q.setFromUnitVectors(up,dir.clone().normalize()); _e.setFromQuaternion(_q);
+        return {x:mid.x,y:mid.y,z:mid.z,sx:rad,sy:dir.length(),sz:rad,rx:_e.x,ry:_e.y,rz:_e.z}; }); }
+      inst(cyl,SM(0x6e7a88,{roughness:.5,metalness:.3}),bondList(bonds,0.15),g);
+      // the highlighted atom and its four bonds (tetrahedral)
+      const hub=atomsA.reduce((best,a)=>a.distanceTo(T)<best.distanceTo(T)?a:best,atomsA[0]);
+      const goldM=SM(0xffd23f,{roughness:.3,metalness:.5,emissive:0x5a4000,emissiveIntensity:.8});
+      const hubM=new THREE.Mesh(sph,goldM); hubM.scale.setScalar(0.8); hubM.position.copy(hub); g.add(hubM);
+      const hubBonds=DIRS.map(d=>[hub,hub.clone().add(d)]);
+      inst(cyl,goldM,bondList(hubBonds,0.2),g);
+      const nb=hub.clone().add(DIRS[0]);
+      const ruler=new THREE.Mesh(UBOX,new THREE.MeshBasicMaterial({color:0x2fd2f5}));
+      const rd=nb.clone().sub(hub), rmid=hub.clone().add(nb).multiplyScalar(0.5).add(new THREE.Vector3(0,1.4,0));
+      ruler.position.copy(rmid); ruler.scale.set(0.05,0.05,rd.length()); ruler.lookAt(rmid.clone().add(rd)); g.add(ruler);
+      return { key:'atoms', mpu:1e-10, bg:0x0a0e14, fog:[16,60], group:g, hub:[hub.x,hub.y,hub.z],
+        keys:[{t:0,pos:[hub.x-72,hub.y+91,hub.z+86],tgt:[hub.x,hub.y,hub.z],fov:45},
+              {t:0.5,pos:[hub.x-14,hub.y+18,hub.z+19],tgt:[hub.x,hub.y,hub.z],fov:45},
+              {t:1,pos:[hub.x-6.2,hub.y+7.6,hub.z+9.6],tgt:[hub.x+0.6,hub.y+0.6,hub.z+0.6],fov:45}],
+        caps:[{t:0,title:'Atoms 0.235 nm apart',sub:'Silicon’s diamond lattice — every atom bonds to four neighbours'},
+              {t:0.72,title:'The bottom of the zoom',sub:'From a 20 m data hall to a 0.235 nm bond — eleven orders of magnitude'}],
+        tags:[{text:'0.235 nm',sub:'Si–Si bond',pos:[rmid.x,rmid.y+0.4,rmid.z],from:0.3,to:1.01,cls:'c'},
+              {text:'One silicon atom',sub:'four bonds',pos:[hub.x,hub.y+1.2,hub.z],from:0.55,to:1.01,cls:'y'}] };
+    })());
+    return S;
+  }
+
+  /* ---- dive controller: stage chain, matched-FOV cross-fades, captions, input ---- */
+  const DIVE=(function(){
+    let S=null, SC=null, CH=null, STOPS=null, rt=null;
+    // progress ranges: 0 = the trainer scene closing on the GPU, 1..6 = the micro stages (overlaps = cross-fades)
+    const R=[[0,0.1],[0.07,0.25],[0.22,0.43],[0.40,0.58],[0.55,0.71],[0.68,0.85],[0.82,1]];
+    const camB=new THREE.PerspectiveCamera(45,1,0.1,100), camC=new THREE.PerspectiveCamera(45,1,0.1,100);
+    const tB=new THREE.Vector3(), tC=new THREE.Vector3(), _sz=new THREE.Vector2();
+    const s0={from:new THREE.Vector3(),fromT:new THREE.Vector3(),to:new THREE.Vector3(),toT:new THREE.Vector3()};
+    const quadM=new THREE.MeshBasicMaterial({transparent:true,depthTest:false,depthWrite:false,fog:false});
+    const qScene=new THREE.Scene(), qCam=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+    qScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),quadM));
+    const st={on:false,q:0,qT:0,auto:false,ai:1,hold:0,pending:null,rewind:false,ci:-1,fovM:1,acc:0,wacc:0};
+    const tags=[];
+    const TAN=2*Math.tan(Math.PI/8);            // 2·tan(45°/2)
+    const gpuComp=()=>components.find(c=>c.userData.def.cat==='gpu');
+
+    function build(){
+      if(S) return;
+      S=buildDiveStages();
+      SC=S.map(s=>{ const sc=new THREE.Scene(); sc.background=new THREE.Color(s.bg); sc.fog=new THREE.Fog(s.bg,1,2);
+        sc.add(new THREE.HemisphereLight(0x9fc4ff,0x0a0e14,0.75));
+        const k=new THREE.DirectionalLight(0xffffff,1.05); k.position.set(4,10,6); sc.add(k);
+        const r=new THREE.DirectionalLight(0x36c2ff,0.5); r.position.set(-6,4,-5); sc.add(r);
+        sc.add(s.group); return sc; });
+      CH=[{q:0,title:'Into the GPU',sub:'Zooming into one Blackwell GPU on the compute tray you just opened'}];
+      S.forEach((s,i)=>{ const r=R[i+1]; s.caps.forEach(c=>CH.push({q:c.t===0?r[0]+0.015:r[0]+c.t*(r[1]-r[0]),title:c.title,sub:c.sub})); });
+      STOPS=CH.map(c=>c.q).concat([1]);
+      S.forEach((s,i)=>(s.tags||[]).forEach(t=>{ const el=document.createElement('div'); el.className='htag '+(t.cls||'');
+        el.innerHTML='<b>'+t.text+'</b>'+(t.sub||''); el.setAttribute('aria-hidden','true'); app.appendChild(el);
+        tags.push({el,stage:i+1,t,pos:new THREE.Vector3().fromArray(t.pos),on:false}); }));
+      try{ SC.forEach(sc=>renderer.compile(sc,camB)); }catch(e){}
+    }
+
+    function pose(i,t,cam,tgt){ // places the stage camera; returns the field of view in metres
+      if(i===0){ const e=smooth(t); cam.position.lerpVectors(s0.from,s0.to,e); tgt.lerpVectors(s0.fromT,s0.toT,e); cam.lookAt(tgt);
+        return cam.position.distanceTo(tgt)*TAN*M_PER_UNIT; }
+      const s=S[i-1], K=s.keys;
+      if(!s._cp){ s._cp=new THREE.CatmullRomCurve3(K.map(k=>new THREE.Vector3().fromArray(k.pos)),false,'centripetal');
+        s._ct=new THREE.CatmullRomCurve3(K.map(k=>new THREE.Vector3().fromArray(k.tgt)),false,'centripetal'); }
+      let j=0; while(j<K.length-2 && t>K[j+1].t) j++;
+      const lt=clamp01((t-K[j].t)/(K[j+1].t-K[j].t)), tt=0.45*lt+0.55*smooth(lt), u=(j+tt)/(K.length-1);
+      s._cp.getPoint(u,cam.position); s._ct.getPoint(u,tgt); cam.lookAt(tgt);
+      const d=cam.position.distanceTo(tgt);
+      cam.fov=K[j].fov+(K[j+1].fov-K[j].fov)*tt; cam.aspect=camera.aspect; cam.near=Math.max(1e-4,d*0.01); cam.far=d*40;
+      cam.updateProjectionMatrix();
+      const sc=SC[i-1]; sc.fog.near=d*0.8; sc.fog.far=d*2.8;
+      if(s.update) s.update(t,nowT,cam);
+      return d*2*Math.tan(cam.fov*Math.PI/360)*s.mpu;
+    }
+    function draw(i,cam,target){ renderer.setRenderTarget(target); renderer.render(i===0?scene:SC[i-1],cam); renderer.setRenderTarget(null); }
+    function ensureRT(){ renderer.getDrawingBufferSize(_sz);
+      if(!rt){ rt=new THREE.WebGLRenderTarget(_sz.x,_sz.y,{minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,format:THREE.RGBAFormat});
+        quadM.map=rt.texture; quadM.needsUpdate=true; }
+      else if(rt.width!==_sz.x||rt.height!==_sz.y) rt.setSize(_sz.x,_sz.y); }
+
+    function render(dt){
+      advance(dt); if(!st.on) return false;
+      const q=st.q; let A=-1,B=-1;
+      for(let i=0;i<R.length;i++) if(q>=R[i][0]-1e-6 && q<=R[i][1]+1e-6){ if(A<0) A=i; else if(B<0) B=i; }
+      if(A<0) A=q<=0?0:R.length-1;
+      const camA=A===0?camera:camB;
+      const mA=pose(A,clamp01((q-R[A][0])/(R[A][1]-R[A][0])),camA,tB);
+      let alpha=0, mB=mA;
+      if(B>=0){ alpha=smooth((q-R[B][0])/(R[A][1]-R[B][0])); mB=pose(B,clamp01((q-R[B][0])/(R[B][1]-R[B][0])),camC,tC); }
+      if(B<0||alpha<=0.001) draw(A,camA,null);
+      else if(alpha>=0.999) draw(B,camC,null);
+      else { ensureRT(); draw(B,camC,rt); draw(A,camA,null); quadM.opacity=alpha;
+        const ac=renderer.autoClear; renderer.autoClear=false; renderer.render(qScene,qCam); renderer.autoClear=ac; }
+      st.fovM=Math.exp(Math.log(mA)+(Math.log(mB)-Math.log(mA))*alpha);
+      const dom=(B>=0&&alpha>=0.5)?{i:B,cam:camC,q0:R[B][0],q1:R[B][1]}:{i:A,cam:camA,q0:R[A][0],q1:R[A][1]};
+      ui(dom);
+      return true;
+    }
+    function ui(dom){
+      let ci=0; for(let i=CH.length-1;i>0;i--){ if(st.q>=CH[i].q-0.01){ ci=i; break; } }
+      if(ci!==st.ci){ st.ci=ci; const c=CH[ci];
+        capT.textContent=c.title; capS.textContent=c.sub; capN.textContent=(ci+1)+' / '+CH.length;
+        introCap.classList.remove('pop'); void introCap.offsetWidth; introCap.classList.add('pop');
+        try{ renderer.domElement.setAttribute('aria-label','3D zoom into the GPU — '+c.title+'. Scroll or press the arrow keys to go deeper.'); }catch(e){} }
+      introCap.classList.add('on');
+      const W=window.innerWidth, H=window.innerHeight, lt=(st.q-dom.q0)/(dom.q1-dom.q0);
+      tags.forEach(h=>{
+        const a=h.stage===dom.i? smooth((lt-h.t.from)/0.06)*(1-smooth((lt-h.t.to)/0.06)) : 0;
+        if(a<=0.01){ if(h.on){ h.el.style.opacity=0; h.on=false; } return; }
+        _v.copy(h.pos).project(dom.cam);
+        if(_v.z>1||Math.abs(_v.x)>1.05||Math.abs(_v.y)>1.05){ if(h.on){ h.el.style.opacity=0; h.on=false; } return; }
+        h.on=true; h.el.style.opacity=a.toFixed(3);
+        h.el.style.left=((_v.x*0.5+0.5)*W)+'px'; h.el.style.top=((-_v.y*0.5+0.5)*H)+'px';
+      });
+    }
+
+    const SPEED=0.05, HOLD=1.25;
+    function advance(dt){
+      if(!st.on) return;
+      if(st.rewind){ st.qT=Math.max(0,st.qT-dt*0.55); if(REDUCED||(st.qT<=0&&st.q<0.003)){ exit(); return; } }
+      else if(st.auto&&!overlayOpen()){
+        const stop=STOPS[st.ai];
+        if(REDUCED){ st.hold+=dt; if(st.hold>2.8){ st.hold=0; st.qT=stop; if(st.ai<STOPS.length-1) st.ai++; else st.auto=false; } }
+        else if(st.qT<stop){ st.qT=Math.min(stop,st.qT+SPEED*dt); st.hold=0; }
+        else if(Math.abs(st.q-stop)<0.006){ st.hold+=dt; if(st.hold>HOLD){ st.hold=0; if(st.ai<STOPS.length-1) st.ai++; else st.auto=false; } }
+      }
+      if(REDUCED) st.q=st.qT;
+      else { st.q+=(st.qT-st.q)*(1-Math.exp(-dt*(st.rewind?6:3.2))); if(Math.abs(st.qT-st.q)<1e-5) st.q=st.qT; }
+    }
+
+    function enter(opts){
+      opts=opts||{};
+      if(st.on||st.pending) return;
+      if(introOn) endIntro(true);
+      const gpu=gpuComp(); if(!gpu) return;
+      if(active!==gpu) openComponent(gpu);
+      hideRideNext();
+      st.pending={auto:!!opts.auto, hold:opts.auto?2.6:0.5, t:0, shown:false};
+    }
+    function tickPending(dt){
+      const p=st.pending; if(!p) return;
+      const gpu=gpuComp(); if(active!==gpu||introOn){ st.pending=null; return; }   // the learner moved on
+      if(gpu._t<1||overlayOpen()) return;
+      p.t+=dt;
+      if(!p.shown && p.t>=p.hold*0.4){ p.shown=true;                                // frame the GPU itself first
+        const pr=gpu._peris.find(x=>x.def.id==='gpu');
+        if(pr){ selectedPeri=pr.def; curTab='overview'; renderCard(gpu.userData.def,pr.def); focusOn(gpu,true); setStep(4); } }
+      if(p.t>=p.hold){ st.pending=null; start(p.auto); }
+    }
+    function start(auto){
+      build();
+      const gpu=gpuComp(), pr=gpu._peris.find(x=>x.def.id==='gpu');
+      new THREE.Box3().setFromObject(pr?pr.g:gpu).getCenter(s0.toT);
+      s0.from.copy(camera.position); s0.fromT.copy(target);
+      const dir=s0.from.clone().sub(s0.toT).normalize(); dir.y=Math.max(dir.y,0.62); dir.normalize();
+      s0.to.copy(s0.toT).addScaledVector(dir,0.2/(TAN*M_PER_UNIT));                // lands at a 20 cm field of view
+      Object.assign(st,{on:true,q:0,qT:0,auto:!!auto,ai:1,hold:0,rewind:false,ci:-1,acc:0,wacc:0});
+      curChapter=-1;                                                                // the hall ride re-captions itself next time
+      capSkipEl.textContent='Back to the rack ›';
+      rotPref=autoRotate; document.body.classList.add('dive-on'); setRotate(false); dragging=false; pinchD=0; hideRideNext();
+      ident.style.opacity=0; renderer.domElement.style.cursor=''; focusRideControl();
+    }
+    function exit(){
+      if(!st.on) return;
+      Object.assign(st,{on:false,auto:false,rewind:false,pending:null});
+      document.body.classList.remove('dive-on'); introCap.classList.remove('on'); capSkipEl.textContent='Skip ›';
+      tags.forEach(h=>{ h.el.style.opacity=0; h.on=false; });
+      renderer.setRenderTarget(null); applyCamera(); wheelQuietUntil=nowT+0.6; dragging=false; pinchD=0; setRotate(rotPref&&!active);
+      if(curReport) renderCard(curReport,curPeri);                                  // restores the trainer's aria text
+    }
+    function stopAuto(){ st.auto=false; st.rewind=false; }
+    function step(dir){ stopAuto(); if(!STOPS) return;
+      if(dir>0){ const n=STOPS.find(s=>s>st.qT+0.004); st.qT=n==null?1:n; }
+      else { const prev=STOPS.filter(s=>s<st.qT-0.004); if(prev.length) st.qT=prev[prev.length-1]; else if(st.q<0.004) exit(); else st.qT=0; } }
+    function delta(d){ // d > 0: deeper; pulling back past the start returns to the trainer
+      if(!st.on) return; stopAuto();
+      if(REDUCED){ st.wacc+=d; if(Math.abs(st.wacc)>=120){ step(st.wacc>0?1:-1); st.wacc=0; } return; }
+      st.qT+=d/3800;
+      if(st.qT<0){ st.acc+=-st.qT; st.qT=0; if(st.acc>0.05&&st.q<0.01) exit(); } else st.acc=0;
+      st.qT=Math.min(1,st.qT);
+    }
+    function back(){ if(!st.on) return; st.auto=false; if(REDUCED) exit(); else st.rewind=true; }
+    return { on:()=>st.on, pending:()=>!!st.pending, enter, exit, back, step, delta, stopAuto, render, tickPending,
+      cancelPending(){ st.pending=null; }, go(q){ stopAuto(); st.qT=clamp01(q); }, fovM:()=>st.fovM,
+      state:()=>({on:st.on,q:st.q,qT:st.qT,auto:st.auto,ci:st.ci,pending:!!st.pending,fovM:st.fovM,stops:STOPS&&STOPS.slice()}) };
+  })();
+
 
   /* =========================================================================
      PICKING + DISSECTION STATE
@@ -2788,6 +3291,7 @@ window.__PROVENANCE = Object.freeze({
 
   function openComponent(comp){
     if(introOn) endIntro(true);
+    if(DIVE.on()) DIVE.exit();
     hideRideNext();
     const e=comp.userData.def;
     if(active && active!==comp){ setExplode(active,0); }
@@ -2819,6 +3323,7 @@ window.__PROVENANCE = Object.freeze({
 
   renderer.domElement.addEventListener('click',e=>{
     if(moved>6) return; // was a drag
+    if(DIVE.on()) return;
     if(introOn){
       if(pC<0.3) return;
       mouse.x=(e.clientX/window.innerWidth)*2-1; mouse.y=-(e.clientY/window.innerHeight)*2+1;
@@ -2843,6 +3348,7 @@ window.__PROVENANCE = Object.freeze({
 
   function openBlank(u){
     if(introOn) endIntro(true);
+    if(DIVE.on()) DIVE.exit();
     collapseAll(); // retract any dissected chassis before switching to the blank report
     const r=Object.assign({},blankReport,{u:u,h:1}); curTab='overview';
     markSidebar(r); setStep(1); renderCard(r,null);
@@ -2915,17 +3421,17 @@ window.__PROVENANCE = Object.freeze({
     tabs.forEach(t=>t.classList.toggle('active',t.dataset.tab===curTab));
     let html='';
     if(p){
-      if(curTab==='overview'){ html+='<p>'+p.desc+'</p>'+whyBox(r); }
+      if(curTab==='overview'){ html+='<p>'+p.desc+'</p>'+whyBox(r)+(r.cat==='gpu'&&p.id==='gpu'?diveCTA():''); }
       if(curTab==='specs'){ html+='<h4>Specs — '+p.name+'</h4>'+(p.specs||[]).map(s=>'<div class="spec"><span class="k">'+s[0]+'</span><span class="v">'+s[1]+'</span></div>').join('');
         html+='<h4 style="margin-top:16px">Host component</h4>'+(r.specs||[]).slice(0,4).map(s=>'<div class="spec"><span class="k">'+s[0]+'</span><span class="v">'+s[1]+'</span></div>').join(''); }
       if(curTab==='internals'){ html+=internalsGrid(r); }
       if(curTab==='vendors'){ html+='<h4>Who makes it</h4><p class="vendnote">Training reference only — not a procurement recommendation.</p>'+(p.vendors||[]).map(v=>'<div class="vend"><div class="n">'+v[0]+'</div>'+(v[1]?'<div class="d">'+v[1]+'</div>':'')+'</div>').join('');
         html+='<p style="margin-top:12px;color:var(--muted);font-size:11.5px">Part of <b style="color:#fff">'+r.name+'</b> — open its Vendors tab for hyperscaler deployments.</p>'+courseCTA(r); }
     } else {
-      if(curTab==='overview'){ html+='<p>'+r.summary+'</p>'+whyBox(r)+courseCTA(r); }
+      if(curTab==='overview'){ html+='<p>'+r.summary+'</p>'+whyBox(r)+(r.cat==='gpu'?diveCTA():'')+courseCTA(r); }
       if(curTab==='specs'){ html+='<h4>Specifications</h4>'+(r.specs||[]).map(s=>'<div class="spec"><span class="k">'+s[0]+'</span><span class="v">'+s[1]+'</span></div>').join('');
         html+='<p style="margin-top:12px;color:var(--muted);font-size:11.3px">Rack mechanical/thermal figures per EIA-310-D &amp; ASHRAE TC9.9 (project Spec Library). Density &amp; vendor figures: 2026 industry landscape.</p>'; }
-      if(curTab==='internals'){ html+=internalsGrid(r)+whyBox(r); }
+      if(curTab==='internals'){ html+=internalsGrid(r)+whyBox(r)+(r.cat==='gpu'?diveCTA():''); }
       if(curTab==='vendors'){ html+='<h4>Global vendors</h4><p class="vendnote">Training reference only — not a procurement recommendation.</p>'+(r.vendors||[]).map(v=>'<div class="vend"><div class="n">'+v[0]+'</div>'+(v[1]?'<div class="d">'+v[1]+'</div>':'')+'</div>').join('');
         if(r.deploys&&r.deploys.length){ html+='<h4>How the hyperscalers deploy it</h4>'+r.deploys.map(d=>'<div class="dep"><span class="op '+opClass(d[0])+'">'+opName(d[0])+'</span><span class="t">'+d[1]+'</span></div>').join('');
           html+='<p style="margin-top:12px;color:var(--muted);font-size:11.3px">Deployment data reflects operational &amp; under-construction US AI infrastructure as of 2026.</p>'; }
@@ -2933,6 +3439,7 @@ window.__PROVENANCE = Object.freeze({
     }
     cardBody.innerHTML=html;
     const c=cardBody.querySelector('[data-course]'); if(c){c.addEventListener('click',()=>openCourse(c.getAttribute('data-course')));}
+    cardBody.querySelectorAll('[data-dive]').forEach(b=>{ b.addEventListener('click',()=>DIVE.enter({})); onKeyActivate(b); });
     cardBody.querySelectorAll('[data-peri]').forEach(btn=>btn.addEventListener('click',()=>{
       const r2=curReport; const comp=components.find(cc=>cc.userData.def===r2); if(!comp) return;
       if(active!==comp) openComponent(comp);
@@ -2940,6 +3447,11 @@ window.__PROVENANCE = Object.freeze({
       curTab='overview'; // Inspect jumps straight to the part's explanation; breadcrumb returns to the chassis
       renderCard(r2,selectedPeri); focusOn(comp,true); setStep(4);
     }));
+  }
+  function diveCTA(){
+    return '<div class="cta dive" data-dive="1" role="button" tabindex="0"><div class="lead">Go deeper</div>'+
+      '<div class="ttl">▶ Zoom into the silicon</div><div class="sub">From this GPU down to a single silicon atom — the die, the L2 cache, '+
+      'a Tensor Core, the copper wiring, one transistor, 0.235 nm bonds.</div><div class="go">Start the dive →</div></div>';
   }
   function courseCTA(r){
     const key=r.course||'L1'; const c=COURSE[key]||COURSE.L1;
@@ -2980,7 +3492,7 @@ window.__PROVENANCE = Object.freeze({
   const ident=document.getElementById('ident'), identTxt=document.getElementById('identTxt');
   let hoverRayCount=0;
   function hoverIdentify(e){
-    if(dragging||introOn){ident.style.opacity=0;return;}
+    if(dragging||introOn||DIVE.on()){ident.style.opacity=0;return;}
     if((hoverRayCount++ %2)!==0) return; // throttle
     mouse.x=(e.clientX/window.innerWidth)*2-1; mouse.y=-(e.clientY/window.innerHeight)*2+1;
     ray.setFromCamera(mouse,camera);
@@ -3030,6 +3542,7 @@ window.__PROVENANCE = Object.freeze({
       m2.transparent=true; m2.opacity=0.1; m2.depthWrite=false; } }
   function setMode(m){
     if(introOn) endIntro(true);
+    if(DIVE.on()) DIVE.exit();
     mode=(mode===m)?'all':m;
     if(active && mode!=='all') collapseAll(); // a rack-wide view over a dissected chassis reads as corruption
     btnPower.classList.toggle('active',mode==='power'); btnAir.classList.toggle('active',mode==='air');
@@ -3068,13 +3581,28 @@ window.__PROVENANCE = Object.freeze({
   document.getElementById('introStart').addEventListener('click',()=>startRide());
   document.getElementById('introSkip').addEventListener('click',()=>endIntro(false));
   document.getElementById('btnSkipIntro').addEventListener('click',()=>endIntro(false));
-  document.getElementById('capSkip').addEventListener('click',()=>endIntro(false));
-  document.getElementById('capPrev').addEventListener('click',()=>stepChapter(-1));
-  document.getElementById('capNext').addEventListener('click',()=>stepChapter(1));
+  document.getElementById('capSkip').addEventListener('click',()=>{ if(DIVE.on()) DIVE.back(); else endIntro(false); });
+  document.getElementById('capPrev').addEventListener('click',()=>{ if(DIVE.on()) DIVE.step(-1); else stepChapter(-1); });
+  document.getElementById('capNext').addEventListener('click',()=>{ if(DIVE.on()) DIVE.step(1); else stepChapter(1); });
+  document.getElementById('btnDiveBack').addEventListener('click',()=>DIVE.back());
   rideNextEl.addEventListener('click',()=>{ hideRideNext();
     const gpu=components.find(c=>c.userData.def.cat==='gpu'); if(gpu) openComponent(gpu); });
   // any deliberate input cancels the ride's pending hand-off into the GPU node
-  ['pointerdown','wheel','keydown'].forEach(ev=>window.addEventListener(ev,()=>cancelAutoOpen(),{capture:true,passive:true}));
+  ['pointerdown','wheel','keydown'].forEach(ev=>window.addEventListener(ev,()=>{ cancelAutoOpen(); DIVE.cancelPending(); },{capture:true,passive:true}));
+  /* dive keyboard: arrows/space/page keys step levels, Esc returns to the GPU node */
+  window.addEventListener('keydown',e=>{
+    if(!DIVE.on()) return;
+    if(helpEl.classList.contains('open')||courseEl.classList.contains('open')||
+       document.getElementById('own').classList.contains('open')) return;
+    const t=e.target, onCtl=t&&t.closest&&t.closest('button,a,[role=button]');
+    if(t&&t.closest&&t.closest('input,textarea,select')) return;
+    const k=e.key;
+    if(k==='ArrowDown'||k==='PageDown'||k==='ArrowRight'||(k===' '&&!onCtl)){ e.preventDefault(); DIVE.step(1); }
+    else if(k==='ArrowUp'||k==='PageUp'||k==='ArrowLeft'){ e.preventDefault(); DIVE.step(-1); }
+    else if(k==='Home'){ e.preventDefault(); DIVE.go(0); }
+    else if(k==='End'){ e.preventDefault(); DIVE.go(1); }
+    else if(k==='Escape'){ e.stopPropagation(); DIVE.exit(); }   // keep the GPU node open behind it
+  },true);
   /* ride keyboard: window-capture so it sees the state before any overlay's own
      Escape handling closes it; arrows/space/page keys step chapters, Esc skips */
   window.addEventListener('keydown',e=>{
@@ -3155,7 +3683,7 @@ window.__PROVENANCE = Object.freeze({
 
   /* label projection */
   function updateLabels(){
-    if(introOn){ if(!updateLabels._hid){ updateLabels._hid=true;
+    if(introOn||DIVE.on()){ if(!updateLabels._hid){ updateLabels._hid=true;
         labelData.forEach(L=>{L.el.style.opacity=0;L.el.classList.remove('on');});
         components.forEach(c=>c._peris.forEach(pr=>{ if(pr.el) pr.el.style.opacity=0; }));
         uTicks.forEach(t=>{t.el.style.opacity=0;}); }
@@ -3250,20 +3778,21 @@ window.__PROVENANCE = Object.freeze({
      (frame height at the look-at distance, in real units via 1U = 44.45 mm)
   ==========================================================================*/
   const fovVal=document.getElementById('fovVal'), fovMk=document.getElementById('fovMk');
-  const FOV_TOP=2, FOV_BOT=-1; // log10 metres: 100 m … 10 cm
+  const FOV_TOP=2, FOV_BOT=-10; // log10 metres: 100 m … 0.1 nm (hall → atom)
+  const FOV_LABEL=k=>k>=0?Math.pow(10,k)+' m':k>=-2?Math.pow(10,k+2)+' cm':k>=-3?'1 mm':k>=-6?Math.pow(10,k+6)+' µm':k>=-9?Math.pow(10,k+9)+' nm':'0.1 nm';
   (function(){ const sc=document.getElementById('fovScale');
     for(let k=FOV_TOP;k>=FOV_BOT;k--){
-      [1,5,2].forEach((m,j)=>{ const lg=k+Math.log10(m); if(lg>FOV_TOP||lg<FOV_BOT) return;
+      [1,3].forEach((m,j)=>{ const lg=k+Math.log10(m); if(lg>FOV_TOP||lg<FOV_BOT) return;
         const f=(FOV_TOP-lg)/(FOV_TOP-FOV_BOT)*100;
         const tk=document.createElement('div'); tk.className='tk'+(j===0?' mj':''); tk.style.top=f+'%'; sc.appendChild(tk);
-        if(j===0){ const tl=document.createElement('div'); tl.className='tl'; tl.style.top=f+'%';
-          tl.textContent=k>=0?Math.pow(10,k)+' m':Math.round(Math.pow(10,k+2))+' cm'; sc.appendChild(tl); } });
+        if(j===0){ const tl=document.createElement('div'); tl.className='tl'+(k%2?' alt':''); tl.style.top=f+'%';
+          tl.textContent=FOV_LABEL(k); sc.appendChild(tl); } });
     } })();
-  function fmtLen(m){ return m>=100?Math.round(m)+' m':m>=10?m.toFixed(1)+' m':m>=1?m.toFixed(2)+' m':(m*100).toFixed(1)+' cm'; }
+  function fmtLen(m){ return m>=100?Math.round(m)+' m':m>=10?m.toFixed(1)+' m':m>=1?m.toFixed(2)+' m':m>=0.01?(m*100).toFixed(1)+' cm':
+    m>=1e-3?(m*1e3).toFixed(2)+' mm':m>=1e-4?Math.round(m*1e6)+' µm':m>=1e-6?(m*1e6).toFixed(1)+' µm':m>=1e-7?Math.round(m*1e9)+' nm':(m*1e9).toFixed(2)+' nm'; }
   let fovLast=-1;
   function updateFov(){
-    const d=camera.position.distanceTo(introOn?introLook:target);
-    const m=2*d*Math.tan(camera.fov*Math.PI/360)*M_PER_UNIT;
+    const m=DIVE.on()? DIVE.fovM() : 2*camera.position.distanceTo(introOn?introLook:target)*Math.tan(camera.fov*Math.PI/360)*M_PER_UNIT;
     if(!(m>0) || Math.abs(m-fovLast)/m<0.004) return; fovLast=m;
     fovVal.textContent='≈ '+fmtLen(m);
     fovMk.style.top=(clamp01((FOV_TOP-Math.log10(m))/(FOV_TOP-FOV_BOT))*100)+'%';
@@ -3277,8 +3806,9 @@ window.__PROVENANCE = Object.freeze({
     const D=window.__dbg, LS=D?function(s){try{localStorage.setItem('dbgPhase',s+' t='+(active?active._t.toFixed(3):'-'))}catch(e){}}:null;
     if(D)LS('P0-frame');
     const dt=Math.min(0.25,Math.max(0,nowT-(tick._last||nowT))); tick._last=nowT;
+    DIVE.tickPending(dt);
     if(introOn){ updateIntro(dt); }
-    else { if(autoRotate && !dragging && !active){ goal.theta+=0.0022; }
+    else if(!DIVE.on()){ if(autoRotate && !dragging && !active){ goal.theta+=0.0022; }
       if(D)LS('P1-cam');
       applyCamera(); }
     if(D)LS('P2-anim');
@@ -3286,7 +3816,7 @@ window.__PROVENANCE = Object.freeze({
     if(D)LS('P3-labels');
     try{updateLabels();}catch(err){}
     if(D)LS('P4-render');
-    renderer.render(scene,camera);
+    if(!(DIVE.on() && DIVE.render(dt))) renderer.render(scene,camera);
     drawWatermark();   // composited into the WebGL output, so it travels with any capture
     updateFov();
     if(D)LS('P5-done');
@@ -3304,6 +3834,7 @@ window.__PROVENANCE = Object.freeze({
   }catch(e){}
   if(skipRide){ HALL.group.visible=false; }
   else { introOn=true; pT=pC=0; setRotate(false); document.body.classList.add('intro-on'); setRideAria();
+    introHook.classList.add('on');       // visible before focus, or focus() is ignored
     try{ document.getElementById('introStart').focus({preventScroll:true}); }catch(e){} }
   if(window.__dbg) tick(performance.now()); else requestAnimationFrame(tick);
 })();
