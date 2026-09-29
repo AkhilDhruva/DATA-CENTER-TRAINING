@@ -402,6 +402,10 @@
   .htag.row.hot{color:var(--accent)}
   .htag.hero{color:var(--accent);font-size:10.5px}
   .htag.hero b{font-size:15px;color:#fff}
+  .htag.bx{transform:translate(-50%,-50%);padding:4px 9px;background:rgba(13,19,28,.9);border:1px solid rgba(232,238,247,.25);
+    border-radius:4px;color:#fff;letter-spacing:.06em;text-transform:none;font-size:11px}
+  .htag.bx::after{display:none}
+  .htag.bx b{margin:0;font-size:11.5px;letter-spacing:.04em}
   #rideNext{bottom:150px;left:calc((100vw - 456px)/2);transform:translateX(-50%) translateY(8px);z-index:13;opacity:0;
     visibility:hidden;pointer-events:none;background:rgba(13,19,28,.95);border:1px solid var(--accent);color:#fff;
     border-radius:999px;padding:10px 18px;font-size:12.5px;cursor:pointer;transition:opacity .35s,transform .35s,visibility .35s;
@@ -2730,7 +2734,7 @@ window.__PROVENANCE = Object.freeze({
       const a=h.show(pC); const vis=a>0.01;
       if(!vis){ if(h.on){ h.el.style.opacity=0; h.on=false; } return; }
       _v.copy(h.pos).project(camera);
-      if(_v.z>1||Math.abs(_v.x)>1.1||Math.abs(_v.y)>1.1){ if(h.on){ h.el.style.opacity=0; h.on=false; } return; }
+      if(_v.z>1||Math.abs(_v.x)>1.1||(-_v.y*0.5+0.5)*H<84||_v.y<-1.1){ if(h.on){ h.el.style.opacity=0; h.on=false; } return; }
       h.on=true; h.el.style.opacity=a.toFixed(3);
       h.el.style.left=((_v.x*0.5+0.5)*W)+'px'; h.el.style.top=((-_v.y*0.5+0.5)*H)+'px';
     });
@@ -2908,7 +2912,7 @@ window.__PROVENANCE = Object.freeze({
       // L2 cache: two columns of tiles with a dark seam — the corridor
       const l2=[]; for(let r=0;r<24;r++) for(let c=0;c<2;c++) l2.push({x:c?0.9:-0.9,y:0.15,z:-13.9+r*1.21,sx:1.62,sy:0.3,sz:1.14});
       inst(UBOX,SM(0xd3d9e0,{roughness:.35,metalness:.2,emissive:0x1d2630,emissiveIntensity:.6}),l2,g);
-      // eight GPCs (two banks of four), ten SMs each — raised blocks with gold Tensor strips
+      // eight GPCs (two banks of four), ten SMs each — same colour language as the SM level
       const smBase=[],gold=[],green=[],rf=[],l1=[],gpc=[];
       const GPC_W=4.0, GPC_D=14.25;
       [-1,1].forEach(side=>{ for(let col=0;col<2;col++) for(let row=0;row<2;row++){
@@ -2924,10 +2928,10 @@ window.__PROVENANCE = Object.freeze({
           l1.push({x:sx,y:0.3,z:sz+1.12,sx:1.64,sy:0.12,sz:0.28}); } } });
       inst(UBOX,SM(0x2a323b,{roughness:.6,metalness:.4}),gpc,g);
       inst(UBOX,SM(0x39424c,{roughness:.55,metalness:.45}),smBase,g);
-      inst(UBOX,SM(0xd9b34a,{roughness:.35,metalness:.6,emissive:0x3a2a08,emissiveIntensity:.7}),gold,g);
-      inst(UBOX,SM(0x7fa37a,{roughness:.5,metalness:.3}),green,g);
-      inst(UBOX,SM(0x8d97a2,{roughness:.4,metalness:.5}),rf,g);
-      inst(UBOX,SM(0xe6ebf0,{roughness:.35,metalness:.2}),l1,g);
+      inst(UBOX,SM(0x7d9450,{roughness:.45,metalness:.15}),gold,g);                 // Tensor Cores (olive)
+      inst(UBOX,SM(0xb8d99a,{roughness:.45,metalness:.1}),green,g);                 // CUDA cores
+      inst(UBOX,SM(0xa89bd0,{roughness:.4,metalness:.15}),rf,g);                    // register files
+      inst(UBOX,SM(0xd9b34a,{roughness:.35,metalness:.35,emissive:0x2a1e05,emissiveIntensity:.6}),l1,g); // L1 / shared memory
       // data packets streaming along the L2 (illustrative)
       const PK=36, pr=rng(19), packets=[];
       for(let i=0;i<PK;i++) packets.push({lane:(i%4), off:pr()*29, v:2.2+pr()*3.4*(i%2?1:-1)});
@@ -2949,46 +2953,65 @@ window.__PROVENANCE = Object.freeze({
           pk.instanceMatrix.needsUpdate=true; } };
     })());
 
-    /* ---- 3 · logical block layout: one GPC → one SM (1 unit = 0.1 mm) ---- */
+    /* ---- 3 · logical block layout → one SM → one processing block (1 unit = 0.1 mm) ----
+       Colour language (matches the die level): olive Tensor Cores, light-green CUDA-core cells,
+       lilac register-file banks, blue warp schedulers, orange LD/ST · SFU, gold L1 / shared memory. */
     S.push((function(){
       const g=new THREE.Group();
       const floor=new THREE.Mesh(UBOX,SM(0x1b2129,{roughness:.6,metalness:.4})); floor.scale.set(80,0.6,160); floor.position.y=-0.3; g.add(floor);
-      const base=[],gold=[],cuda=[],rf=[],l1=[],tex4=[],sched=[];
-      const ctr=[0,0,0];
+      const L={base:[],plate:[],cuda:[],tc:[],rf:[],sch:[],ldst:[],l1:[],l1n:[],tx:[]};
       for(let sc=0;sc<2;sc++) for(let sr=-2;sr<=2;sr++){
-        const sx=-10+sc*20, sz=sr*28;
-        base.push({x:sx,y:0.9,z:sz,sx:18.4,sy:1.8,sz:26.2});
-        for(let p=0;p<4;p++){ const px=sx-4.5+(p%2)*9, pz=sz-7.2+(p>>1)*11;
-          gold.push({x:px,y:3.0,z:pz-3.0,sx:7.4,sy:2.4,sz:2.6});
-          for(let cx=0;cx<8;cx++) for(let cz=0;cz<3;cz++) cuda.push({x:px-3.15+cx*0.9,y:2.3,z:pz-0.6+cz*0.95,sx:0.72,sy:1.0,sz:0.72});
-          rf.push({x:px,y:2.2,z:pz+2.9,sx:7.4,sy:0.9,sz:1.5});
-          sched.push({x:px,y:2.0,z:pz+4.2,sx:7.4,sy:0.5,sz:0.7}); }
-        l1.push({x:sx,y:2.4,z:sz+11.2,sx:16.4,sy:1.2,sz:2.8});
-        for(let k=0;k<4;k++) tex4.push({x:sx-6+k*4,y:2.0,z:sz-12.2,sx:3.2,sy:0.6,sz:1.1});
+        const sx=-10+sc*20, sz=sr*28;                                    // one SM: 1.84 × 2.62 mm (illustrative)
+        L.base.push({x:sx,y:0.5,z:sz,sx:18.4,sy:1.0,sz:26.2});
+        L.l1.push({x:sx,y:1.6,z:sz+11.2,sx:16.6,sy:1.2,sz:3.2});           // L1 / shared memory, stepped like the reel
+        [-5.6,0,5.6].forEach(o=>L.l1n.push({x:sx+o,y:2.35,z:sz+10.6,sx:3.4,sy:0.32,sz:1.3}));
+        for(let k=0;k<4;k++) L.tx.push({x:sx-6.2+k*4.1,y:1.4,z:sz-12.0,sx:3.4,sy:0.8,sz:1.3});  // texture units
+        for(let p=0;p<4;p++){                                            // four processing blocks, 2 × 2
+          const px=sx-4.4+(p%2)*8.8, pz=sz-6.2+(p>>1)*10.6;
+          L.plate.push({x:px,y:1.05,z:pz,sx:8.4,sy:0.1,sz:10.2});
+          L.sch.push({x:px,y:1.45,z:pz-4.5,sx:7.8,sy:0.8,sz:0.9});         // warp scheduler + dispatch
+          for(let k=0;k<8;k++) L.rf.push({x:px-3.43+k*0.98,y:1.55,z:pz-3.25,sx:0.86,sy:1.0,sz:1.3});   // 64 KB register file, 8 banks
+          for(let r=0;r<4;r++) for(let c=0;c<8;c++) L.cuda.push({x:px-3.43+c*0.98,y:1.35,z:pz-2.0+r*0.98,sx:0.8,sy:0.6,sz:0.8}); // 32 CUDA cores
+          L.tc.push({x:px+1.6,y:1.9,z:pz+3.3,sx:4.6,sy:1.7,sz:3.4});        // Tensor Core
+          for(let k=0;k<4;k++) L.ldst.push({x:px-3.4+k*0.62,y:1.4,z:pz+3.3,sx:0.5,sy:0.7,sz:3.2});    // LD/ST · SFU
+        }
       }
-      inst(UBOX,SM(0x2f3740,{roughness:.55,metalness:.45}),base,g);
-      // the Tensor Core surface carries fine wiring, so the next level's copper reads as a continuation
-      const tcTex=tex(256,256,(c,w,h)=>{ c.fillStyle='#d9b34a'; c.fillRect(0,0,w,h);
-        for(let i=0;i<32;i++){ c.fillStyle=i%2?'rgba(120,80,20,.35)':'rgba(255,230,160,.25)'; c.fillRect(0,i*8,w,3); }
-        for(let i=0;i<16;i++){ c.fillStyle='rgba(90,60,15,.25)'; c.fillRect(i*16,0,2,h); } });
-      const goldM=SM(0xffffff,{map:tcTex,roughness:.3,metalness:.65,emissive:0x2a1e05,emissiveIntensity:.8});
-      inst(UBOX,goldM,gold,g);
-      inst(UBOX,SM(0x86b07f,{roughness:.45,metalness:.25}),cuda,g);
-      inst(UBOX,SM(0x8d97a2,{roughness:.4,metalness:.5}),rf,g);
-      inst(UBOX,SM(0xb9c6d4,{roughness:.4,metalness:.4}),sched,g);
-      inst(UBOX,SM(0xe6ebf0,{roughness:.3,metalness:.2}),l1,g);
-      inst(UBOX,SM(0x6f8fb5,{roughness:.4,metalness:.4}),tex4,g);
-      // target: top-left partition's Tensor Core of the centre-left SM
-      const T=[-14.5,4.2,-10.2];
-      return { key:'sm', mpu:0.0001, bg:0x0a0e14, fog:[60,220], group:g,
-        keys:[{t:0,pos:[-26,34,28],tgt:[-6,0,0],fov:45},{t:0.45,pos:[-19,15,4],tgt:[-12,2,-6],fov:45},
-              {t:0.75,pos:[-15.6,8.4,-6.6],tgt:[-14.5,3.0,-10],fov:45},{t:1,pos:[-14.8,5.4,-9.6],tgt:T,fov:45}],
-        caps:[{t:0,title:'Logical block layout',sub:'One GPC of SMs · each SM has four processing blocks · illustrative, not a silicon floorplan'},
-              {t:0.5,title:'One Tensor Core',sub:'The matrix engine that does most of AI’s math — one in each processing block'}],
-        tags:[{text:'Tensor Core',sub:'matrix math',pos:[-14.5,4.3,-10.2],from:0.18,to:0.62,cls:'y'},
-              {text:'CUDA cores',sub:'general math',pos:[-5.5,3.0,-7.3],from:0.18,to:0.6,cls:'g'},
-              {text:'Register file',sub:'',pos:[-5.5,2.8,3.9],from:0.2,to:0.58,cls:'g'},
-              {text:'L1 / shared memory',sub:'',pos:[-10,3.2,11.2],from:0.2,to:0.5,cls:'c'}] };
+      inst(UBOX,SM(0x2a3138,{roughness:.55,metalness:.4}),L.base,g);
+      inst(UBOX,SM(0x161b20,{roughness:.8,metalness:.2}),L.plate,g);
+      inst(UBOX,SM(0x9cc27f,{roughness:.55,metalness:.1}),L.cuda,g);
+      // the Tensor Core's fine grid is where the next level's wiring picks up
+      const tcTex=tex(256,256,(c,w,h)=>{ c.fillStyle='#7d9450'; c.fillRect(0,0,w,h);
+        for(let i=0;i<32;i++){ c.fillStyle='rgba(40,55,20,.45)'; c.fillRect(0,i*8,w,2); c.fillRect(i*8,0,2,h); }
+        for(let y=4;y<h;y+=8) for(let x=4;x<w;x+=8){ c.fillStyle='rgba(210,230,160,.35)'; c.fillRect(x,y,2,2); } });
+      inst(UBOX,SM(0xffffff,{map:tcTex,roughness:.45,metalness:.15}),L.tc,g);
+      inst(UBOX,SM(0xa89bd0,{roughness:.4,metalness:.15}),L.rf,g);
+      inst(UBOX,SM(0x8fb4d8,{roughness:.4,metalness:.2}),L.sch,g);
+      inst(UBOX,SM(0xd9824a,{roughness:.45,metalness:.15}),L.ldst,g);
+      inst(UBOX,SM(0xd9b34a,{roughness:.35,metalness:.35,emissive:0x2a1e05,emissiveIntensity:.6}),L.l1,g);
+      inst(UBOX,SM(0xe6c464,{roughness:.35,metalness:.35}),L.l1n,g);
+      inst(UBOX,SM(0x9aa4ae,{roughness:.4,metalness:.3}),L.tx,g);
+      // focus: processing block 0 of the centre-left SM (x -14.4, z -6.2); its Tensor Core sits at (-12.8, -2.9)
+      const TC=[-12.8,2.75,-2.9];
+      return { key:'sm', mpu:0.0001, bg:0x0a0e14, group:g,
+        keys:[{t:0,pos:[-26,34,28],tgt:[-6,0,0],fov:45},
+              {t:0.22,pos:[-22,20,14],tgt:[-10,1.2,-0.5],fov:45},        // whole SM
+              {t:0.45,pos:[-20,11.5,1.5],tgt:[-14.4,1.3,-6.0],fov:45},   // whole processing block
+              {t:0.68,pos:[-16.8,6.8,-1.0],tgt:[-14.5,1.5,-6.2],fov:45}, // its parts, labelled
+              {t:0.86,pos:[-14.2,5.2,0.2],tgt:TC,fov:45},
+              {t:1,pos:[-13.1,3.85,-2.35],tgt:TC,fov:45}],
+        caps:[{t:0,title:'Logical block layout',sub:'One GPC of streaming multiprocessors (SMs) · illustrative, not a silicon floorplan'},
+              {t:0.2,title:'One streaming multiprocessor',sub:'128 CUDA cores · 4 Tensor Cores · shared L1 / shared memory'},
+              {t:0.42,title:'One processing block',sub:'1 of 4 per SM · 32 CUDA cores · 1 Tensor Core · 64 KB register file'},
+              {t:0.64,title:'Inside the processing block',sub:'Scheduler, register file, CUDA cores, Tensor Core · illustrative physical layout'},
+              {t:0.84,title:'One Tensor Core',sub:'The matrix engine that does most of AI’s math — one in each processing block'}],
+        tags:[{text:'L1 / shared memory',sub:'',pos:[-10,2.7,11.2],from:0.12,to:0.4,cls:'y'},
+              {text:'Tensor Core',sub:'× 4 per SM',pos:[-12.8,2.9,-2.9],from:0.12,to:0.4,cls:'g'},
+              {text:'Texture units',sub:'',pos:[-10,2.0,-12],from:0.12,to:0.36,cls:'g'},
+              {text:'Warp scheduler · dispatch',sub:'',pos:[-14.4,2.1,-10.7],from:0.56,to:0.84,cls:'bx'},
+              {text:'Register file · 64 KB',sub:'',pos:[-14.4,2.3,-9.45],from:0.56,to:0.84,cls:'bx'},
+              {text:'32 CUDA cores',sub:'',pos:[-16.4,1.9,-6.7],from:0.56,to:0.84,cls:'bx'},
+              {text:'LD/ST · SFU',sub:'',pos:[-17.2,2.0,-2.9],from:0.6,to:0.84,cls:'bx'},
+              {text:'Tensor Core',sub:'',pos:TC,from:0.56,to:0.95,cls:'bx'}] };
     })());
 
     /* ---- 4 · pass through the wiring (1 unit = 1 µm) --------------------- */
@@ -3121,7 +3144,7 @@ window.__PROVENANCE = Object.freeze({
   const DIVE=(function(){
     let S=null, SC=null, CH=null, STOPS=null, rt=null;
     // progress ranges: 0 = the trainer scene closing on the GPU, 1..6 = the micro stages (overlaps = cross-fades)
-    const R=[[0,0.1],[0.07,0.25],[0.22,0.43],[0.40,0.58],[0.55,0.71],[0.68,0.85],[0.82,1]];
+    const R=[[0,0.085],[0.06,0.2],[0.175,0.345],[0.32,0.6],[0.575,0.72],[0.695,0.86],[0.835,1]];
     const camB=new THREE.PerspectiveCamera(45,1,0.1,100), camC=new THREE.PerspectiveCamera(45,1,0.1,100);
     const tB=new THREE.Vector3(), tC=new THREE.Vector3(), _sz=new THREE.Vector2();
     const s0={from:new THREE.Vector3(),fromT:new THREE.Vector3(),to:new THREE.Vector3(),toT:new THREE.Vector3()};
@@ -3202,7 +3225,7 @@ window.__PROVENANCE = Object.freeze({
         const a=h.stage===dom.i? smooth((lt-h.t.from)/0.06)*(1-smooth((lt-h.t.to)/0.06)) : 0;
         if(a<=0.01){ if(h.on){ h.el.style.opacity=0; h.on=false; } return; }
         _v.copy(h.pos).project(dom.cam);
-        if(_v.z>1||Math.abs(_v.x)>1.05||Math.abs(_v.y)>1.05){ if(h.on){ h.el.style.opacity=0; h.on=false; } return; }
+        if(_v.z>1||Math.abs(_v.x)>1.05||(-_v.y*0.5+0.5)*H<84||_v.y<-1.05){ if(h.on){ h.el.style.opacity=0; h.on=false; } return; }
         h.on=true; h.el.style.opacity=a.toFixed(3);
         h.el.style.left=((_v.x*0.5+0.5)*W)+'px'; h.el.style.top=((-_v.y*0.5+0.5)*H)+'px';
       });

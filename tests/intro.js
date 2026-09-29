@@ -65,7 +65,9 @@ async function assertTrainerHome(page, label) {
   check(label + ': lens, far plane and fog restored', s.fov === 45 && s.far === 240 && s.fogN === 42 && s.fogF === 78, s);
   const name = await page.evaluate(() => document.getElementById('cardName').textContent);
   check(label + ': inspector shows the rack', /42U Data Center Rack/.test(name), name);
-  check(label + ': trainer chrome visible again', (await shown(page, 'sidebar')) && (await shown(page, 'card')) && (await shown(page, 'controls')));
+  const back = await page.waitForFunction(() => ['sidebar', 'card', 'controls'].every((id) => { const cs = getComputedStyle(document.getElementById(id));
+    return cs.visibility === 'visible' && parseFloat(cs.opacity) > 0.9; }), null, { timeout: 8000 }).then(() => true, () => false);
+  check(label + ': trainer chrome visible again', back);
 }
 
 (async () => {
@@ -146,7 +148,8 @@ async function assertTrainerHome(page, label) {
   await waitRide(page, () => !window.__ride.st().on, null, 30000);
   await settle(page, 1500);
   await assertTrainerHome(page, 'after the ride');
-  check('the ride offers to continue into the GPU node', await shown(page, 'rideNext'));
+  check('the ride offers to continue into the GPU node', await page.waitForFunction(() => { const el = document.getElementById('rideNext');
+    return el.classList.contains('on') && parseFloat(getComputedStyle(el).opacity) > 0.9; }, null, { timeout: 8000 }).then(() => true, () => false));
   const crumb = await page.evaluate(() => document.getElementById('crumb').textContent.replace(/\s+/g, ''));
   check('breadcrumb roots at the data hall', /^Datahall›Rack/.test(crumb), crumb);
   const fovT = await page.evaluate(() => document.getElementById('fovVal').textContent);
@@ -231,9 +234,15 @@ async function assertTrainerHome(page, label) {
     check(label, re.test(c.t) && unit.test(c.f), c);
   };
   await depth(0.15, /one blackwell gpu/i, / cm$/, 'the GPU package, at centimetre scale');
-  await depth(0.3, /104 billion transistors/i, / cm$| mm$/, 'one die: 104 billion transistors');
-  await depth(0.4, /l2 cache/i, / mm$/, 'the L2 cache corridor, at millimetre scale');
-  await depth(0.5, /tensor core/i, / mm$| µm$/, 'one Tensor Core');
+  await depth(0.22, /104 billion transistors/i, / cm$| mm$/, 'one die: 104 billion transistors');
+  await depth(0.3, /l2 cache/i, / mm$/, 'the L2 cache corridor, at millimetre scale');
+  await depth(0.4, /one streaming multiprocessor/i, / mm$/, 'one streaming multiprocessor: 128 CUDA cores, 4 Tensor Cores');
+  await depth(0.47, /one processing block/i, / mm$| µm$/, 'one processing block: 32 CUDA cores, 64 KB register file');
+  await depth(0.53, /inside the processing block/i, / µm$/, 'inside the processing block, at micrometre scale');
+  const bx = await page.evaluate(() => [...document.querySelectorAll('.htag.bx')].filter((t) => parseFloat(t.style.opacity) > 0.5).map((t) => t.textContent));
+  check('processing-block parts are labelled (scheduler, register file, CUDA cores)',
+    bx.some((t) => /scheduler/i.test(t)) && bx.some((t) => /Register file/.test(t)) && bx.some((t) => /32 CUDA cores/.test(t)), bx);
+  await depth(0.565, /tensor core/i, / µm$/, 'one Tensor Core');
   await depth(0.63, /wiring/i, / µm$/, 'passing through the copper wiring, at micrometre scale');
   await depth(0.76, /transistor, cut in half/i, / nm$| µm$/, 'one transistor, cut in half');
   await depth(1, /bottom of the zoom/i, / nm$/, 'the bottom: silicon atoms at nanometre scale');
