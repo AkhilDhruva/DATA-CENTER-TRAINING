@@ -124,9 +124,9 @@ async function assertTrainerHome(page, label) {
   check('scroll up pulls back out', afterUp < afterDown - 0.05, [afterDown, afterUp]);
 
   // aisle annotations teach the overhead services
-  await page.evaluate(() => window.__ride.set(0.3));
+  await page.evaluate(() => window.__ride.set(0.32));   // every service and aisle tag is fully in at p = 0.32
   await page.waitForFunction(() => { const on = [...document.querySelectorAll('.htag')].filter((t) => parseFloat(t.style.opacity) > 0.5).map((t) => t.textContent);
-    return on.some((t) => /Cold aisle/.test(t)) && on.some((t) => /Fire suppression/.test(t)); }, null, { timeout: 30000 }).catch(() => {});
+    return ['Cold aisle', 'Hot aisle', 'Fire suppression', 'Fiber raceway', 'Power busway'].every((k) => on.some((t) => t.includes(k))); }, null, { timeout: 30000 }).catch(() => {});
   const tags = await page.evaluate(() => [...document.querySelectorAll('.htag')].filter((t) => parseFloat(t.style.opacity) > 0.5).map((t) => t.textContent));
   check('overhead services are labelled (fiber raceway, busway, fire suppression)',
     tags.some((t) => /Fiber raceway/.test(t)) && tags.some((t) => /busway/i.test(t)) && tags.some((t) => /Fire suppression/.test(t)), tags);
@@ -233,10 +233,11 @@ async function assertTrainerHome(page, label) {
   // every chapter of the dive, in the reel's order — located from the dive's own chapter list, then checked on screen
   const chs = await page.evaluate(() => window.__ride.chapters());
   const visibleBx = () => page.evaluate(() => [...document.querySelectorAll('.htag.bx')].filter((t) => parseFloat(t.style.opacity) > 0.5).map((t) => t.textContent));
-  const chapter = async (re, unit, label, after) => {
+  const chapter = async (re, unit, label, after, frac) => {    // frac: how far into the chapter to look (default: its middle)
     const i = chs.findIndex((c) => re.test(c.title));
     if (i < 0) { check(label + ' (chapter exists)', false, chs.map((c) => c.title)); return; }
-    const q = (chs[i].q + (i + 1 < chs.length ? chs[i + 1].q : 1)) / 2;
+    const f = frac == null ? 0.5 : frac;
+    const q = chs[i].q + f * ((i + 1 < chs.length ? chs[i + 1].q : 1) - chs[i].q);
     await page.evaluate((q) => window.__ride.diveGo(q), q);
     await waitRide(page, (q) => Math.abs(window.__ride.dive().q - q) < 0.004, q, 60000);
     await page.waitForFunction((src) => new RegExp(src, 'i').test(document.getElementById('capT').textContent), re.source, { timeout: 30000 }).catch(() => {});
@@ -252,7 +253,7 @@ async function assertTrainerHome(page, label) {
   await chapter(/one streaming multiprocessor/i, / mm$/, 'one streaming multiprocessor: 128 CUDA cores, 4 Tensor Cores');
   await chapter(/^one processing block/i, / mm$| µm$/, 'one processing block: 32 CUDA cores, 64 KB register file');
   await chapter(/inside the processing block/i, / µm$/, 'inside the processing block, at micrometre scale',
-    labelled('processing-block parts are labelled (scheduler, register file, CUDA cores)', [/scheduler/i, /Register file/, /32 CUDA cores/]));
+    labelled('processing-block parts are labelled (scheduler, register file, CUDA cores)', [/scheduler/i, /Register file/, /32 CUDA cores/]), 0.2);
   await chapter(/register file/i, / µm$/, 'the register file: 16,384 × 32-bit');
   await chapter(/one bank/i, / µm$/, 'one bank: two 128 × 128 arrays, decoder, sense amplifiers');
   await chapter(/memory cells/i, / µm$| nm$/, 'memory cells, each storing one bit');
@@ -266,7 +267,7 @@ async function assertTrainerHome(page, label) {
   await chapter(/rows of logic cells/i, / µm$| nm$/, 'rows of logic cells, then gates and fins');
   await chapter(/tile we zoom into/i, / µm$| nm$/, 'the tile we zoom into');
   await chapter(/one full-adder tile/i, / nm$/, 'one full-adder tile: sum and carry',
-    labelled('the full-adder cells are labelled (XOR, majority)', [/XOR/, /Majority/]));
+    labelled('the full-adder cells are labelled (XOR, majority)', [/XOR/, /Majority/]), 0.3);
   await chapter(/one logic cell/i, / nm$/, 'one logic cell (XOR): gates cross fins');
   await chapter(/transistor, cut in half/i, / nm$/, 'one transistor, cut in half');
   await chapter(/atoms 0.235 nm/i, / nm$/, 'silicon atoms 0.235 nm apart');
@@ -293,7 +294,7 @@ async function assertTrainerHome(page, label) {
   await waitRide(page, () => window.__ride.dive().on, null, 30000).then(() => {}, () => {});
   check('scrolling deeper on the GPU node enters the dive', await page.evaluate(() => window.__ride.dive().on));
   await settle(page, 900);
-  await page.mouse.wheel(0, -700);
+  for (let i = 0; i < 8 && (await page.evaluate(() => window.__ride.dive().on)); i++) { await page.mouse.wheel(0, -800); await page.waitForTimeout(400); }
   await waitRide(page, () => !window.__ride.dive().on, null, 20000).then(() => {}, () => {});
   check('scrolling back up out of the dive returns to the trainer', !(await page.evaluate(() => window.__ride.dive().on)));
   // "Back to the rack" rewinds out of the silicon

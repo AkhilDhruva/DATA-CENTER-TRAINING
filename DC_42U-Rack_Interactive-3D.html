@@ -315,20 +315,21 @@
   /* ---------- data-hall ride (intro) ---------- */
   /* While the ride runs, the trainer chrome steps aside so the hall reads full-bleed;
      the authorship mark (#owner) is deliberately never hidden. */
-  #sidebar,#controls,#card,#bottombar,#stepper,#btnTraining,#menuBtn{transition:opacity .6s,visibility .6s}
+  /* shown: visible at once (so focus can land), opacity fades in; hidden: fade out, then visibility flips */
+  #sidebar,#controls,#card,#bottombar,#stepper,#btnTraining,#menuBtn{transition:opacity .6s,visibility 0s}
   body.intro-on #sidebar,body.intro-on #controls,body.intro-on #card,body.intro-on #bottombar,
   body.intro-on #stepper,body.intro-on #btnTraining,body.intro-on #menuBtn,body.intro-on #trainHint,body.intro-on #ident{
-    opacity:0;visibility:hidden;pointer-events:none}
+    opacity:0;visibility:hidden;pointer-events:none;transition:opacity .6s,visibility 0s .6s}
   body.intro-on #btnTraining,body.intro-on #menuBtn{display:none}   /* free the header for Skip on small screens */
   body.intro-on #topbar{background:linear-gradient(180deg,rgba(7,11,18,.72),rgba(7,11,18,0));border-bottom-color:transparent;backdrop-filter:none}
   #btnSkipIntro{display:none}
   body.intro-on #btnSkipIntro{display:flex}
   /* silicon dive: same cinematic hand-off as the hall ride */
   body.dive-on #sidebar,body.dive-on #controls,body.dive-on #card,body.dive-on #bottombar,body.dive-on #stepper,
-  body.dive-on #trainHint,body.dive-on #ident{opacity:0;visibility:hidden;pointer-events:none}
+  body.dive-on #trainHint,body.dive-on #ident{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .6s,visibility 0s .6s}
   body.dive-on #btnTraining,body.dive-on #menuBtn{display:none}
   body.ride-carry #sidebar,body.ride-carry #controls,body.ride-carry #card,body.ride-carry #bottombar,body.ride-carry #stepper,
-  body.ride-carry #trainHint{opacity:0;visibility:hidden;pointer-events:none}
+  body.ride-carry #trainHint{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .6s,visibility 0s .6s}
   body.ride-carry #btnTraining,body.ride-carry #menuBtn{display:none}
   /* the ride's layers live in one clipped, click-through layer: text backings can't widen the page on touch screens */
   #intro{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:10}
