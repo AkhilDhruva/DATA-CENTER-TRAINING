@@ -4,11 +4,12 @@
 > Copyright © 2026 Akhil Gaddam. All rights reserved. Proprietary — see [LICENSE](LICENSE).
 > First created 4 July 2026. Authorship is verifiable from this repository's timestamped commit history.
 
-A self-contained, browser-based **interactive 3D server rack** built for technical upskilling courseware. Rotate, zoom, and click any component to read its spec. **Critical components dissect** — they slide out of the rack, the casing splits open, and the internal peripherals separate and label themselves. Each part opens a detailed report card with global vendors, hyperscaler deployments, and a course link.
+A self-contained, browser-based **interactive 3D server rack** built for technical upskilling courseware. It opens on a God's-eye view of a whole AI data hall and zooms you down, row by row, to one rack — then you rotate, zoom, and click any component to read its spec. **Critical components dissect** — they slide out of the rack, the casing splits open, and the internal peripherals separate and label themselves. Each part opens a detailed report card with global vendors, hyperscaler deployments, and a course link.
 
 **▶ Live demo:** https://data-center-training.vercel.app
 
 ## What it shows
+- **The data-hall ride (opening sequence)** — *"Want to learn what's inside a data center rack? Start here and zoom — you're in for a ride."* The app opens on a God's-eye view of a full AI data hall (8 rows × 16 racks, hot/cold-aisle containment, perforated cold-aisle tiles, yellow fiber raceway, grey power busway with tap-offs, red fire-suppression mains, CRAH units). Scroll, swipe or press ↓ and the camera flies down the rows, drops into the cold aisle, locks onto **Rack C-08**, and the rest of the hall sinks away until one rack stands alone — landing on the trainer's own view with no cut. **Start the ride** plays it hands-free and carries on into the GPU-node dissection. A live **Field of view** ruler (log scale, ≈ 20 m → ≈ 2 m) tracks the zoom the whole way, powers-of-ten style. Scroll back up past the full rack (or use **Data hall**) to fly back out. Reduced-motion users get chapter cuts instead of a flight; `?intro=0` (or `#rack`) opens straight on the trainer.
 - A 42U rack built to **EIA-310-D** dimensions (1U = 1.75 in / 44.45 mm; 42U = 73.5 in / 1867 mm; 19-in / 482.6 mm mounting).
 - Populated with a Top-of-Rack switch, patch panel, 1U/2U compute, an **AI GPU compute node (GB200-class)**, 4U storage, a 3U UPS/BBU, blanking panels on every empty U, and dual zero-U rPDUs (A-feed amber, B-feed cyan).
 - **★ Critical-component dissection** — click a critical part (GPU node, UPS, ToR switch, storage, A/B rPDUs) and it performs an *exploded view*: the component slides forward, the casing opens in opposite directions and fades to a translucent ghost, and the internal peripherals fan out, get highlighted, and label themselves. The camera choreographs a POV change to frame the dissection.
@@ -18,12 +19,14 @@ A self-contained, browser-based **interactive 3D server rack** built for technic
   - **Vendors & deployments** — global vendors *and* how the hyperscalers (Microsoft, Meta, Google, AWS, xAI, OpenAI) deploy the part, referencing operational / under-construction US AI infrastructure as of 2026 (Colossus, Fairwater, Prometheus/Hyperion, New Carlisle/Rainier, Stargate Abilene).
   - **Course** — a *"Start the course here"* CTA that opens the matching lesson from the **Rack to Runtime** program.
 - Classic modes retained: **Power view** (A/B feeds), **Airflow view** (blanking), component labels, U-position ruler, auto-rotate, hover-to-identify, and reset.
+- One zoom language throughout: scroll down / pinch out / swipe up goes deeper; scroll up pulls back out — all the way to the data hall.
 
 > The interactive website is developed **separately** from the Articulate Rise 360 course objects — this is the standalone, deploy-and-share artifact.
 
 ## Tech
 - Single HTML file. **Three.js (r128)** loaded from CDN; custom orbit controls (no extra dependencies).
 - Detailed procedural component geometry (GPUs on cold plates, CPUs, HBM stacks, NVLink/ASICs, NICs, PSUs, battery modules, busbar, manifolds) built in-scene — no external asset files.
+- The data hall is fully instanced (≈ 30 draw calls for 127 racks and all overhead services) with procedurally drawn rack doors, rears, tops and floor tiles; it is built at the same 1U = 44.45 mm scale as the trainer rack and hidden once the ride hands over, so the trainer costs nothing extra.
 - Honors `prefers-reduced-motion` (auto-rotate off, instant transitions) and keeps all data as real on-screen text for accessibility.
 - Drop-in embeddable in **Articulate Rise 360** as a Web Object / Embed block (≥ 560 px height).
 

@@ -29,6 +29,8 @@ function check(name, cond) {
 
 async function boot(browser, w, h) {
   const page = await browser.newPage({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
+  // these suites exercise the trainer itself; the data-hall ride has its own suite (tests/intro.js)
+  await page.addInitScript(() => { window.__DC_SKIP_INTRO = true; });
   if (THREE_LOCAL) await page.route('**/three.min.js', (r) => r.fulfill({
     contentType: 'application/javascript', body: fs.readFileSync(THREE_LOCAL, 'utf8') }));
   if (GLTF_LOCAL) await page.route('**/GLTFLoader.js', (r) => r.fulfill({

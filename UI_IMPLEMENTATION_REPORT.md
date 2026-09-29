@@ -8,7 +8,10 @@ Run the suites with the app served locally:
 npx http-server -p 8123 .   # or python3 -m http.server 8123
 APP_URL=http://127.0.0.1:8123/index.html node tests/acceptance.js
 APP_URL=http://127.0.0.1:8123/index.html node tests/provenance.js
+APP_URL=http://127.0.0.1:8123/index.html node tests/intro.js
 ```
+
+`tests/intro.js` covers the data-hall ride that now opens the app: hook copy, chrome hand-off, chapter navigation (keyboard, wheel over the canvas *and* over the headline, swipe), overhead/aisle annotations, the Rack C-08 lock-on, isolation, the seamless camera hand-over to the trainer default (radius/lens/far plane/fog restored), continue-the-ride into the GPU node, flying back out via **Data hall** and via scroll pull-back, Esc/Skip paths, hands-free autoplay, reduced motion (chapter cuts), `?intro=0`, and mobile/compact layouts. `tests/acceptance.js` exercises the trainer itself and skips the ride (`window.__DC_SKIP_INTRO`); `tests/provenance.js` runs with the ride on, proving the authorship mark and watermark survive it.
 
 Result at time of writing: **74 passed, 0 failed** (`tests/acceptance.js`) and **38 passed, 0 failed** (`tests/provenance.js`).
 

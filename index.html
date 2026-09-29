@@ -81,7 +81,7 @@
   html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;overflow:hidden}
   #app{position:fixed;inset:0}
-  canvas{display:block}
+  canvas{display:block;touch-action:none}
   a{color:var(--accent)}
   .hud{position:absolute}
   /* ---------- top bar ---------- */
@@ -312,6 +312,92 @@
   #courseClose,#helpClose,#ownClose{background:var(--accent);border:0;color:#04121c;font-weight:700;border-radius:9px;
     padding:10px 18px;cursor:pointer;font-size:13px}
   #helpBox ul{margin:0;padding-left:18px;font-size:13px;line-height:1.8;color:#cdd8e6}
+  /* ---------- data-hall ride (intro) ---------- */
+  /* While the ride runs, the trainer chrome steps aside so the hall reads full-bleed;
+     the authorship mark (#owner) is deliberately never hidden. */
+  #sidebar,#controls,#card,#bottombar,#stepper,#btnTraining,#menuBtn{transition:opacity .6s,visibility .6s}
+  body.intro-on #sidebar,body.intro-on #controls,body.intro-on #card,body.intro-on #bottombar,
+  body.intro-on #stepper,body.intro-on #btnTraining,body.intro-on #menuBtn,body.intro-on #trainHint{
+    opacity:0;visibility:hidden;pointer-events:none}
+  body.intro-on #btnTraining,body.intro-on #menuBtn{display:none}   /* free the header for Skip on small screens */
+  body.intro-on #topbar{background:linear-gradient(180deg,rgba(7,11,18,.72),rgba(7,11,18,0));border-bottom-color:transparent;backdrop-filter:none}
+  #btnSkipIntro{display:none}
+  body.intro-on #btnSkipIntro{display:flex}
+  .ride-t{font-family:"Arial Narrow","Roboto Condensed","Helvetica Neue",Arial,sans-serif;font-stretch:condensed;
+    font-weight:800;text-transform:uppercase;letter-spacing:.02em;color:#fff}
+  #introHook,#introCap{left:max(32px,4.5vw);bottom:136px;z-index:10;opacity:0;visibility:hidden;pointer-events:none;
+    transform:translateY(12px);transition:opacity .5s,transform .5s,visibility .5s}
+  #introHook.on,#introCap.on{opacity:1;visibility:visible;transform:none}
+  #introHook{max-width:min(660px,86vw)}
+  #introHook.on .introBtns{pointer-events:auto}
+  #introHook::before,#introCap::before{content:"";position:absolute;inset:-80px -150px -60px -100px;z-index:-1;pointer-events:none;
+    background:radial-gradient(ellipse 60% 62% at 36% 54%,rgba(7,11,18,.9) 0%,rgba(7,11,18,.62) 48%,rgba(7,11,18,0) 100%)}
+  #introHook .kick{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)}
+  #introHook h2{margin:10px 0 12px;font-size:clamp(30px,4.4vw,60px);line-height:1.0;text-shadow:0 2px 24px rgba(0,0,0,.6)}
+  #introHook p{margin:0 0 22px;font-size:clamp(15px,1.45vw,19px);color:#cdd8e6;line-height:1.45}
+  .introBtns{display:flex;gap:10px;flex-wrap:wrap}
+  #introStart{background:var(--accent);color:#04121c;border:0;font-weight:800;border-radius:12px;padding:13px 20px;
+    font-size:14px;cursor:pointer;box-shadow:0 0 24px rgba(47,210,245,.35)}
+  #introStart:hover{filter:brightness(1.08)}
+  #introSkip{background:rgba(13,19,28,.72);border:1px solid var(--line2);color:var(--ink);border-radius:12px;
+    padding:12px 18px;font-size:13.5px;cursor:pointer}
+  #introSkip:hover{border-color:var(--accent)}
+  #introStart:focus-visible,#introSkip:focus-visible,#introCap button:focus-visible,#rideNext:focus-visible,
+  #btnSkipIntro:focus-visible{outline:2px solid #fff;outline-offset:2px}
+  .scrollHint{margin-top:20px;display:flex;gap:11px;align-items:center;font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:#9fb0c3}
+  .mouse{width:18px;height:28px;border:2px solid #9fb0c3;border-radius:10px;position:relative;flex:0 0 auto}
+  .mouse::after{content:"";position:absolute;left:50%;top:5px;width:2px;height:6px;margin-left:-1px;background:#9fb0c3;
+    border-radius:2px;animation:dcWheel 1.6s infinite}
+  @keyframes dcWheel{0%{opacity:0;transform:translateY(-2px)}30%{opacity:1}100%{opacity:0;transform:translateY(9px)}}
+  #introCap{max-width:min(640px,80vw)}
+  #introCap .ct{font-size:clamp(26px,3.3vw,46px);line-height:1.0;text-shadow:0 2px 18px rgba(0,0,0,.65)}
+  #introCap .cs{margin-top:9px;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:#c3cfdc;
+    line-height:1.55;text-shadow:0 1px 8px rgba(0,0,0,.8)}
+  #introCap.pop .ct,#introCap.pop .cs{animation:dcPop .55s ease both}
+  @keyframes dcPop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  #introCap .cn{margin-top:14px;display:flex;gap:8px;align-items:center;font-size:11px;letter-spacing:.12em;color:#c3cfdc;
+    text-shadow:0 1px 6px rgba(0,0,0,.9)}
+  #introCap.on .cn{pointer-events:auto}
+  #introCap .cn button{background:rgba(13,19,28,.75);border:1px solid var(--line2);color:var(--ink);border-radius:9px;
+    height:30px;min-width:30px;padding:0 10px;font-size:13px;cursor:pointer}
+  #introCap .cn button:hover{border-color:var(--accent)}
+  #introCap .cn #capSkip{font-size:11.5px;letter-spacing:.06em}
+  /* field-of-view ruler — log scale, live readout (powers-of-ten HUD) */
+  #fov{right:28px;top:50%;transform:translateY(-50%);width:96px;z-index:9;pointer-events:none;
+    font-variant-numeric:tabular-nums;transition:opacity .5s}
+  #fov .fh{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:#9fb0c3;text-align:right}
+  #fov .fv{font-size:15px;font-weight:700;color:#fff;text-align:right;margin:4px 0 10px;white-space:nowrap}
+  #fov .fs{position:relative;height:250px;width:64px;margin-left:auto;border-right:1px solid rgba(232,238,247,.35)}
+  #fov .tk{position:absolute;right:0;height:1px;width:6px;background:rgba(232,238,247,.35)}
+  #fov .tk.mj{width:12px;background:rgba(232,238,247,.7)}
+  #fov .tl{position:absolute;right:17px;transform:translateY(-50%);font-size:9.5px;color:#9fb0c3;white-space:nowrap}
+  #fov .mk{position:absolute;right:-5px;width:24px;height:2px;margin-top:-1px;background:#ffd23f;
+    box-shadow:0 0 8px rgba(255,210,63,.85);transition:top .12s linear}
+  body:not(.intro-on) #fov{right:472px;top:auto;bottom:98px;transform:none;width:110px;padding:10px 12px 12px;
+    background:rgba(13,19,28,.88);border:1px solid var(--line);border-radius:var(--rad);backdrop-filter:blur(6px)}
+  body:not(.intro-on) #fov .fs{height:150px}
+  @media (max-height:800px){body:not(.intro-on) #fov{display:none}}
+  /* hall annotations projected from 3D */
+  .htag{position:absolute;transform:translate(-50%,-100%);pointer-events:none;opacity:0;transition:opacity .35s;
+    font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#dbe6f2;white-space:nowrap;text-align:center;
+    padding-bottom:30px;text-shadow:0 1px 6px rgba(0,0,0,.9);z-index:6}
+  .htag::after{content:"";position:absolute;left:50%;bottom:0;width:1px;height:26px;background:currentColor;opacity:.65}
+  .htag b{display:block;font-size:11.5px;letter-spacing:.1em;margin-bottom:2px}
+  .htag.y{color:#ffd23f}.htag.r{color:#ff7a6b}.htag.g{color:#c9d4e0}.htag.c{color:#6fe3ff}.htag.o{color:#ffae6b}
+  .htag.row{padding-bottom:0;font-weight:700;color:#9fb0c3}
+  .htag.row::after{display:none}
+  .htag.row.hot{color:var(--accent)}
+  .htag.hero{color:var(--accent);font-size:10.5px}
+  .htag.hero b{font-size:15px;color:#fff}
+  #rideNext{bottom:150px;left:calc((100vw - 456px)/2);transform:translateX(-50%) translateY(8px);z-index:13;opacity:0;
+    visibility:hidden;pointer-events:none;background:rgba(13,19,28,.95);border:1px solid var(--accent);color:#fff;
+    border-radius:999px;padding:10px 18px;font-size:12.5px;cursor:pointer;transition:opacity .35s,transform .35s,visibility .35s;
+    display:flex;gap:8px;align-items:center;white-space:nowrap;box-shadow:0 0 22px rgba(47,210,245,.25)}
+  #rideNext.on{opacity:1;visibility:visible;pointer-events:auto;transform:translateX(-50%)}
+  #rideNext b{color:var(--accent)}
+  @media (prefers-reduced-motion:reduce){.mouse::after{animation:none}#introCap.pop .ct,#introCap.pop .cs{animation:none}}
+
   /* ---------- responsive ---------- */
   /* Desktop: sidebar + viewport + controls + inspector */
   @media (max-width:1560px){#stepper .step .txt{display:none}#stepper{gap:6px;padding:7px 12px}}
@@ -328,6 +414,8 @@
     .bb .v{font-size:11.5px}.bb .k{font-size:9.5px}
     #btnNote{display:none}
     #brand p{display:none}
+    body:not(.intro-on) #fov{display:none}
+    #rideNext{bottom:auto;top:128px;left:50%}
   }
   /* Phone: compact header, no stepper, icon-only actions */
   @media (max-width:760px){
@@ -339,6 +427,16 @@
     #sidebar{left:10px;width:min(260px,calc(100vw - 20px))}
     #bottombar{display:none}
     #card{left:10px;right:10px;height:42vh;bottom:10px}
+    #introHook,#introCap{left:16px;right:16px;bottom:78px;max-width:none}
+    #introHook::before,#introCap::before{inset:-40px -16px -30px -16px}
+    #introHook .kick{font-size:10px;letter-spacing:.14em}
+    #introCap .cs{font-size:10.5px;letter-spacing:.12em}
+    #fov{right:10px;top:84px;transform:none;width:78px}
+    #fov .fs{height:130px;width:52px}
+    #fov .fv{font-size:13px;margin-bottom:6px}
+    #rideNext{top:118px;max-width:92vw}
+    #btnSkipIntro{font-size:0;gap:0;padding:0 12px}
+    #btnSkipIntro::after{content:"Skip";font-size:12px}
   }
 </style>
 </head>
@@ -358,6 +456,7 @@
     <li class="step s4"><span class="num">4</span><span class="txt">Inspect internals</span></li>
   </ol>
   <div id="topActions">
+    <button class="iconbtn" id="btnSkipIntro" type="button" aria-label="Skip intro">Skip intro&nbsp;›</button>
     <button class="iconbtn" id="btnTraining"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10L12 5 2 10l10 5 10-5zM6 12v5c0 1 3 3 6 3s6-2 6-3v-5"/></svg>Training mode</button>
     <button class="iconbtn" id="btnHelp"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 015.8 1c0 2-3 3-3 3M12 17h.01"/></svg>Help</button>
     <button class="iconbtn sq" id="btnFull" title="Fullscreen"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg></button>
@@ -377,6 +476,7 @@
   <div class="ctl" id="btnAir"><span class="dot" style="background:var(--warn)"></span>Airflow view<span class="end">(blanking)</span></div>
   <div class="ctl" id="btnLabels"><span class="dot" style="background:var(--accent)"></span>Component labels<span class="switch"></span></div>
   <div class="ctl on" id="btnU"><span class="dot" style="background:var(--muted)"></span>U-position ruler<span class="switch"></span></div>
+  <div class="ctl" id="btnHall"><span class="dot" style="background:#ffd23f"></span>Data hall<span class="end">zoom out</span></div>
   <div class="ctl" id="btnExit" style="display:none"><span class="dot" style="background:var(--crit)"></span>Exit dissection</div>
   <div class="ctl reset" id="btnReset"><span class="dot" style="background:#fff"></span>Reset view</div>
 </div>
@@ -418,6 +518,36 @@
 
 <div id="trainHint" class="hud" hidden role="status"><span id="trainHintTxt"></span></div>
 
+<!-- Data-hall ride: God's-eye establishing shot that flies down to this rack -->
+<section id="intro" data-component="DataHallRide" aria-label="Data hall ride">
+  <div id="introHook" class="hud">
+    <div class="kick">Rack to Runtime · from the hall to the chip</div>
+    <h2 class="ride-t" id="introTitle">Want to learn what’s inside a data center rack?</h2>
+    <p>Start here and zoom — you’re in for a ride.</p>
+    <div class="introBtns">
+      <button id="introStart" type="button">▶&nbsp; Start the ride</button>
+      <button id="introSkip" type="button">Skip to the rack</button>
+    </div>
+    <div class="scrollHint"><span class="mouse" aria-hidden="true"></span>Scroll, swipe or press ↓ to zoom in</div>
+  </div>
+  <div id="introCap" class="hud">
+    <div class="ct ride-t" id="capT" aria-live="polite"></div>
+    <div class="cs" id="capS"></div>
+    <div class="cn">
+      <button id="capPrev" type="button" aria-label="Previous chapter">‹</button>
+      <span id="capN" aria-hidden="true"></span>
+      <button id="capNext" type="button" aria-label="Next chapter">›</button>
+      <button id="capSkip" type="button">Skip ›</button>
+    </div>
+  </div>
+</section>
+<div id="fov" class="hud" aria-hidden="true" data-component="FieldOfViewRuler">
+  <div class="fh">Field of view</div>
+  <div class="fv" id="fovVal">—</div>
+  <div class="fs" id="fovScale"><div class="mk" id="fovMk"></div></div>
+</div>
+<button id="rideNext" class="hud" type="button">▶ Continue the ride — <b>pull out the AI GPU node</b></button>
+
 <div id="ident" class="hud"><span class="st">★</span><span id="identTxt"></span></div>
 <div id="err">Couldn't load the 3D engine (needs internet for the Three.js CDN). The component list and specs are in the course build pack.</div>
 <div id="toast"></div>
@@ -431,9 +561,15 @@
     <li><b>3 · Open chassis</b> — the casing splits apart and fades to a ghost.</li>
     <li><b>4 · Inspect internals</b> — click any internal part in 3D, or use the <b>Internals</b> tab → <b>Inspect</b>.</li>
   </ul>
+  <h3>The ride</h3>
+  <ul>
+    <li>The trainer opens on a God's-eye view of a full data hall. <b>Scroll down / swipe up / ↓</b> to zoom in, row by row, until one rack is isolated.</li>
+    <li><b>Start the ride</b> plays it hands-free and carries on into the GPU node. <b>Esc</b> or <b>Skip</b> jumps straight to the rack.</li>
+    <li>Scroll back up past the full-rack view (or use <b>Data hall</b>) to fly back out to the hall.</li>
+  </ul>
   <h3>Controls</h3>
   <ul>
-    <li>Drag to orbit · scroll/pinch to zoom · hover to identify.</li>
+    <li>Drag to orbit · scroll down/pinch out to go deeper, scroll up to pull back · hover to identify.</li>
     <li><b>Power view</b> highlights the A/B feed path; <b>Airflow view</b> highlights blanking panels.</li>
     <li><b>Esc</b> closes overlays and exits dissection. <b>Reset view</b> returns to the full rack.</li>
   </ul>
@@ -1884,6 +2020,334 @@ window.__PROVENANCE = Object.freeze({
   }}
 
   /* =========================================================================
+     DATA HALL — the establishing shot for the intro ride. The trainer rack is
+     one rack of many: a full hall of instanced racks is built around it at the
+     same scale (1U = 0.4 units, so 1 unit = 111 mm), with cold aisles facing
+     fronts, contained hot aisles behind, and the overhead services a tech sees
+     from the floor (yellow fiber raceway, grey power busway, red fire-
+     suppression). The ride flies from God's-eye down into the cold aisle, the
+     rest of the hall falls away, and the camera lands exactly on the trainer's
+     default view — no cut. Everything is instanced/shared so the whole hall
+     costs a handful of draw calls, and it is hidden once the ride hands over.
+  ==========================================================================*/
+  const M_PER_UNIT = 0.04445/U;
+  const HALL=(function(){
+    const g=new THREE.Group(); g.name='DataHall'; scene.add(g);
+    const ROWS=8, PER_ROW=16, HERO_ROW=2, HERO_COL=7, PITCH=RACK_W+0.1;
+    const CA=11.4, HA=10.0;                       // cold aisle ~1.27 m, hot aisle ~1.1 m
+    const RH=RACK_H+1.32, TOPY=RH/2, FLOORY=baseY-0.6;
+    const ROWNAMES='ABCDEFGH', TOTAL=ROWS*PER_ROW;
+    const HERO_ID='Rack '+ROWNAMES[HERO_ROW]+'-'+String(HERO_COL+1).padStart(2,'0');
+    const maxAniso=renderer.capabilities.getMaxAnisotropy?renderer.capabilities.getMaxAnisotropy():1;
+    const ANISO=Math.min(8,maxAniso||1);
+
+    /* ---- layout: rows alternate orientation so fronts share cold aisles ---- */
+    const rowZ=[],rowFace=[];
+    rowZ[HERO_ROW]=0; rowFace[HERO_ROW]=1;         // trainer rack's row: front opens to +z
+    for(let r=HERO_ROW+1;r<ROWS;r++){ rowZ[r]=rowZ[r-1]+RACK_D+(rowFace[r-1]>0?CA:HA); rowFace[r]=-rowFace[r-1]; }
+    for(let r=HERO_ROW-1;r>=0;r--){ rowZ[r]=rowZ[r+1]-RACK_D-(rowFace[r+1]>0?HA:CA); rowFace[r]=-rowFace[r+1]; }
+    const colX=c=>(c-HERO_COL)*PITCH;
+    const X0=colX(0)-RACK_W/2, X1=colX(PER_ROW-1)+RACK_W/2, ROWLEN=X1-X0, MIDX=(X0+X1)/2;
+    const Z0=rowZ[0]-RACK_D/2, Z1=rowZ[ROWS-1]+RACK_D/2, MIDZ=(Z0+Z1)/2;
+    const aisles=[];
+    for(let r=0;r<ROWS-1;r++){ const za=rowZ[r]+RACK_D/2, zb=rowZ[r+1]-RACK_D/2;
+      aisles.push({z:(za+zb)/2, w:zb-za, cold:rowFace[r]>0}); }
+
+    /* ---- procedural textures (drawn once, shared by every instance) ---- */
+    function rng(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed);
+      t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+    function tex(cv,repeat){ const t=new THREE.CanvasTexture(cv); t.anisotropy=ANISO;
+      if(repeat){ t.wrapS=t.wrapT=THREE.RepeatWrapping; } return t; }
+    function canvas(w,h){ const cv=document.createElement('canvas'); cv.width=w; cv.height=h; return cv; }
+    // 42U elevation plans, top of rack first (each sums to 42U)
+    const R_=(t,h,n)=>Array.from({length:n},()=>[t,h]);
+    const PLANS={
+      compute:[['sw',1],['patch',1],['cable',1],...R_('srv',2,6),['blank',1],...R_('srv1',1,4),['blank',1],...R_('srv',2,5),['stor',4],['blank',2],['blank',2],['ups',3]],
+      gpu:[['sw',1],['sw',1],['patch',1],['pwr',2],...R_('gpu',1,10),...R_('nvs',1,9),...R_('gpu',1,8),['pwr',2],['cable',2],['blank',3],['pwr',3]],
+      storage:[['sw',1],['patch',1],...R_('stor',4,9),['blank',1],['ups',3]],
+      network:[...[].concat(...R_(0,0,8).map(()=>[['patch',1],['sw',1]])),['cable',2],...[].concat(...R_(0,0,8).map(()=>[['patch',1],['sw',1]])),['cable',2],['blank',3],['pwr',3]]
+    };
+    function drawFront(kind,seed){
+      const W=384,H=1152,EW=128,EH=384,sx=EW/W,sy=EH/H, rnd=rng(seed);
+      const cv=canvas(W,H), c=cv.getContext('2d'), ev=canvas(EW,EH), e=ev.getContext('2d');
+      c.fillStyle='#262d37'; c.fillRect(0,0,W,H); c.fillStyle='#07090d'; c.fillRect(12,14,W-40,H-28);
+      e.fillStyle='#000'; e.fillRect(0,0,EW,EH);
+      const glow=(x,y,w,h,col)=>{ e.fillStyle=col; e.fillRect(x*sx,y*sy,Math.max(1,w*sx),Math.max(1,h*sy)); };
+      const led=(x,y,col)=>{ c.fillStyle=col; c.fillRect(x-2,y-2,4,4); glow(x-3,y-3,6,6,col); };
+      const L=20,R=W-36, uH=(H-40)/42; let u=0;
+      PLANS[kind].forEach(([t,h])=>{
+        const x=L,y=20+u*uH+1,w=R-L,hh=h*uH-2; u+=h;
+        if(t==='srv'||t==='srv1'){ c.fillStyle='#96a0ab'; c.fillRect(x,y,w,hh);
+          const n=10,bw=(w*0.8)/n;
+          for(let i=0;i<n;i++){ c.fillStyle='#c8cfd7'; c.fillRect(x+5+i*bw,y+3,bw-3,hh-7);
+            c.fillStyle='#5b6470'; c.fillRect(x+6+i*bw,y+hh*0.5,bw-5,2); }
+          c.fillStyle='#4a535e'; c.fillRect(x+w*0.84,y+3,w*0.14,hh-6);
+          led(x+w*0.82,y+hh*0.35,rnd()<0.93?'#39d98a':'#ffd23f');
+        } else if(t==='gpu'){ c.fillStyle='#1a2029'; c.fillRect(x,y,w,hh);
+          for(let i=0;i<4;i++){ c.fillStyle='#2b333e'; c.fillRect(x+6+i*w*0.16,y+3,w*0.14,hh-6); }
+          c.fillStyle='#8fb4d8'; c.fillRect(x+w*0.7,y+hh*0.25,6,hh*0.5); c.fillRect(x+w*0.76,y+hh*0.25,6,hh*0.5);
+          c.fillStyle='#2fd2f5'; c.fillRect(x+w*0.82,y+hh*0.4,w*0.14,3); glow(x+w*0.82,y+hh*0.3,w*0.14,6,'#2fd2f5');
+        } else if(t==='nvs'){ c.fillStyle='#10151c'; c.fillRect(x,y,w,hh);
+          for(let i=0;i<18;i++){ c.fillStyle='#05070a'; c.fillRect(x+6+i*(w-12)/18,y+4,(w-12)/18-3,hh-8);
+            if(rnd()<0.8) led(x+8+i*(w-12)/18,y+hh-5,'#39d98a'); }
+        } else if(t==='sw'){ c.fillStyle='#1b222c'; c.fillRect(x,y,w,hh);
+          for(let i=0;i<24;i++){ c.fillStyle='#05070a'; c.fillRect(x+6+i*(w*0.86)/24,y+4,(w*0.86)/24-3,hh-8);
+            if(rnd()<0.7) led(x+8+i*(w*0.86)/24,y+4,'#39d98a'); }
+        } else if(t==='patch'){ c.fillStyle='#2a323d'; c.fillRect(x,y,w,hh);
+          for(let i=0;i<24;i++){ c.fillStyle=rnd()<0.5?'#2e7cf6':'#f2c230'; c.fillRect(x+6+i*(w*0.9)/24,y+hh*0.3,(w*0.9)/24-4,hh*0.5); }
+        } else if(t==='stor'){ c.fillStyle='#7f8994'; c.fillRect(x,y,w,hh);
+          for(let i=0;i<12;i++){ c.fillStyle='#b8c0c9'; c.fillRect(x+5+i*(w-10)/12,y+4,(w-10)/12-3,hh-8);
+            c.fillStyle='#48515c'; c.fillRect(x+6+i*(w-10)/12,y+hh*0.1,(w-10)/12-5,2);
+            led(x+9+i*(w-10)/12,y+hh-9,'#b06bff'); }
+        } else if(t==='pwr'||t==='ups'){ c.fillStyle=t==='ups'?'#3a424d':'#5c6672'; c.fillRect(x,y,w,hh);
+          for(let i=0;i<6;i++){ c.fillStyle='#2f3741'; c.fillRect(x+6+i*w*0.13,y+4,w*0.11,hh-8); led(x+10+i*w*0.13,y+8,i%3?'#39d98a':'#ff8c32'); }
+          if(t==='ups'){ c.fillStyle='#36c2ff'; c.fillRect(x+w*0.82,y+hh*0.25,w*0.12,hh*0.3); glow(x+w*0.82,y+hh*0.25,w*0.12,hh*0.3,'#1f7aa0'); }
+        } else if(t==='cable'){ c.fillStyle='#0d1117'; c.fillRect(x,y,w,hh);
+          for(let i=0;i<14;i++){ c.fillStyle=['#2e7cf6','#f2c230','#1c2330'][i%3]; c.fillRect(x+8+i*(w-16)/14,y+2,3,hh-4); }
+        } else { c.fillStyle='#1c232d'; c.fillRect(x,y,w,hh);
+          c.fillStyle='#10151c'; for(let k=1;k<4;k++) c.fillRect(x+w*0.06,y+hh*k/4-1,w*0.88,2); }
+      });
+      // perforated door: a fine dot grid over the whole face, then the handle
+      c.fillStyle='rgba(0,0,0,.26)';
+      for(let yy=16;yy<H-14;yy+=6) for(let xx=14+((yy/6)%2)*3;xx<W-28;xx+=6) c.fillRect(xx,yy,2,2);
+      c.fillStyle='#aab4bf'; c.fillRect(W-22,H*0.43,8,H*0.12); c.fillStyle='#39414b'; c.fillRect(W-20,H*0.47,4,10);
+      return {map:tex(cv), emi:tex(ev)};
+    }
+    function drawRear(){
+      const W=256,H=768,EW=64,EH=192,sx=EW/W,sy=EH/H;
+      const cv=canvas(W,H), c=cv.getContext('2d'), ev=canvas(EW,EH), e=ev.getContext('2d');
+      c.fillStyle='#161c24'; c.fillRect(0,0,W,H); c.fillStyle='#0b0f14'; c.fillRect(8,10,W-16,H-20);
+      e.fillStyle='#000'; e.fillRect(0,0,EW,EH);
+      const uH=(H-20)/42;
+      for(let u=0;u<42;u+=2){ const y=10+u*uH;
+        for(let i=0;i<4;i++){ c.strokeStyle='#3a434f'; c.lineWidth=2; c.beginPath(); c.arc(60+i*28,y+uH,uH*0.8,0,7); c.stroke(); }
+        c.fillStyle='#2b333e'; c.fillRect(W-86,y+3,26,uH*2-6); c.fillRect(W-56,y+3,26,uH*2-6);
+        if(u%6===0){ e.fillStyle='#39d98a'; e.fillRect((W-80)*sx,(y+6)*sy,2,2); }
+      }
+      // A-feed (amber) and B-feed (cyan) power cords + network bundle, like the trainer rack's rPDUs
+      c.fillStyle='#ff8c32'; c.fillRect(14,10,7,H-20); c.fillStyle='#36c2ff'; c.fillRect(W-22,10,7,H-20);
+      c.fillStyle='#2e7cf6'; c.fillRect(28,10,5,H-20); c.fillStyle='#f2c230'; c.fillRect(35,10,4,H-20);
+      e.fillStyle='#5a2c0c'; e.fillRect(14*sx,0,2,EH); e.fillStyle='#0f4560'; e.fillRect((W-22)*sx,0,2,EH);
+      return {map:tex(cv), emi:tex(ev)};
+    }
+    function drawTop(){
+      const cv=canvas(256,320), c=cv.getContext('2d');
+      c.fillStyle='#8b95a0'; c.fillRect(0,0,256,320); c.fillStyle='#707a86'; c.fillRect(0,0,256,8); c.fillRect(0,312,256,8);
+      c.fillRect(0,0,8,320); c.fillRect(248,0,8,320);
+      c.fillStyle='#1b2129'; [[40,40],[150,40],[40,236],[150,236]].forEach(([x,y])=>c.fillRect(x,y,66,40));
+      c.fillStyle='#2b323c'; for(let i=0;i<5;i++) c.fillRect(44+i*12,42,3,36);
+      c.fillStyle='#5d6672'; [[18,18],[232,18],[18,296],[232,296]].forEach(([x,y])=>{ c.beginPath(); c.arc(x,y,5,0,7); c.fill(); });
+      return tex(cv);
+    }
+    function drawTile(perf){
+      const cv=canvas(128,128), c=cv.getContext('2d');
+      c.fillStyle=perf?'#1c2838':'#121923'; c.fillRect(0,0,128,128);
+      c.fillStyle=perf?'#27374b':'#1c2632'; c.fillRect(0,0,128,3); c.fillRect(0,0,3,128);
+      if(perf){ c.fillStyle='#0a0f16'; for(let y=14;y<120;y+=9) for(let x=14;x<120;x+=9){ c.beginPath(); c.arc(x,y,2.4,0,7); c.fill(); } }
+      else { c.fillStyle='#18212c'; [[10,10],[118,10],[10,118],[118,118]].forEach(([x,y])=>c.fillRect(x-2,y-2,4,4)); }
+      return tex(cv,true);
+    }
+    function drawLouver(){
+      const cv=canvas(128,256), c=cv.getContext('2d');
+      c.fillStyle='#4a535f'; c.fillRect(0,0,128,256);
+      for(let y=10;y<246;y+=8){ c.fillStyle='#2a313b'; c.fillRect(8,y,112,4); }
+      return tex(cv);
+    }
+    function drawGrad(){ // vertical beam falloff: bright at the floor, gone at the ceiling
+      const cv=canvas(64,256), c=cv.getContext('2d'); const gr=c.createLinearGradient(0,0,0,256);
+      gr.addColorStop(0,'rgba(255,255,255,0)'); gr.addColorStop(0.7,'rgba(255,255,255,.25)'); gr.addColorStop(1,'rgba(255,255,255,.9)');
+      c.fillStyle=gr; c.fillRect(0,0,64,256);
+      for(let i=0;i<9;i++){ c.fillStyle='rgba(255,255,255,.08)'; c.fillRect(i*7+2,0,2,256); }
+      return tex(cv);
+    }
+    function drawRadial(){
+      const cv=canvas(256,256), c=cv.getContext('2d'); const gr=c.createRadialGradient(128,128,8,128,128,128);
+      gr.addColorStop(0,'rgba(255,255,255,.95)'); gr.addColorStop(0.45,'rgba(255,255,255,.35)'); gr.addColorStop(1,'rgba(255,255,255,0)');
+      c.fillStyle=gr; c.fillRect(0,0,256,256);
+      c.strokeStyle='rgba(255,255,255,.9)'; c.lineWidth=3; c.strokeRect(58,40,140,176);
+      return tex(cv);
+    }
+
+    /* ---- materials ---- */
+    const fadeRack=[], fadeOver=[], fadeFloor=[], fadeLate=[];
+    function M(list,opts,Cls){ const m=new (Cls||THREE.MeshStandardMaterial)(opts);
+      m.userData.baseOp=(opts.opacity==null?1:opts.opacity); m.userData.baseTr=!!opts.transparent; if(list) list.push(m); return m; }
+    const PO={polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-4};
+    const bodyMat=M(fadeRack,{color:0x1a212b,roughness:.62,metalness:.45});
+    const topMat =M(fadeRack,Object.assign({map:drawTop(),roughness:.7,metalness:.2},PO));
+    const faces={compute:drawFront('compute',11),gpu:drawFront('gpu',23),storage:drawFront('storage',37),network:drawFront('network',51)};
+    const frontMat={}; Object.keys(faces).forEach(k=>{ frontMat[k]=M(fadeRack,Object.assign({map:faces[k].map,emissiveMap:faces[k].emi,
+      emissive:0xffffff,emissiveIntensity:1,roughness:.55,metalness:.15},PO)); });
+    const rear=drawRear();
+    const rearMat=M(fadeRack,Object.assign({map:rear.map,emissiveMap:rear.emi,emissive:0xffffff,emissiveIntensity:1,roughness:.7,metalness:.2},PO));
+    const yellowMat=M(fadeOver,{color:0xf2c230,roughness:.5,metalness:.25,emissive:0x3a2a00,emissiveIntensity:.6});
+    const buswayMat=M(fadeOver,{color:0x6f7884,roughness:.45,metalness:.7});
+    const tapMat   =M(fadeOver,{color:0x39414c,roughness:.5,metalness:.6});
+    const redMat   =M(fadeOver,{color:0xd9443a,roughness:.45,metalness:.3,emissive:0x2a0604,emissiveIntensity:.8});
+    const cordMat  =M(fadeOver,{color:0x0b0e12,roughness:.9,metalness:.1});
+    const lightMat =M(fadeOver,{color:0xdfe9f6,transparent:false},THREE.MeshBasicMaterial);
+    const roofMat  =M(fadeOver,{color:0x0e1620,roughness:.2,metalness:.6,transparent:true,opacity:.62,emissive:0x2a1206,emissiveIntensity:.9});
+    const floorTex=drawTile(false); floorTex.repeat.set(560/5.4,560/5.4);
+    const floorMat =M(fadeFloor,{map:floorTex,roughness:.92,metalness:.05});
+    const perfMat  =M(fadeFloor,Object.assign({map:drawTile(true),roughness:.85,metalness:.05,emissive:0x0b2a44,emissiveIntensity:.55},PO));
+    const crahMat  =M(fadeLate,{color:0x3a434f,roughness:.55,metalness:.5});
+    const louverMat=M(fadeLate,Object.assign({map:drawLouver(),roughness:.6,metalness:.4},PO));
+    const pduMat   =M(fadeLate,{color:0x2b333e,roughness:.55,metalness:.5});
+    const pduGlow  =M(fadeLate,{color:0xff8c32,emissive:0xff8c32,emissiveIntensity:.7,roughness:.4});
+
+    /* ---- instancing helpers ---- */
+    const UBOX=new THREE.BoxGeometry(1,1,1), UCYL=new THREE.CylinderGeometry(1,1,1,10), UPLANE=new THREE.PlaneGeometry(1,1);
+    const _m=new THREE.Matrix4(), _q=new THREE.Quaternion(), _p=new THREE.Vector3(), _s=new THREE.Vector3(), _e=new THREE.Euler();
+    function inst(geo,mat,list,parent){ // list: [{x,y,z,sx,sy,sz,rx,ry,rz}]
+      const im=new THREE.InstancedMesh(geo,mat,Math.max(1,list.length)); im.frustumCulled=false;
+      list.forEach((o,i)=>{ _e.set(o.rx||0,o.ry||0,o.rz||0); _q.setFromEuler(_e);
+        im.setMatrixAt(i,_m.compose(_p.set(o.x,o.y,o.z),_q,_s.set(o.sx,o.sy,o.sz))); });
+      if(!list.length) im.count=0;
+      (parent||g).add(im); return im;
+    }
+
+    /* ---- racks (the trainer rack itself fills the hero slot) ---- */
+    const racks=[];
+    for(let r=0;r<ROWS;r++) for(let c=0;c<PER_ROW;c++){
+      if(r===HERO_ROW&&c===HERO_COL) continue;
+      const h=rng(r*131+c*7+3)(), end=(c===0||c===PER_ROW-1);
+      const kind=end?'network':(h<0.42?'gpu':(h<0.86?'compute':'storage'));
+      const x=colX(c), z=rowZ[r], dist=Math.hypot(x,z);
+      racks.push({x,z,face:rowFace[r],kind,dist,k:-1});
+    }
+    const maxDist=racks.reduce((a,b)=>Math.max(a,b.dist),1);
+    racks.forEach(rk=>{ rk.start=0.585+0.10*(rk.dist/maxDist); });
+    const rackGroup2=new THREE.Group(); g.add(rackGroup2);
+    const mkIM=(geo,mat,n)=>{ const im=new THREE.InstancedMesh(geo,mat,n); im.frustumCulled=false;
+      im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); rackGroup2.add(im); return im; };
+    const imBody=mkIM(UBOX,bodyMat,racks.length), imTop=mkIM(UPLANE,topMat,racks.length), imRear=mkIM(UPLANE,rearMat,racks.length);
+    const imFront={}; Object.keys(frontMat).forEach(k=>{ const n=racks.filter(rk=>rk.kind===k).length;
+      imFront[k]=mkIM(UPLANE,frontMat[k],Math.max(1,n)); imFront[k].count=n; imFront[k]._n=0; });
+    racks.forEach(rk=>{ rk.fi=imFront[rk.kind]._n++; });
+    const L_BODY=new THREE.Matrix4().makeScale(RACK_W,RH,RACK_D);
+    const L_TOP=new THREE.Matrix4().makeTranslation(0,TOPY+0.02,0).multiply(new THREE.Matrix4().makeRotationX(-Math.PI/2))
+      .multiply(new THREE.Matrix4().makeScale(RACK_W-0.1,RACK_D-0.1,1));
+    const L_FRONT=new THREE.Matrix4().makeTranslation(0,0,RACK_D/2+0.02).multiply(new THREE.Matrix4().makeScale(RACK_W-0.2,RH-0.4,1));
+    const L_REAR=new THREE.Matrix4().makeTranslation(0,0,-(RACK_D/2+0.02)).multiply(new THREE.Matrix4().makeRotationY(Math.PI))
+      .multiply(new THREE.Matrix4().makeScale(RACK_W-0.2,RH-0.4,1));
+    const _w=new THREE.Matrix4(), _t=new THREE.Matrix4();
+    function placeRack(rk,k){ // k: 0 standing → 1 fully sunk through the floor
+      if(k>=1){ _w.makeScale(0,0,0); }
+      else { _e.set(0,rk.face>0?0:Math.PI,0); _q.setFromEuler(_e);
+        _w.compose(_p.set(rk.x,-k*(RH+2),rk.z),_q,_s.set(1,1,1)); }
+      imBody.setMatrixAt(rk.idx,_t.multiplyMatrices(_w,L_BODY));
+      imTop.setMatrixAt(rk.idx,_t.multiplyMatrices(_w,L_TOP));
+      imRear.setMatrixAt(rk.idx,_t.multiplyMatrices(_w,L_REAR));
+      imFront[rk.kind].setMatrixAt(rk.fi,_t.multiplyMatrices(_w,L_FRONT));
+    }
+    racks.forEach((rk,i)=>{ rk.idx=i; placeRack(rk,0); rk.k=0; });
+
+    /* ---- floor: 600 mm raised-floor tiles, perforated tiles in the cold aisles ---- */
+    const floorG=new THREE.Group(); g.add(floorG);
+    const hallFloor=new THREE.Mesh(new THREE.PlaneGeometry(560,560),floorMat);
+    hallFloor.rotation.x=-Math.PI/2; hallFloor.position.set(MIDX,FLOORY+0.012,MIDZ); hallFloor.receiveShadow=true; floorG.add(hallFloor);
+    aisles.filter(a=>a.cold).forEach(a=>{
+      const m=new THREE.Mesh(new THREE.PlaneGeometry(ROWLEN,a.w),perfMat.clone());
+      m.material.map=perfMat.map.clone(); m.material.map.needsUpdate=true; m.material.map.repeat.set(ROWLEN/5.4,a.w/5.4);
+      m.material.userData.baseOp=1; fadeFloor.push(m.material);
+      m.rotation.x=-Math.PI/2; m.position.set(MIDX,FLOORY+0.03,a.z); m.receiveShadow=true; floorG.add(m);
+    });
+
+    /* ---- overhead services + containment (lift away together) ---- */
+    const over=new THREE.Group(); g.add(over);
+    const trays=[],posts=[],bus=[],taps=[],drops=[],pipes=[],lights=[],roofs=[];
+    const anchors={};
+    for(let r=0;r<ROWS;r++){
+      const z=rowZ[r], f=rowFace[r];
+      const tz=z+f*1.7, ty=TOPY+3.2, bz=z-f*2.1, by=TOPY+2.3, pz=z+f*(RACK_D/2+1.0), py=TOPY+5.4;
+      trays.push({x:MIDX,y:ty,z:tz,sx:ROWLEN+2,sy:0.12,sz:2.5},{x:MIDX,y:ty+0.27,z:tz-1.2,sx:ROWLEN+2,sy:0.55,sz:0.1},
+                 {x:MIDX,y:ty+0.27,z:tz+1.2,sx:ROWLEN+2,sy:0.55,sz:0.1});
+      bus.push({x:MIDX,y:by,z:bz,sx:ROWLEN+2,sy:0.75,sz:0.95});
+      pipes.push({x:MIDX,y:py,z:pz,sx:0.16,sy:ROWLEN+4,sz:0.16,rz:Math.PI/2});
+      for(let c=0;c<PER_ROW;c++){ const x=colX(c);
+        if(c%2===0){ [-1,1].forEach(s=>posts.push({x,y:(TOPY+ty)/2,z:tz+s*1.05,sx:0.06,sy:ty-TOPY,sz:0.06})); }
+        taps.push({x,y:by-0.75,z:bz,sx:0.9,sy:0.75,sz:1.05});
+        drops.push({x:x+0.25,y:(TOPY+by-1.1)/2,z:bz,sx:0.07,sy:by-1.1-TOPY,sz:0.07});
+        if(c%4===1) drops.push({x,y:(py+TOPY+11)/2,z:pz,sx:0.04,sy:TOPY+11-py,sz:0.04}); // sprinkler hanger
+      }
+      if(r===3){ anchors.tray=new THREE.Vector3(-30,ty+0.6,tz); anchors.bus=new THREE.Vector3(-21,by+0.5,bz);
+                 anchors.pipe=new THREE.Vector3(-12,py+0.3,pz); }
+    }
+    aisles.forEach(a=>{
+      if(a.cold) lights.push({x:MIDX,y:TOPY+11,z:a.z,sx:ROWLEN,sy:0.16,sz:0.5});
+      else { roofs.push({x:MIDX,y:TOPY+0.25,z:a.z,sx:ROWLEN,sy:0.1,sz:a.w+0.4},
+                        {x:X0-0.1,y:0,z:a.z,sx:0.12,sy:RH,sz:a.w},{x:X1+0.1,y:0,z:a.z,sx:0.12,sy:RH,sz:a.w}); }
+    });
+    inst(UBOX,yellowMat,trays,over); inst(UCYL,yellowMat,posts,over); inst(UBOX,buswayMat,bus,over);
+    inst(UBOX,tapMat,taps,over); inst(UCYL,cordMat,drops,over); inst(UCYL,redMat,pipes,over);
+    inst(UBOX,lightMat,lights,over); inst(UBOX,roofMat,roofs,over);
+    const coldA=aisles.find(a=>a.cold&&a.z>0), hotA=aisles.find(a=>!a.cold&&a.z>coldA.z);
+    anchors.cold=new THREE.Vector3(-30,FLOORY+0.4,coldA.z); anchors.hot=new THREE.Vector3(-22,TOPY+0.6,hotA.z);
+
+    /* ---- perimeter: CRAH units along the end walls, PDU cabinets at row ends (sink last) ---- */
+    const late=new THREE.Group(); g.add(late);
+    const crah=[],louv=[],pdus=[],pduStrips=[];
+    for(let z=Z0+8;z<Z1;z+=24){ [[X0-16,1],[X1+16,-1]].forEach(([x,s])=>{
+      crah.push({x,y:-0.5,z,sx:6,sy:RH+1,sz:15});
+      louv.push({x:x+s*3.02,y:0,z,sx:13,sy:RH-3,sz:1,ry:s*Math.PI/2}); }); }
+    for(let r=0;r<ROWS;r++) [X0-2.2,X1+2.2].forEach(x=>{
+      pdus.push({x,y:-1,z:rowZ[r],sx:3.4,sy:RH-2,sz:RACK_D});
+      pduStrips.push({x,y:TOPY-3.4,z:rowZ[r]+rowFace[r]*(RACK_D/2+0.02),sx:2.6,sy:0.18,sz:0.05}); });
+    inst(UBOX,crahMat,crah,late); inst(UPLANE,louverMat,louv,late); inst(UBOX,pduMat,pdus,late); inst(UBOX,pduGlow,pduStrips,late);
+
+    /* ---- hero FX: God-ray beam, outline + halo, floor lock-on ---- */
+    const fx=new THREE.Group(); g.add(fx);
+    const beamMat=new THREE.MeshBasicMaterial({map:drawGrad(),color:0x2fd2f5,transparent:true,opacity:0,
+      blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.FrontSide,fog:false});
+    const beam=new THREE.Mesh(new THREE.CylinderGeometry(4.2,6.4,90,40,1,true),beamMat);
+    beam.position.set(0,FLOORY+45,0); fx.add(beam);
+    // lock-on frame: 12 glowing edge bars (thick enough to read at any distance, unlike 1px lines)
+    const lockMat=new THREE.MeshBasicMaterial({color:0x2fd2f5,transparent:true,opacity:0,blending:THREE.AdditiveBlending,
+      depthWrite:false,fog:false});
+    const FW=RACK_W+0.45, FH=RH+0.4, FD=RACK_D+0.45, ET=0.1, edges=[];
+    [-1,1].forEach(a=>[-1,1].forEach(b=>{
+      edges.push({x:a*FW/2,y:0,z:b*FD/2,sx:ET,sy:FH,sz:ET},{x:0,y:a*FH/2,z:b*FD/2,sx:FW,sy:ET,sz:ET},
+                 {x:a*FW/2,y:b*FH/2,z:0,sx:ET,sy:ET,sz:FD}); }));
+    inst(UBOX,lockMat,edges,fx);
+    const halo=new THREE.Mesh(new THREE.BoxGeometry(RACK_W+0.7,RH+0.6,RACK_D+0.7),new THREE.MeshBasicMaterial({color:0x2fd2f5,
+      transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.BackSide,fog:false}));
+    fx.add(halo);
+    const marker=new THREE.Mesh(new THREE.PlaneGeometry(15,17),new THREE.MeshBasicMaterial(Object.assign({map:drawRadial(),
+      color:0x2fd2f5,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,fog:false},PO)));
+    marker.rotation.x=-Math.PI/2; marker.position.y=FLOORY+0.05; fx.add(marker);
+
+    /* ---- stage update: everything is a pure function of ride progress p ---- */
+    const sm=x=>{ x=Math.max(0,Math.min(1,x)); return x*x*(3-2*x); };
+    const bump=(p,a,b,c,d)=>sm((p-a)/(b-a))*(1-sm((p-c)/(d-c)));
+    function fade(list,a){ list.forEach(m=>{ const o=m.userData.baseOp*a; if(m.opacity===o) return;
+      m.opacity=o; m.transparent=o<0.999||m.userData.baseTr; m.depthWrite=o>0.5; }); }
+    const state={kO:-1,kL:-1,kF:-1};
+    function update(p,t){
+      const kO=sm((p-0.56)/0.12);                         // overhead lifts + fades
+      if(kO!==state.kO){ state.kO=kO; over.position.y=kO*16; fade(fadeOver,1-kO); over.visible=kO<1; }
+      let dirty=false;                                     // racks sink in a wave out from the hero
+      racks.forEach(rk=>{ const k=sm((p-rk.start)/0.05); if(k!==rk.k){ rk.k=k; placeRack(rk,k); dirty=true; } });
+      if(dirty){ imBody.instanceMatrix.needsUpdate=imTop.instanceMatrix.needsUpdate=imRear.instanceMatrix.needsUpdate=true;
+        Object.keys(imFront).forEach(k=>imFront[k].instanceMatrix.needsUpdate=true); }
+      rackGroup2.visible=racks.some(rk=>rk.k<1);
+      const kL=sm((p-0.62)/0.1);                           // CRAHs + row-end PDUs go last
+      if(kL!==state.kL){ state.kL=kL; late.position.y=-kL*(RH+4); late.visible=kL<1; }
+      const kF=sm((p-0.74)/0.1);                           // raised floor dissolves into the trainer stage
+      if(kF!==state.kF){ state.kF=kF; fade(fadeFloor,1-kF); floorG.visible=kF<1; }
+      const pulse=0.78+0.22*Math.sin(t*3.1);
+      beamMat.opacity=((p<0.16?(1-sm(p/0.16))*0.55:0) + bump(p,0.26,0.33,0.40,0.46)*0.5)*pulse;
+      lockMat.opacity=bump(p,0.44,0.52,0.86,0.97)*(0.55+0.45*pulse);
+      halo.material.opacity=bump(p,0.46,0.54,0.72,0.86)*0.07*pulse;
+      marker.material.opacity=Math.max(p<0.16?(1-sm(p/0.16)):0, bump(p,0.44,0.52,0.9,1.0))*0.75*pulse;
+      fx.visible=beamMat.opacity>0.002||lockMat.opacity>0.002||marker.material.opacity>0.002;
+      return {floorOpaque:kF<=0, spot:bump(p,0.44,0.52,0.86,0.98)};
+    }
+    return {group:g, update, rows:ROWS, total:TOTAL, heroId:HERO_ID, heroRow:ROWNAMES[HERO_ROW],
+      rowTags:rowZ.map((z,r)=>({name:'Row '+ROWNAMES[r], pos:new THREE.Vector3(X0-3.5,TOPY+1.2,z), hero:r===HERO_ROW})),
+      anchors, heroTop:new THREE.Vector3(0,TOPY+1.4,0), center:new THREE.Vector3(MIDX,FLOORY,MIDZ)};
+  })();
+
+  /* =========================================================================
      TRAINING-CONSOLE UI — stepper, sidebar, bottom bar, top-bar actions
   ==========================================================================*/
   const bbName=document.getElementById('bbName'), bbPos=document.getElementById('bbPos'),
@@ -1909,7 +2373,7 @@ window.__PROVENANCE = Object.freeze({
   const RACKREPORT={cat:'rack',critical:false,name:'42U Data Center Rack',
     summary:'The standard data-center cabinet, built to EIA-310-D: 42 rack units of 1.75 in (44.45 mm) each, 19-inch mounting, populated with compute, network, storage and power — and a blanking panel on every empty U. Click any component in the rack (or in the Rack Contents list) to begin the dissection.',
     why:'Everything the facility does — power redundancy, airflow discipline, serviceability — is enforced one rack at a time. This rack is the unit of installation, commissioning, and 24×7 defense.',
-    specs:[['Usable height','42U · 73.5 in / 1867 mm'],['1U pitch','1.75 in / 44.45 mm'],['Mounting width','19 in / 482.6 mm'],['Typical depth','1000–1200 mm'],['Static load','≤ 1588 kg / 3500 lb'],['Power','A + B feeds · 2N-capable'],['Inlet target','18–27 °C (ASHRAE TC9.9)']],
+    specs:[['Hall position','Row '+HALL.heroRow+' · '+HALL.heroId+' (cold-aisle front)'],['Usable height','42U · 73.5 in / 1867 mm'],['1U pitch','1.75 in / 44.45 mm'],['Mounting width','19 in / 482.6 mm'],['Typical depth','1000–1200 mm'],['Static load','≤ 1588 kg / 3500 lb'],['Power','A + B feeds · 2N-capable'],['Inlet target','18–27 °C (ASHRAE TC9.9)']],
     vendors:[['Vertiv / Schneider Electric (APC) / Eaton','racks, containment, power train'],['Rittal / Legrand / Chatsworth (CPI)','enclosures & cable management'],['OCP Open Rack','hyperscale exception: 21-in, OU pitch, busbar']],
     deploys:[['msft','Fairwater (Atlanta/Wisconsin): 2N electrical, scaling toward ~5M H100e.'],['meta','Catalina GB200 racks on Open Rack busbar; Prometheus ~631 MW.'],['x','Colossus (Memphis): 100k+ GPUs on Spectrum-X.'],['oai','Stargate Abilene ~421 MW GB200 clusters.'],['aws','New Carlisle (Rainier): Trainium2/3 UltraClusters.']],
     course:'L1',peris:[]};
@@ -1925,7 +2389,7 @@ window.__PROVENANCE = Object.freeze({
     if(d.u){ bbPos.textContent=(d.u-d.h+1)+'U'; bbU.textContent=(d.u-d.h+1)+' – '+d.u+' U';
       bbSize.textContent=d.h+'U ('+(d.h*1.75).toFixed(1)+' in / '+(d.h*44.45).toFixed(1)+' mm)'; }
     else if(d.feed){ bbPos.textContent='0U'; bbU.textContent='Full height (rear)'; bbSize.textContent='Zero-U vertical'; }
-    else { bbPos.textContent='—'; bbU.textContent='42U (73.5 in)'; bbSize.textContent='600 × 1200 mm'; }
+    else { bbPos.textContent=d.cat==='rack'?HALL.heroId:'—'; bbU.textContent='42U (73.5 in)'; bbSize.textContent='600 × 1200 mm'; }
     bbDepth.textContent=m.depth; bbWeight.textContent=m.weight;
   }
   function renderRackOverview(){ if(!active) setStep(1); curTab='overview'; renderCard(RACKREPORT,null); markSidebar(null); }
@@ -2087,12 +2551,215 @@ window.__PROVENANCE = Object.freeze({
   }
   function defaultView(){goal.theta=0.7;goal.phi=1.12;goal.radius=31;goal.tx=0;goal.ty=0;goal.tz=0;}
 
+  /* =========================================================================
+     THE RIDE — God's-eye data hall → cold aisle → one rack → isolate → trainer.
+     A single progress value p ∈ [0,1] drives everything (camera spline, hall
+     staging, captions, FOV ruler), so scrolling back up simply plays it in
+     reverse. The last keyframe IS the trainer's default view, so the hand-over
+     to the orbit camera is seamless. One zoom language across the whole app:
+     scroll down / pinch out / swipe up = go deeper; scroll up = pull back.
+  ==========================================================================*/
+  const DEF_VIEW={theta:0.7,phi:1.12,radius:31};
+  const DEF_POS=new THREE.Vector3(DEF_VIEW.radius*Math.sin(DEF_VIEW.phi)*Math.sin(DEF_VIEW.theta),
+    DEF_VIEW.radius*Math.cos(DEF_VIEW.phi), DEF_VIEW.radius*Math.sin(DEF_VIEW.phi)*Math.cos(DEF_VIEW.theta));
+  // camera keyframes: position, look-at, lens, fog and near plane per beat
+  const RIDE_KEYS=[
+    {p:0.00, pos:[6,330,70],     tgt:[4,-9,26],     fov:30, fogN:320, fogF:820, near:1.0},  // God's eye
+    {p:0.18, pos:[-92,92,118],   tgt:[-2,-8,24],    fov:38, fogN:130, fogF:430, near:1.0},  // oblique hall
+    {p:0.36, pos:[-80,30,36],    tgt:[-8,-2,9],     fov:45, fogN:60,  fogF:250, near:0.3},  // down the rows
+    {p:0.41, pos:[-58,11,11.5],  tgt:[-9,1,8],      fov:45, fogN:36,  fogF:190, near:0.1},  // enter the cold aisle
+    {p:0.46, pos:[-34,6.8,10.2], tgt:[-3,0.6,5.5],  fov:52, fogN:30,  fogF:170, near:0.1},  // eye level (1.8 m)
+    {p:0.52, pos:[-12,12,13],    tgt:[0,0.3,1.4],   fov:58, fogN:30,  fogF:150, near:0.1},  // crane up: one rack, 3/4
+    {p:0.68, pos:[-8.5,10.5,14], tgt:[0,0.2,0.6],   fov:56, fogN:34,  fogF:120, near:0.1},  // isolate
+    {p:0.84, pos:[4,13.5,31],    tgt:[0,0,0],       fov:48, fogN:40,  fogF:90,  near:0.1},  // pull back
+    {p:1.00, pos:DEF_POS.toArray(), tgt:[0,0,0],    fov:45, fogN:42,  fogF:78,  near:0.1}   // = trainer default
+  ];
+  const RIDE_POS=new THREE.CatmullRomCurve3(RIDE_KEYS.map(k=>new THREE.Vector3().fromArray(k.pos)),false,'centripetal');
+  const RIDE_TGT=new THREE.CatmullRomCurve3(RIDE_KEYS.map(k=>new THREE.Vector3().fromArray(k.tgt)),false,'centripetal');
+  const CHAPTERS=[
+    {p:0,    t:'',                      s:''},
+    {p:0.18, t:'The data hall',         s:HALL.rows+' rows · '+HALL.total+' racks · hot / cold aisle containment'},
+    {p:0.36, t:'The cold aisle',        s:'Fronts face fronts · 18–27 °C supply air (ASHRAE TC9.9) · hot exhaust is contained behind'},
+    {p:0.52, t:'One rack',              s:HALL.heroId+' · 42U · EIA-310-D · A + B power · the one you will dissect'},
+    {p:0.68, t:'Isolate it',            s:'Everything else falls away'},
+    {p:1,    t:'Conceptual deployment', s:'Generic 42U rack and servers — not a specific vendor system'}
+  ];
+  const STOPS=CHAPTERS.map(c=>c.p);
+  const HALL_VIEW_P=0.18;                // where "Data hall" buttons fly back to
+  let introOn=false, pT=0, pC=0, endHold=0, wheelAcc=0, pullBack=0, wheelQuietUntil=0, autoOpenTimer=0;
+  const auto={on:false,i:1,hold:0};
+  const blend={t:1,pos:new THREE.Vector3(),tgt:new THREE.Vector3(),fov:45};
+  const introLook=new THREE.Vector3(), _ip=new THREE.Vector3(), _it=new THREE.Vector3(), _shift=new THREE.Vector3();
+  const clamp01=v=>Math.max(0,Math.min(1,v));
+  const smooth=x=>{ x=clamp01(x); return x*x*(3-2*x); };
+
+  function ridePose(p,outPos,outTgt){
+    let i=0; while(i<RIDE_KEYS.length-2 && p>RIDE_KEYS[i+1].p) i++;
+    const a=RIDE_KEYS[i], b=RIDE_KEYS[i+1], lt=clamp01((p-a.p)/(b.p-a.p));
+    const tt=0.45*lt+0.55*smooth(lt);      // ease into each beat without stopping dead
+    const u=(i+tt)/(RIDE_KEYS.length-1);
+    RIDE_POS.getPoint(u,outPos); RIDE_TGT.getPoint(u,outTgt);
+    const mix=(x,y)=>x+(y-x)*tt;
+    // portrait screens: back the wide hall shots off so the whole hall still fits
+    const aspK=Math.max(1,Math.min(2.6,1.35/Math.max(0.3,camera.aspect)));
+    const w=p<=0.18?1:(p<0.36?1-(p-0.18)/0.18:0), k=1+(aspK-1)*w;
+    if(k>1){ outPos.sub(outTgt).multiplyScalar(k).add(outTgt); }
+    // opening frame: park the hall beside the hook text (right on wide screens, above it on tall ones)
+    const w0=1-smooth(p/0.18);
+    if(w0>0){ const wide=camera.aspect>1.25; _shift.set(wide?-42*w0:0,0,wide?0:48*w0*k);
+      outPos.add(_shift); outTgt.add(_shift); }
+    return {fov:mix(a.fov,b.fov), fogN:mix(a.fogN,b.fogN)*k, fogF:mix(a.fogF,b.fogF)*k, near:mix(a.near,b.near)};
+  }
+
+  function nextStop(p,dir){
+    if(dir>0){ for(let i=0;i<STOPS.length;i++) if(STOPS[i]>p+0.004) return STOPS[i]; return 1; }
+    for(let i=STOPS.length-1;i>=0;i--) if(STOPS[i]<p-0.004) return STOPS[i]; return 0;
+  }
+  function stepChapter(dir){ auto.on=false; pT=nextStop(pT,dir); }
+  function cancelAutoOpen(){ if(autoOpenTimer){ clearTimeout(autoOpenTimer); autoOpenTimer=0; } }
+  function startRide(){
+    cancelAutoOpen(); auto.on=true; auto.hold=0;
+    auto.i=STOPS.findIndex(s=>s>pT+0.004); if(auto.i<0) auto.i=STOPS.length-1;
+  }
+  const AUTO_SPEED=0.085, AUTO_HOLD=1.35;
+  function autoStep(dt){
+    if(!auto.on) return;
+    const stop=STOPS[auto.i];
+    if(REDUCED){ // reduced motion: chapter cuts on a timer instead of a flight
+      auto.hold+=dt; if(auto.hold>2.8){ auto.hold=0; pT=stop; if(auto.i<STOPS.length-1) auto.i++; }
+      return;
+    }
+    if(pT<stop){ const slow=(pT>0.55&&pT<0.76)?0.7:1; pT=Math.min(stop,pT+AUTO_SPEED*slow*dt); auto.hold=0; }
+    else if(auto.i<STOPS.length-1 && Math.abs(pC-stop)<0.012){ auto.hold+=dt; if(auto.hold>AUTO_HOLD){ auto.hold=0; auto.i++; } }
+  }
+
+  function enterHall(dest){
+    cancelAutoOpen(); hideRideNext();
+    if(introOn){ auto.on=false; pT=clamp01(dest); return; }
+    if(mode!=='all') setMode(mode);                     // back to the full view (toggle off power/airflow)
+    if(active || curReport!==RACKREPORT) closeCardFlow();
+    blend.pos.copy(camera.position); blend.tgt.copy(target); blend.fov=camera.fov; blend.t=REDUCED?1:0;
+    introOn=true; auto.on=false; endHold=0; pC=1; pT=clamp01(dest); if(REDUCED) pC=pT;
+    HALL.group.visible=true; dragging=false; setRotate(false);
+    document.body.classList.add('intro-on');
+    setRideAria();
+  }
+  function endIntro(instant,fromRide){
+    if(!introOn) return;
+    introOn=false; auto.on=false; pT=pC=1; endHold=0;
+    HALL.update(1,nowT); HALL.group.visible=false; floor.visible=grid.visible=true;
+    stage.intensity=stageRim.intensity=stageAccent.intensity=0;
+    camera.fov=45; camera.near=0.1; camera.far=240; camera.updateProjectionMatrix();
+    scene.fog.near=42; scene.fog.far=78;
+    defaultView(); Object.assign(cam,goal); applyCamera();
+    document.body.classList.remove('intro-on');
+    introHook.classList.remove('on'); introCap.classList.remove('on'); hallTags.forEach(h=>{h.el.style.opacity=0;});
+    wheelQuietUntil=nowT+0.8;                           // swallow scroll momentum at the hand-over
+    setRotate(!REDUCED);
+    if(!instant){
+      if(!active) renderRackOverview();
+      if(fromRide){ cancelAutoOpen(); autoOpenTimer=setTimeout(()=>{ autoOpenTimer=0;
+          const gpu=components.find(c=>c.userData.def.cat==='gpu'); if(gpu&&!active&&!introOn){ openComponent(gpu); toast('Pulling the AI GPU node out of the rack…'); } },1100); }
+      else showRideNext();
+    }
+  }
+
+  /* HUD for the ride: hook, reel-style captions, projected hall annotations */
+  const introHook=document.getElementById('introHook'), introCap=document.getElementById('introCap');
+  const capT=document.getElementById('capT'), capS=document.getElementById('capS'), capN=document.getElementById('capN');
+  const rideNextEl=document.getElementById('rideNext');
+  let curChapter=-1;
+  function showRideNext(){ rideNextEl.classList.add('on'); clearTimeout(rideNextEl._t);
+    rideNextEl._t=setTimeout(hideRideNext,12000); }
+  function hideRideNext(){ rideNextEl.classList.remove('on'); }
+  function setRideAria(){
+    const c=CHAPTERS[Math.max(0,curChapter)];
+    try{ renderer.domElement.setAttribute('role','img');
+      renderer.domElement.setAttribute('aria-label','3D data hall ride'+(c&&c.t?' — '+c.t:'')+'. Scroll or press the arrow keys to zoom.'); }catch(e){}
+  }
+  const hallTags=[];
+  function addTag(cls,html,pos,show){ const el=document.createElement('div'); el.className='htag '+cls; el.innerHTML=html;
+    el.setAttribute('aria-hidden','true'); app.appendChild(el); hallTags.push({el,pos,show,on:false}); }
+  addTag('hero','<b>Start here</b>'+HALL.heroId,HALL.heroTop,p=>1-smooth((p-0.08)/0.06));
+  HALL.rowTags.forEach(r=>addTag('row'+(r.hero?' hot':''),r.name,r.pos,p=>smooth((p-0.1)/0.06)*(1-smooth((p-0.3)/0.06))));
+  addTag('y','<b>Fiber raceway</b>yellow tray',HALL.anchors.tray,p=>smooth((p-0.24)/0.05)*(1-smooth((p-0.385)/0.03)));
+  addTag('g','<b>Power busway</b>tap-off per rack',HALL.anchors.bus,p=>smooth((p-0.25)/0.05)*(1-smooth((p-0.385)/0.03)));
+  addTag('r','<b>Fire suppression</b>sprinkler main',HALL.anchors.pipe,p=>smooth((p-0.26)/0.05)*(1-smooth((p-0.385)/0.03)));
+  addTag('c','<b>Cold aisle</b>18–27 °C supply',HALL.anchors.cold,p=>smooth((p-0.27)/0.05)*(1-smooth((p-0.40)/0.03)));
+  addTag('o','<b>Hot aisle</b>contained exhaust',HALL.anchors.hot,p=>smooth((p-0.28)/0.05)*(1-smooth((p-0.385)/0.03)));
+  addTag('hero','<b>★ '+HALL.heroId+'</b>42U · A + B power · this one',HALL.heroTop,p=>smooth((p-0.46)/0.05)*(1-smooth((p-0.72)/0.05)));
+
+  function updateRideUI(){
+    const hookOn=pC<0.04 && pT<0.04;
+    introHook.classList.toggle('on',hookOn);
+    let ci=0; for(let i=CHAPTERS.length-1;i>0;i--){ if(pC>=CHAPTERS[i].p-0.075){ ci=i; break; } }
+    if(ci!==curChapter){ curChapter=ci; const c=CHAPTERS[ci];
+      capT.textContent=c.t; capS.textContent=c.s; capN.textContent=ci+' / '+(CHAPTERS.length-1);
+      introCap.classList.remove('pop'); void introCap.offsetWidth; introCap.classList.add('pop'); setRideAria(); }
+    introCap.classList.toggle('on',!hookOn && ci>0);
+    const W=window.innerWidth, H=window.innerHeight;
+    hallTags.forEach(h=>{
+      const a=h.show(pC); const vis=a>0.01;
+      if(!vis){ if(h.on){ h.el.style.opacity=0; h.on=false; } return; }
+      _v.copy(h.pos).project(camera);
+      if(_v.z>1||Math.abs(_v.x)>1.1||Math.abs(_v.y)>1.1){ if(h.on){ h.el.style.opacity=0; h.on=false; } return; }
+      h.on=true; h.el.style.opacity=a.toFixed(3);
+      h.el.style.left=((_v.x*0.5+0.5)*W)+'px'; h.el.style.top=((-_v.y*0.5+0.5)*H)+'px';
+    });
+  }
+
+  function updateIntro(dt){
+    autoStep(dt);
+    if(REDUCED) pC=pT; else { pC+=(pT-pC)*(1-Math.exp(-dt*3.2)); if(Math.abs(pT-pC)<1e-4) pC=pT; }
+    const P=ridePose(pC,_ip,_it);
+    let fov=P.fov;
+    if(blend.t<1){ blend.t=Math.min(1,blend.t+dt/1.1); const b=smooth(blend.t);
+      _ip.lerpVectors(blend.pos,_ip,b); _it.lerpVectors(blend.tgt,_it,b); fov=blend.fov+(fov-blend.fov)*b; }
+    camera.position.copy(_ip); camera.lookAt(_it); introLook.copy(_it);
+    if(camera.fov!==fov||camera.near!==P.near||camera.far!==1400){
+      camera.fov=fov; camera.near=P.near; camera.far=1400; camera.updateProjectionMatrix(); }
+    scene.fog.near=P.fogN; scene.fog.far=P.fogF;
+    const st=HALL.update(pC,nowT);
+    floor.visible=grid.visible=!st.floorOpaque;
+    // light the chosen rack with the trainer's own stage lights as it is singled out
+    stage.intensity=0.6*st.spot; stageRim.intensity=0.75*st.spot; stageAccent.intensity=0.35*st.spot;
+    updateRideUI();
+    if(pT>=1 && pC>=0.999){ endHold+=dt; if(!auto.on || endHold>(REDUCED?2.4:1.3)) endIntro(false,auto.on); }
+    else endHold=0;
+  }
+
+  function rideDelta(d){ // d > 0: deeper
+    cancelAutoOpen(); auto.on=false;
+    if(REDUCED){ wheelAcc+=d; if(Math.abs(wheelAcc)>=120){ stepChapter(wheelAcc>0?1:-1); wheelAcc=0; } return; }
+    pT=clamp01(pT+d/2800);
+  }
+  function orbitZoom(d){ // d > 0: deeper (dolly in); pulling back past the full rack flies out to the hall
+    if(nowT<wheelQuietUntil) return;
+    goal.radius=Math.max(11,Math.min(60,goal.radius-d*0.02));
+    if(d<0 && !active && goal.radius>=59.5){ pullBack+=-d; if(pullBack>260){ pullBack=0; enterHall(0.86); } }
+    else pullBack=0;
+  }
+
   let dragging=false,px=0,py=0,moved=0;
-  renderer.domElement.addEventListener('pointerdown',e=>{dragging=true;px=e.clientX;py=e.clientY;moved=0;setRotate(false);});
-  window.addEventListener('pointerup',()=>dragging=false);
+  const touchPts=new Map(); let pinchD=0;
+  const pinchDist=()=>{ const a=[...touchPts.values()]; return a.length<2?0:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y); };
+  renderer.domElement.addEventListener('pointerdown',e=>{
+    touchPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(touchPts.size===2){ dragging=false; pinchD=pinchDist(); return; }
+    dragging=true;px=e.clientX;py=e.clientY;moved=0;
+    if(introOn){ auto.on=false; cancelAutoOpen(); return; }
+    setRotate(false);
+  });
+  const endPtr=e=>{ touchPts.delete(e.pointerId); if(touchPts.size<2) pinchD=0; dragging=false; };
+  window.addEventListener('pointerup',endPtr);
+  window.addEventListener('pointercancel',endPtr);
   window.addEventListener('pointermove',e=>{
+    if(touchPts.has(e.pointerId)) touchPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(touchPts.size===2 && pinchD){ const d=pinchDist(); if(d>0){ const g=Math.log(d/pinchD)*900; pinchD=d;
+        if(introOn) rideDelta(g); else orbitZoom(g); } return; }
     if(dragging){
       const dx=e.clientX-px,dy=e.clientY-py; moved+=Math.abs(dx)+Math.abs(dy);
+      if(introOn){ rideDelta(-dy*2.2); px=e.clientX; py=e.clientY; return; } // swipe up = deeper
       goal.theta-=dx*0.008; goal.phi-=dy*0.006;
       goal.phi=Math.max(0.22,Math.min(Math.PI-0.22,goal.phi));
       cam.theta-=dx*0.008; cam.phi=Math.max(0.22,Math.min(Math.PI-0.22,cam.phi-dy*0.006));
@@ -2100,8 +2767,15 @@ window.__PROVENANCE = Object.freeze({
     }
     hoverIdentify(e);
   });
-  renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();
-    goal.radius=Math.max(11,Math.min(60,goal.radius+e.deltaY*0.02));},{passive:false});
+  function wheelDelta(e){ let d=e.deltaY; if(e.deltaMode===1) d*=16; else if(e.deltaMode===2) d*=window.innerHeight;
+    return e.ctrlKey? -3*d : d; }         // trackpad pinch: spreading (zoom in) arrives as ctrl + negative deltaY
+  renderer.domElement.addEventListener('wheel',e=>{ e.preventDefault(); if(!introOn) orbitZoom(wheelDelta(e)); },{passive:false});
+  // during the ride the whole screen scrolls the ride (headline and captions sit over the canvas)
+  window.addEventListener('wheel',e=>{
+    if(!introOn) return;
+    if(e.target.closest && e.target.closest('#help,#course,#own')) return; // let open overlays scroll natively
+    e.preventDefault(); rideDelta(wheelDelta(e));
+  },{passive:false});
 
   /* =========================================================================
      PICKING + DISSECTION STATE
@@ -2113,6 +2787,8 @@ window.__PROVENANCE = Object.freeze({
   function setExplode(comp,goalT){ comp._goal=goalT; }
 
   function openComponent(comp){
+    if(introOn) endIntro(true);
+    hideRideNext();
     const e=comp.userData.def;
     if(active && active!==comp){ setExplode(active,0); }
     active=comp; selectedPeri=null;
@@ -2143,6 +2819,13 @@ window.__PROVENANCE = Object.freeze({
 
   renderer.domElement.addEventListener('click',e=>{
     if(moved>6) return; // was a drag
+    if(introOn){
+      if(pC<0.3) return;
+      mouse.x=(e.clientX/window.innerWidth)*2-1; mouse.y=-(e.clientY/window.innerHeight)*2+1;
+      ray.setFromCamera(mouse,camera);
+      if(ray.intersectObjects(pickable.filter(m=>m.visible&&m.userData.pick),false).length){ auto.on=false; pT=1; }
+      return;
+    }
     mouse.x=(e.clientX/window.innerWidth)*2-1; mouse.y=-(e.clientY/window.innerHeight)*2+1;
     ray.setFromCamera(mouse,camera);
     const vis=pickable.filter(m=>m.visible && m.parent && m.userData.pick);
@@ -2159,6 +2842,7 @@ window.__PROVENANCE = Object.freeze({
   });
 
   function openBlank(u){
+    if(introOn) endIntro(true);
     collapseAll(); // retract any dissected chassis before switching to the blank report
     const r=Object.assign({},blankReport,{u:u,h:1}); curTab='overview';
     markSidebar(r); setStep(1); renderCard(r,null);
@@ -2179,15 +2863,17 @@ window.__PROVENANCE = Object.freeze({
 
   function closeCard(){ renderRackOverview(); }
   /* breadcrumb: Rack › chassis › internal part — every level navigates */
+  const HALL_CRUMB='<button data-lvl="hall" title="Zoom out to the data hall">Data hall</button><span class="sep">›</span>';
   function renderCrumb(r,peri){
-    if(r.cat==='rack'){ crumbEl.innerHTML='<span class="cur">Rack</span>'; return; }
-    let h='<button data-lvl="rack">Rack</button><span class="sep">›</span>';
+    if(r.cat==='rack'){ crumbEl.innerHTML=HALL_CRUMB+'<span class="cur" aria-current="page">Rack</span>'; return; }
+    let h=HALL_CRUMB+'<button data-lvl="rack">Rack</button><span class="sep">›</span>';
     if(peri) h+='<button data-lvl="chassis">'+r.name+'</button><span class="sep">›</span><span class="cur" aria-current="page">'+peri.name+'</span>';
     else h+='<span class="cur" aria-current="page">'+r.name+'</span>';
     crumbEl.innerHTML=h;
   }
   crumbEl.addEventListener('click',e=>{
     const b=e.target.closest('button'); if(!b) return;
+    if(b.dataset.lvl==='hall'){ enterHall(HALL_VIEW_P); return; }
     if(b.dataset.lvl==='rack'){ closeCardFlow(); return; }
     if(b.dataset.lvl==='chassis'){ selectedPeri=null; curPeri=null; if(active){focusOn(active,true);}
       curTab=(curReport&&curReport.peris&&curReport.peris.length)?'internals':'overview';
@@ -2294,7 +2980,7 @@ window.__PROVENANCE = Object.freeze({
   const ident=document.getElementById('ident'), identTxt=document.getElementById('identTxt');
   let hoverRayCount=0;
   function hoverIdentify(e){
-    if(dragging){ident.style.opacity=0;return;}
+    if(dragging||introOn){ident.style.opacity=0;return;}
     if((hoverRayCount++ %2)!==0) return; // throttle
     mouse.x=(e.clientX/window.innerWidth)*2-1; mouse.y=-(e.clientY/window.innerHeight)*2+1;
     ray.setFromCamera(mouse,camera);
@@ -2343,6 +3029,7 @@ window.__PROVENANCE = Object.freeze({
     else { if(m2.userData._preMode===undefined) m2.userData._preMode={t:m2.transparent,o:m2.opacity,dw:m2.depthWrite};
       m2.transparent=true; m2.opacity=0.1; m2.depthWrite=false; } }
   function setMode(m){
+    if(introOn) endIntro(true);
     mode=(mode===m)?'all':m;
     if(active && mode!=='all') collapseAll(); // a rack-wide view over a dissected chassis reads as corruption
     btnPower.classList.toggle('active',mode==='power'); btnAir.classList.toggle('active',mode==='air');
@@ -2376,6 +3063,34 @@ window.__PROVENANCE = Object.freeze({
     btnPower.classList.remove('active');btnAir.classList.remove('active');
     closeCardFlow(); setRotate(!REDUCED);
   };
+  const btnHall=document.getElementById('btnHall');
+  btnHall.onclick=()=>enterHall(HALL_VIEW_P);
+  document.getElementById('introStart').addEventListener('click',()=>startRide());
+  document.getElementById('introSkip').addEventListener('click',()=>endIntro(false));
+  document.getElementById('btnSkipIntro').addEventListener('click',()=>endIntro(false));
+  document.getElementById('capSkip').addEventListener('click',()=>endIntro(false));
+  document.getElementById('capPrev').addEventListener('click',()=>stepChapter(-1));
+  document.getElementById('capNext').addEventListener('click',()=>stepChapter(1));
+  rideNextEl.addEventListener('click',()=>{ hideRideNext();
+    const gpu=components.find(c=>c.userData.def.cat==='gpu'); if(gpu) openComponent(gpu); });
+  // any deliberate input cancels the ride's pending hand-off into the GPU node
+  ['pointerdown','wheel','keydown'].forEach(ev=>window.addEventListener(ev,()=>cancelAutoOpen(),{capture:true,passive:true}));
+  /* ride keyboard: window-capture so it sees the state before any overlay's own
+     Escape handling closes it; arrows/space/page keys step chapters, Esc skips */
+  window.addEventListener('keydown',e=>{
+    if(!introOn) return;
+    if(helpEl.classList.contains('open')||courseEl.classList.contains('open')||
+       document.getElementById('own').classList.contains('open')) return;
+    const t=e.target, inField=t&&t.closest&&t.closest('input,textarea,select');
+    const onCtl=t&&t.closest&&t.closest('button,a,[role=button]');
+    if(inField) return;
+    const k=e.key;
+    if(k==='ArrowDown'||k==='PageDown'||k==='ArrowRight'||(k===' '&&!onCtl)){ e.preventDefault(); stepChapter(1); }
+    else if(k==='ArrowUp'||k==='PageUp'||k==='ArrowLeft'){ e.preventDefault(); stepChapter(-1); }
+    else if(k==='Home'){ e.preventDefault(); auto.on=false; pT=0; }
+    else if(k==='End'){ e.preventDefault(); auto.on=false; pT=1; }
+    else if(k==='Escape'){ endIntro(false); }
+  },true);
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(courseEl.classList.contains('open'))courseEl.classList.remove('open');else if(helpEl.classList.contains('open'))helpEl.classList.remove('open');else closeCardFlow();}});
 
   /* =========================================================================
@@ -2440,6 +3155,12 @@ window.__PROVENANCE = Object.freeze({
 
   /* label projection */
   function updateLabels(){
+    if(introOn){ if(!updateLabels._hid){ updateLabels._hid=true;
+        labelData.forEach(L=>{L.el.style.opacity=0;L.el.classList.remove('on');});
+        components.forEach(c=>c._peris.forEach(pr=>{ if(pr.el) pr.el.style.opacity=0; }));
+        uTicks.forEach(t=>{t.el.style.opacity=0;}); }
+      return; }
+    updateLabels._hid=false;
     labelData.forEach(L=>{
       const showComp = active ? active===L.obj : showLabels; // dissection: selected label always; otherwise honor the toggle
       if(!showComp){L.el.style.opacity=0;L.el.classList.remove('on');}
@@ -2524,6 +3245,30 @@ window.__PROVENANCE = Object.freeze({
     };
   })();
 
+  /* =========================================================================
+     FIELD-OF-VIEW RULER — powers-of-ten HUD: how much of the world is in frame
+     (frame height at the look-at distance, in real units via 1U = 44.45 mm)
+  ==========================================================================*/
+  const fovVal=document.getElementById('fovVal'), fovMk=document.getElementById('fovMk');
+  const FOV_TOP=2, FOV_BOT=-1; // log10 metres: 100 m … 10 cm
+  (function(){ const sc=document.getElementById('fovScale');
+    for(let k=FOV_TOP;k>=FOV_BOT;k--){
+      [1,5,2].forEach((m,j)=>{ const lg=k+Math.log10(m); if(lg>FOV_TOP||lg<FOV_BOT) return;
+        const f=(FOV_TOP-lg)/(FOV_TOP-FOV_BOT)*100;
+        const tk=document.createElement('div'); tk.className='tk'+(j===0?' mj':''); tk.style.top=f+'%'; sc.appendChild(tk);
+        if(j===0){ const tl=document.createElement('div'); tl.className='tl'; tl.style.top=f+'%';
+          tl.textContent=k>=0?Math.pow(10,k)+' m':Math.round(Math.pow(10,k+2))+' cm'; sc.appendChild(tl); } });
+    } })();
+  function fmtLen(m){ return m>=100?Math.round(m)+' m':m>=10?m.toFixed(1)+' m':m>=1?m.toFixed(2)+' m':(m*100).toFixed(1)+' cm'; }
+  let fovLast=-1;
+  function updateFov(){
+    const d=camera.position.distanceTo(introOn?introLook:target);
+    const m=2*d*Math.tan(camera.fov*Math.PI/360)*M_PER_UNIT;
+    if(!(m>0) || Math.abs(m-fovLast)/m<0.004) return; fovLast=m;
+    fovVal.textContent='≈ '+fmtLen(m);
+    fovMk.style.top=(clamp01((FOV_TOP-Math.log10(m))/(FOV_TOP-FOV_BOT))*100)+'%';
+  }
+
   let nowT=0;
   function tick(ts){
     if(window.__dbg && document.hidden){ setTimeout(function(){tick(performance.now());},50); } // debug: keep animating in hidden tabs
@@ -2531,9 +3276,11 @@ window.__PROVENANCE = Object.freeze({
     nowT=(ts||0)/1000;
     const D=window.__dbg, LS=D?function(s){try{localStorage.setItem('dbgPhase',s+' t='+(active?active._t.toFixed(3):'-'))}catch(e){}}:null;
     if(D)LS('P0-frame');
-    if(autoRotate && !dragging && !active){ goal.theta+=0.0022; }
-    if(D)LS('P1-cam');
-    applyCamera();
+    const dt=Math.min(0.25,Math.max(0,nowT-(tick._last||nowT))); tick._last=nowT;
+    if(introOn){ updateIntro(dt); }
+    else { if(autoRotate && !dragging && !active){ goal.theta+=0.0022; }
+      if(D)LS('P1-cam');
+      applyCamera(); }
     if(D)LS('P2-anim');
     animateComponents();
     if(D)LS('P3-labels');
@@ -2541,16 +3288,23 @@ window.__PROVENANCE = Object.freeze({
     if(D)LS('P4-render');
     renderer.render(scene,camera);
     drawWatermark();   // composited into the WebGL output, so it travels with any capture
+    updateFov();
     if(D)LS('P5-done');
   }
   setRotate(!REDUCED); buildSidebar(); renderRackOverview(); applyCamera();
-  // prewarm: compile every shader (incl. hidden dissection internals) at load,
-  // so first-time GPU shader compilation can't stall mid-animation
+  let skipRide=!!window.__DC_SKIP_INTRO;
+  try{ const q=new URLSearchParams(location.search); if(q.get('intro')==='0'||location.hash==='#rack') skipRide=true; }catch(e){}
+  // prewarm: compile every shader (incl. hidden dissection internals and the
+  // data hall) at load, so first-time GPU shader compilation can't stall mid-animation
   try{
     const hidden=[]; components.forEach(c=>c._peris.forEach(pr=>{if(!pr.g.visible){pr.g.visible=true;hidden.push(pr.g);}}));
+    HALL.group.visible=true;
     renderer.compile(scene,camera);
     hidden.forEach(g=>g.visible=false);
   }catch(e){}
+  if(skipRide){ HALL.group.visible=false; }
+  else { introOn=true; pT=pC=0; setRotate(false); document.body.classList.add('intro-on'); setRideAria();
+    try{ document.getElementById('introStart').focus({preventScroll:true}); }catch(e){} }
   if(window.__dbg) tick(performance.now()); else requestAnimationFrame(tick);
 })();
 </script>
