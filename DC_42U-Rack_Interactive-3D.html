@@ -1810,7 +1810,7 @@ window.__PROVENANCE = Object.freeze({
           if(tag){o.userData.pick=tag;pickable.push(o);}}});
         grp.add(node);
       });
-      if(found) toast('High-fidelity model loaded ('+found+' groups)');
+      if(found){ shadowDirty=true; toast('High-fidelity model loaded ('+found+' groups)'); }
     }).catch(()=>{/* no GLB yet — procedural fallback stays, silently */});
   }
 
@@ -2504,7 +2504,7 @@ window.__PROVENANCE = Object.freeze({
     root.traverse(o=>{ if(o.isMesh&&o.material){ const m2=o.material;
       if(on){ if(m2.userData._preDim===undefined) m2.userData._preDim={t:m2.transparent,o:m2.opacity};
         m2.transparent=true; m2.opacity=0.1; m2.depthWrite=false; }
-      else { const p=m2.userData._preDim; if(p){ m2.transparent=p.t; m2.opacity=p.o; } m2.depthWrite=true; }
+      else { const p=m2.userData._preDim; if(p){ m2.transparent=p.t; m2.opacity=p.o; delete m2.userData._preDim; } m2.depthWrite=true; }
     }});
   }
   function setCompDim(c,on){ if(c._dimmed===!!on) return; c._dimmed=!!on; setObjDim(c,on); }
@@ -2637,8 +2637,8 @@ window.__PROVENANCE = Object.freeze({
   let rotPref=!REDUCED;                  // the learner's auto-rotate choice survives trips to the hall
   function focusRideControl(){           // keep keyboard focus on a live control when the chrome steps aside
     const ae=document.activeElement;
-    if(ae&&ae.closest&&ae.closest('#controls,#card,#sidebar,#bottombar')){ const n=document.getElementById('capNext');
-      if(n) n.focus({preventScroll:true}); else ae.blur(); } }
+    if(!ae||ae===document.body||(ae.closest&&ae.closest('#controls,#card,#sidebar,#bottombar'))){ const n=document.getElementById('capNext');
+      if(n) n.focus({preventScroll:true}); else if(ae&&ae!==document.body) ae.blur(); } }
   const smooth=x=>{ x=clamp01(x); return x*x*(3-2*x); };
 
   function ridePose(p,outPos,outTgt){
@@ -2818,6 +2818,7 @@ window.__PROVENANCE = Object.freeze({
   function rideDelta(d){ // d > 0: deeper
     cancelAutoOpen(); auto.on=false;
     if(REDUCED){ if(stepLatch) return; wheelAcc+=d; if(Math.abs(wheelAcc)>=100){ stepChapter(wheelAcc>0?1:-1); wheelAcc=0; stepLatch=true; } return; }
+    if(stepLatch) return;                   // the rest of a gesture that just changed mode (finale, pull-back) is spent
     pT=clamp01(pT+d/2800);
   }
   let diveAcc=0, pullArmed=false, lastZoomMs=0;
@@ -2864,10 +2865,13 @@ window.__PROVENANCE = Object.freeze({
   });
   function wheelDelta(e){ let d=e.deltaY; if(e.deltaMode===1) d*=16; else if(e.deltaMode===2) d*=window.innerHeight;
     return e.ctrlKey? -3*d : d; }         // trackpad pinch: spreading (zoom in) arrives as ctrl + negative deltaY
-  renderer.domElement.addEventListener('wheel',e=>{ e.preventDefault(); if(!introOn && !DIVE.on()) orbitZoom(wheelDelta(e)); },{passive:false});
+  renderer.domElement.addEventListener('wheel',e=>{ e.preventDefault();
+    if(introOn||DIVE.on()||document.body.classList.contains('ride-carry')) return;
+    orbitZoom(wheelDelta(e));
+    if(introOn){ e.stopPropagation(); stepLatch=true; }   // this gesture flew out to the hall — its tail must not move the ride
+  },{passive:false});
   // during the ride the whole screen scrolls the ride (headline and captions sit over the canvas)
   window.addEventListener('wheel',e=>{
-    const nowMs=performance.now(); if(nowMs-lastWheelMs>250){ stepLatch=false; wheelAcc=0; } lastWheelMs=nowMs;
     if(!introOn && !DIVE.on()) return;
     if(e.target.closest && e.target.closest('#help,#course,#own')) return; // let open overlays scroll natively
     e.preventDefault(); if(DIVE.on()) DIVE.delta(wheelDelta(e)); else rideDelta(wheelDelta(e));
@@ -3853,7 +3857,7 @@ window.__PROVENANCE = Object.freeze({
     }
     function stopAuto(){ st.auto=false; st.rewind=false; }
     function finale(){                    // the reel's last frame: all the way back out to the data hall
-      exit(); enterHall(0.32); finaleOn=true; curChapter=-1;
+      exit(); enterHall(0.32); finaleOn=true; curChapter=-1; stepLatch=true;
     }
     function step(dir){ stopAuto(); if(!STOPS) return;
       if(dir>0 && st.qT>=0.999 && st.q>0.99){ finale(); return; }
@@ -3888,6 +3892,7 @@ window.__PROVENANCE = Object.freeze({
   function openComponent(comp){
     if(introOn) endIntro(true);
     if(DIVE.on()) DIVE.exit();
+    if(mode!=='all') setMode(mode);                     // a rack-wide view mode would leave the chassis ghosted
     hideRideNext();
     const e=comp.userData.def;
     if(active && active!==comp){ setExplode(active,0); }
@@ -4188,18 +4193,25 @@ window.__PROVENANCE = Object.freeze({
     if(!document.body.classList.contains('ride-carry')) return false;
     const k=e.key, onNext=!!(e.target&&e.target.closest&&e.target.closest('#capNext'));
     if(ev==='keydown'&&/^(Tab|Shift|Control|Alt|Meta|CapsLock)$/.test(k)) return true;
-    const fwd=(ev==='keydown'&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&(k==='ArrowDown'||k==='ArrowRight'||k==='PageDown'||(k===' '&&!e.shiftKey)||(k==='Enter'&&onNext)))
-      ||(ev==='wheel'&&e.deltaY>0)||(ev==='pointerdown'&&onNext);
+    const onCtl=!!(e.target&&e.target.closest&&e.target.closest('button,a,[role=button],input,textarea,select'));
+    const fwd=(ev==='keydown'&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&(k==='ArrowDown'||k==='ArrowRight'||k==='PageDown'||(k===' '&&!e.shiftKey&&(onNext||!onCtl))||(k==='Enter'&&onNext)))
+      ||(ev==='wheel'&&wheelDelta(e)>0)||(ev==='pointerdown'&&onNext);
     if(fwd){ if(ev==='keydown') e.preventDefault();
       if(autoOpenTimer){ cancelAutoOpen(); const gpu=components.find(c=>c.userData.def.cat==='gpu'); if(gpu&&!active&&!introOn) DIVE.enter({auto:true}); }
       return true; }
-    cancelAutoOpen(); DIVE.cancelPending(); endCarry(); if(!active) showRideNext();
+    cancelAutoOpen(); DIVE.cancelPending(); endCarry(); if(!active) showRideNext(); setTimeout(focusTrainer,0);
     return true;
   }
-  ['pointerdown','wheel'].forEach(ev=>window.addEventListener(ev,e=>{ finaleOn=false; if(carryInput(ev,e)) return;
+  const fwdKey=e=>!e.altKey&&!e.ctrlKey&&!e.metaKey&&(e.key==='ArrowDown'||e.key==='ArrowRight'||e.key==='PageDown'||
+    (e.key===' '&&!e.shiftKey&&!(e.target&&e.target.closest&&e.target.closest('button,a,[role=button],input,textarea,select'))));
+  ['pointerdown','wheel'].forEach(ev=>window.addEventListener(ev,e=>{
+    if(ev==='wheel'){ const nowMs=performance.now(); if(nowMs-lastWheelMs>250){ stepLatch=false; wheelAcc=0; } lastWheelMs=nowMs; }
+    if(!(ev==='wheel'&&stepLatch)) finaleOn=false;          // the rest of the gesture that caused the finale keeps its caption
+    if(carryInput(ev,e)) return;
+    if(ev==='wheel'&&wheelDelta(e)>0&&DIVE.pending()) return;  // scrolling on into the silicon keeps the dive it just started
     cancelAutoOpen(); DIVE.cancelPending(); },{capture:true,passive:true}));
   window.addEventListener('keydown',e=>{ if(/^(Tab|Shift|Control|Alt|Meta|CapsLock)$/.test(e.key)) return; finaleOn=false;
-    if(carryInput('keydown',e)) return; cancelAutoOpen(); DIVE.cancelPending(); },true);
+    if(carryInput('keydown',e)) return; if(DIVE.pending()&&fwdKey(e)) return; cancelAutoOpen(); DIVE.cancelPending(); },true);
   /* dive keyboard: arrows/space/page keys step levels, Esc returns to the GPU node */
   window.addEventListener('keydown',e=>{
     if(!DIVE.on()) return;
@@ -4218,7 +4230,7 @@ window.__PROVENANCE = Object.freeze({
   /* ride keyboard: window-capture so it sees the state before any overlay's own
      Escape handling closes it; arrows/space/page keys step chapters, Esc skips */
   window.addEventListener('keydown',e=>{
-    if(!introOn) return;
+    if(!introOn||e.defaultPrevented) return;
     if(helpEl.classList.contains('open')||courseEl.classList.contains('open')||
        document.getElementById('own').classList.contains('open')) return;
     if(e.altKey||e.ctrlKey||e.metaKey) return;        // browser shortcuts stay the browser's
@@ -4425,6 +4437,7 @@ window.__PROVENANCE = Object.freeze({
       if(D)LS('P1-cam');
       applyCamera(); }
     if(D)LS('P2-anim');
+    const animating=components.some(c=>c._t!==c._goal);   // sampled before the step that may land on the goal
     animateComponents();
     if(D)LS('P3-labels');
     try{updateLabels();}catch(err){}
@@ -4432,7 +4445,7 @@ window.__PROVENANCE = Object.freeze({
     // rides: freeze the shadow map (no caster moves) and refresh it only when the rack itself animates
     const frozen=introOn||DIVE.on();
     renderer.shadowMap.autoUpdate=!frozen;
-    if(frozen && (shadowDirty || components.some(c=>c._t!==c._goal))){ renderer.shadowMap.needsUpdate=true; shadowDirty=false; }
+    if(frozen && (shadowDirty || animating)){ renderer.shadowMap.needsUpdate=true; shadowDirty=false; }
     if(!(DIVE.on() && DIVE.render(dt))) renderer.render(scene,camera);
     drawWatermark();   // composited into the WebGL output, so it travels with any capture
     updateFov();
