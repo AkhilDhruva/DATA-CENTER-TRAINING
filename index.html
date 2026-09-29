@@ -327,6 +327,8 @@
   body.dive-on #sidebar,body.dive-on #controls,body.dive-on #card,body.dive-on #bottombar,body.dive-on #stepper,
   body.dive-on #trainHint,body.dive-on #ident{opacity:0;visibility:hidden;pointer-events:none}
   body.dive-on #btnTraining,body.dive-on #menuBtn{display:none}
+  body.ride-carry #sidebar,body.ride-carry #controls,body.ride-carry #card,body.ride-carry #bottombar,body.ride-carry #stepper,
+  body.ride-carry #trainHint{opacity:0;visibility:hidden;pointer-events:none}
   body.dive-on #topbar{background:linear-gradient(180deg,rgba(7,11,18,.72),rgba(7,11,18,0));border-bottom-color:transparent;backdrop-filter:none}
   #btnDiveBack{display:none}
   body.dive-on #btnDiveBack{display:flex}
@@ -384,7 +386,10 @@
   #fov .tk.mj{width:12px;background:rgba(232,238,247,.7)}
   #fov .tl{position:absolute;right:17px;transform:translateY(-50%);font-size:9.5px;color:#9fb0c3;white-space:nowrap}
   #fov .mk{position:absolute;right:-5px;width:24px;height:2px;margin-top:-1px;background:#ffd23f;
-    box-shadow:0 0 8px rgba(255,210,63,.85);transition:top .12s linear}
+    box-shadow:0 0 0 1px rgba(0,0,0,.85),0 0 8px rgba(255,210,63,.85);transition:top .12s linear}
+  #fov .fh,#fov .fv,#fov .tl{text-shadow:0 1px 6px #000}
+  body.intro-on #fov::before,body.dive-on #fov::before{content:"";position:absolute;inset:-22px -18px -22px -48px;z-index:-1;
+    pointer-events:none;background:radial-gradient(ellipse at 70% 50%,rgba(7,11,18,.82),rgba(7,11,18,0) 75%)}
   body:not(.intro-on):not(.dive-on) #fov{right:472px;top:auto;bottom:98px;transform:none;width:110px;padding:10px 12px 12px;
     background:rgba(13,19,28,.88);border:1px solid var(--line);border-radius:var(--rad);backdrop-filter:blur(6px)}
   body:not(.intro-on):not(.dive-on) #fov .fs{height:150px}
@@ -397,6 +402,8 @@
   .htag::after{content:"";position:absolute;left:50%;bottom:0;width:1px;height:26px;background:currentColor;opacity:.65}
   .htag b{display:block;font-size:11.5px;letter-spacing:.1em;margin-bottom:2px}
   .htag.y{color:#ffd23f}.htag.r{color:#ff7a6b}.htag.g{color:#c9d4e0}.htag.c{color:#6fe3ff}.htag.o{color:#ffae6b}
+  .htag.g{padding-bottom:52px}.htag.g::after{height:48px}
+  .htag:not(.bx):not(.row) b{display:inline-block;background:rgba(7,11,18,.78);padding:2px 6px;border-radius:3px;margin-bottom:3px}
   .htag.row{padding-bottom:0;font-weight:700;color:#9fb0c3}
   .htag.row::after{display:none}
   .htag.row.hot{color:var(--accent)}
@@ -2291,8 +2298,8 @@ window.__PROVENANCE = Object.freeze({
         drops.push({x:x+0.25,y:(TOPY+by-1.1)/2,z:bz,sx:0.07,sy:by-1.1-TOPY,sz:0.07});
         if(c%4===1) drops.push({x,y:(py+TOPY+11)/2,z:pz,sx:0.04,sy:TOPY+11-py,sz:0.04}); // sprinkler hanger
       }
-      if(r===3){ anchors.tray=new THREE.Vector3(-30,ty+0.6,tz); anchors.bus=new THREE.Vector3(-21,by+0.5,bz);
-                 anchors.pipe=new THREE.Vector3(-12,py+0.3,pz); }
+      if(r===3){ anchors.tray=new THREE.Vector3(-38,ty+0.6,tz); anchors.bus=new THREE.Vector3(-16,by+0.5,bz);
+                 anchors.pipe=new THREE.Vector3(6,py+0.3,pz); }
     }
     aisles.forEach(a=>{
       if(a.cold) lights.push({x:MIDX,y:TOPY+11,z:a.z,sx:ROWLEN,sy:0.16,sz:0.5});
@@ -2312,8 +2319,8 @@ window.__PROVENANCE = Object.freeze({
       crah.push({x,y:-0.5,z,sx:6,sy:RH+1,sz:15});
       louv.push({x:x+s*3.02,y:0,z,sx:13,sy:RH-3,sz:1,ry:s*Math.PI/2}); }); }
     for(let r=0;r<ROWS;r++) [X0-2.2,X1+2.2].forEach(x=>{
-      pdus.push({x,y:-1,z:rowZ[r],sx:3.4,sy:RH-2,sz:RACK_D});
-      pduStrips.push({x,y:TOPY-3.4,z:rowZ[r]+rowFace[r]*(RACK_D/2+0.02),sx:2.6,sy:0.18,sz:0.05}); });
+      pdus.push({x,y:-3.03,z:rowZ[r],sx:3.4,sy:RH-6,sz:RACK_D});
+      pduStrips.push({x,y:1.8,z:rowZ[r]+rowFace[r]*(RACK_D/2+0.02),sx:2.6,sy:0.18,sz:0.05}); });
     inst(UBOX,crahMat,crah,late); inst(UPLANE,louverMat,louv,late); inst(UBOX,pduMat,pdus,late); inst(UBOX,pduGlow,pduStrips,late);
 
     /* ---- hero FX: God-ray beam, outline + halo, floor lock-on ---- */
@@ -2342,7 +2349,7 @@ window.__PROVENANCE = Object.freeze({
     const bump=(p,a,b,c,d)=>sm((p-a)/(b-a))*(1-sm((p-c)/(d-c)));
     function fade(list,a){ list.forEach(m=>{ const o=m.userData.baseOp*a; if(m.opacity===o) return;
       m.opacity=o; m.transparent=o<0.999||m.userData.baseTr; m.depthWrite=o>0.5; }); }
-    const state={kO:-1,kL:-1,kF:-1};
+    const state={kO:-1,kL:-1,kF:-1,dim:-1};
     function update(p,t){
       const kO=sm((p-0.56)/0.12);                         // overhead lifts + fades
       if(kO!==state.kO){ state.kO=kO; over.position.y=kO*16; fade(fadeOver,1-kO); over.visible=kO<1; }
@@ -2356,12 +2363,14 @@ window.__PROVENANCE = Object.freeze({
       const kF=sm((p-0.74)/0.1);                           // raised floor dissolves into the trainer stage
       if(kF!==state.kF){ state.kF=kF; fade(fadeFloor,1-kF); floorG.visible=kF<1; }
       const pulse=0.78+0.22*Math.sin(t*3.1);
-      beamMat.opacity=((p<0.16?(1-sm(p/0.16))*0.55:0) + bump(p,0.26,0.33,0.40,0.46)*0.5)*pulse;
+      beamMat.opacity=((p<0.16?(1-sm(p/0.16))*0.55:0) + bump(p,0.24,0.30,0.34,0.38)*0.5*sm((camera.position.y-14)/6))*pulse;
       lockMat.opacity=bump(p,0.44,0.52,0.86,0.97)*(0.55+0.45*pulse);
       halo.material.opacity=bump(p,0.46,0.54,0.72,0.86)*0.07*pulse;
       marker.material.opacity=Math.max(p<0.16?(1-sm(p/0.16)):0, bump(p,0.44,0.52,0.9,1.0))*0.75*pulse;
       fx.visible=beamMat.opacity>0.002||lockMat.opacity>0.002||marker.material.opacity>0.002;
-      return {floorOpaque:kF<=0, spot:bump(p,0.44,0.52,0.86,0.98)};
+      const dim=1-0.55*bump(p,0.44,0.52,0.9,1);                      // hall doors recede while the hero is singled out
+      if(dim!==state.dim){ state.dim=dim; Object.keys(frontMat).forEach(k=>{ frontMat[k].emissiveIntensity=dim; frontMat[k].color.setScalar(0.45+0.55*dim); }); }
+      return {floorOpaque:kF<=0, spot:bump(p,0.62,0.70,0.86,0.98)};
     }
     return {group:g, update, rows:ROWS, total:TOTAL, heroId:HERO_ID, heroRow:ROWNAMES[HERO_ROW],
       rowTags:rowZ.map((z,r)=>({name:'Row '+ROWNAMES[r], pos:new THREE.Vector3(X0-3.5,TOPY+1.2,z), hero:r===HERO_ROW})),
@@ -2590,9 +2599,9 @@ window.__PROVENANCE = Object.freeze({
     {p:0.36, pos:[-80,30,36],    tgt:[-8,-2,9],     fov:45, fogN:60,  fogF:250, near:0.3},  // down the rows
     {p:0.41, pos:[-58,11,11.5],  tgt:[-9,1,8],      fov:45, fogN:36,  fogF:190, near:0.1},  // enter the cold aisle
     {p:0.46, pos:[-34,6.8,10.2], tgt:[-3,0.6,5.5],  fov:52, fogN:30,  fogF:170, near:0.1},  // eye level (1.8 m)
-    {p:0.52, pos:[-12,12,13],    tgt:[0,0.3,1.4],   fov:58, fogN:30,  fogF:150, near:0.1},  // crane up: one rack, 3/4
-    {p:0.68, pos:[-8.5,10.5,14], tgt:[0,0.2,0.6],   fov:56, fogN:34,  fogF:120, near:0.1},  // isolate
-    {p:0.84, pos:[4,13.5,31],    tgt:[0,0,0],       fov:48, fogN:40,  fogF:90,  near:0.1},  // pull back
+    {p:0.52, pos:[-17,13,13.5],  tgt:[0,0.5,1.5],   fov:58, fogN:30,  fogF:150, near:0.1},  // crane up: one rack, 3/4
+    {p:0.68, pos:[-14,24,12.5],  tgt:[0,0.5,1],     fov:46, fogN:34,  fogF:120, near:0.1},  // isolate: God's-eye over the sinking hall
+    {p:0.84, pos:[-2,14.5,27.5], tgt:[0,0,0.3],     fov:45, fogN:40,  fogF:90,  near:0.1},  // settle toward the trainer view
     {p:1.00, pos:DEF_POS.toArray(), tgt:[0,0,0],    fov:45, fogN:42,  fogF:78,  near:0.1}   // = trainer default
   ];
   const RIDE_POS=new THREE.CatmullRomCurve3(RIDE_KEYS.map(k=>new THREE.Vector3().fromArray(k.pos)),false,'centripetal');
@@ -2629,7 +2638,9 @@ window.__PROVENANCE = Object.freeze({
     const mix=(x,y)=>x+(y-x)*tt;
     // portrait screens: back the wide hall shots off so the whole hall still fits
     const aspK=Math.max(1,Math.min(2.6,1.35/Math.max(0.3,camera.aspect)));
-    const w=p<=0.18?1:(p<0.36?1-(p-0.18)/0.18:0), k=1+(aspK-1)*w;
+    const w=p<=0.18?1:(p<0.36?1-(p-0.18)/0.18:0);
+    const wR=smooth((p-0.60)/0.05)*(1-smooth((p-0.86)/0.14));            // portrait: keep the isolate beat's sink wave in frame
+    const k=Math.max(1+(aspK-1)*w, 1+(Math.max(1,Math.min(1.7,0.8/Math.max(0.3,camera.aspect)))-1)*wR);
     if(k>1){ outPos.sub(outTgt).multiplyScalar(k).add(outTgt); }
     // opening frame: park the hall beside the hook text (right on wide screens, above it on tall ones)
     const w0=1-smooth(p/0.18);
@@ -2644,6 +2655,8 @@ window.__PROVENANCE = Object.freeze({
   }
   function stepChapter(dir){ auto.on=false; pT=nextStop(pT,dir); }
   function cancelAutoOpen(){ if(autoOpenTimer){ clearTimeout(autoOpenTimer); autoOpenTimer=0; } }
+  function endCarry(){ if(!document.body.classList.contains('ride-carry')) return;
+    document.body.classList.remove('ride-carry'); if(!introOn&&!DIVE.on()) introCap.classList.remove('on'); }
   function startRide(){
     cancelAutoOpen(); auto.on=true; auto.hold=0;
     auto.i=STOPS.findIndex(s=>s>pT+0.004); if(auto.i<0) auto.i=STOPS.length-1;
@@ -2656,8 +2669,9 @@ window.__PROVENANCE = Object.freeze({
       auto.hold+=dt; if(auto.hold>2.8){ auto.hold=0; pT=stop; if(auto.i<STOPS.length-1) auto.i++; }
       return;
     }
-    if(pT<stop){ const slow=(pT>0.55&&pT<0.76)?0.7:1; pT=Math.min(stop,pT+AUTO_SPEED*slow*dt); auto.hold=0; }
-    else if(auto.i<STOPS.length-1 && Math.abs(pC-stop)<0.012){ auto.hold+=dt; if(auto.hold>AUTO_HOLD){ auto.hold=0; auto.i++; } }
+    if(pT<stop){ const slow=(pT>0.36&&pT<0.47)?0.6:(pT>0.52?1.25:1); pT=Math.min(stop,pT+AUTO_SPEED*slow*dt); auto.hold=0; }
+    else if(auto.i<STOPS.length-1 && Math.abs(pC-stop)<0.012){ auto.hold+=dt;
+      if(auto.hold>(stop>=0.5?0.9:AUTO_HOLD)){ auto.hold=0; auto.i++; } }
   }
 
   function enterHall(dest){
@@ -2690,8 +2704,11 @@ window.__PROVENANCE = Object.freeze({
       if(!active) renderRackOverview();
       if(fromRide){ cancelAutoOpen(); const go=()=>{ autoOpenTimer=0;
           if(overlayOpen()){ autoOpenTimer=setTimeout(go,500); return; }   // wait for the dialog to close
-          const gpu=components.find(c=>c.userData.def.cat==='gpu'); if(gpu&&!active&&!introOn){ DIVE.enter({auto:true}); toast('Pulling the AI GPU node out of the rack…'); } };
-        autoOpenTimer=setTimeout(go,1100); }
+          const gpu=components.find(c=>c.userData.def.cat==='gpu'); if(gpu&&!active&&!introOn){ DIVE.enter({auto:true}); } else endCarry(); };
+        autoOpenTimer=setTimeout(go,1100);
+        // keep it one continuous shot: no chrome, a caption for the "open the server" beat
+        document.body.classList.add('ride-carry'); introCap.classList.add('on');
+        capT.textContent='Open the server'; capS.textContent='The AI GPU node slides out of '+HALL.heroId+' and opens up'; capN.textContent=''; }
       else showRideNext();
     }
   }
@@ -2712,19 +2729,19 @@ window.__PROVENANCE = Object.freeze({
   const hallTags=[];
   function addTag(cls,html,pos,show){ const el=document.createElement('div'); el.className='htag '+cls; el.innerHTML=html;
     el.setAttribute('aria-hidden','true'); app.appendChild(el); hallTags.push({el,pos,show,on:false}); }
-  addTag('hero','<b>Start here</b>'+HALL.heroId,HALL.heroTop,p=>1-smooth((p-0.08)/0.06));
+  addTag('hero','<b>Start here</b>'+HALL.heroId,HALL.heroTop,p=>1-smooth((p-0.36)/0.04));
   HALL.rowTags.forEach(r=>addTag('row'+(r.hero?' hot':''),r.name,r.pos,p=>smooth((p-0.1)/0.06)*(1-smooth((p-0.3)/0.06))));
   addTag('y','<b>Fiber raceway</b>yellow tray',HALL.anchors.tray,p=>smooth((p-0.24)/0.05)*(1-smooth((p-0.385)/0.03)));
   addTag('g','<b>Power busway</b>tap-off per rack',HALL.anchors.bus,p=>smooth((p-0.25)/0.05)*(1-smooth((p-0.385)/0.03)));
   addTag('r','<b>Fire suppression</b>sprinkler main',HALL.anchors.pipe,p=>smooth((p-0.26)/0.05)*(1-smooth((p-0.385)/0.03)));
-  addTag('c','<b>Cold aisle</b>18–27 °C supply',HALL.anchors.cold,p=>smooth((p-0.27)/0.05)*(1-smooth((p-0.40)/0.03)));
+  addTag('c','<b>Cold aisle</b>18–27 °C supply',HALL.anchors.cold,p=>smooth((p-0.27)/0.05)*(1-smooth((p-0.33)/0.03)));
   addTag('o','<b>Hot aisle</b>contained exhaust',HALL.anchors.hot,p=>smooth((p-0.28)/0.05)*(1-smooth((p-0.385)/0.03)));
   addTag('hero','<b>★ '+HALL.heroId+'</b>42U · A + B power · this one',HALL.heroTop,p=>smooth((p-0.46)/0.05)*(1-smooth((p-0.72)/0.05)));
 
   function updateRideUI(){
     const hookOn=pC<0.04 && pT<0.04;
     introHook.classList.toggle('on',hookOn);
-    let ci=0; for(let i=CHAPTERS.length-1;i>0;i--){ if(pC>=CHAPTERS[i].p-0.075){ ci=i; break; } }
+    let ci=0; for(let i=CHAPTERS.length-1;i>0;i--){ if(pC>=CHAPTERS[i].p-(i===3?0.03:0.075)){ ci=i; break; } }
     if(ci!==curChapter){ curChapter=ci; const c=CHAPTERS[ci];
       capT.textContent=c.t; capS.textContent=c.s; capN.textContent=ci+' / '+(CHAPTERS.length-1);
       introCap.classList.remove('pop'); void introCap.offsetWidth; introCap.classList.add('pop'); setRideAria(); }
@@ -2734,9 +2751,11 @@ window.__PROVENANCE = Object.freeze({
       const a=h.show(pC); const vis=a>0.01;
       if(!vis){ if(h.on){ h.el.style.opacity=0; h.on=false; } return; }
       _v.copy(h.pos).project(camera);
-      if(_v.z>1||Math.abs(_v.x)>1.1||(-_v.y*0.5+0.5)*H<84||_v.y<-1.1){ if(h.on){ h.el.style.opacity=0; h.on=false; } return; }
+      const hero=h.el.classList.contains('hero'); let y=(-_v.y*0.5+0.5)*H;
+      if(hero) y=Math.max(y,150);                                          // clamp the destination tag below the header
+      if(_v.z>1||Math.abs(_v.x)>1.1||y<84||(_v.y<-1.1&&!hero)){ if(h.on){ h.el.style.opacity=0; h.on=false; } return; }
       h.on=true; h.el.style.opacity=a.toFixed(3);
-      h.el.style.left=((_v.x*0.5+0.5)*W)+'px'; h.el.style.top=((-_v.y*0.5+0.5)*H)+'px';
+      h.el.style.left=((_v.x*0.5+0.5)*W)+'px'; h.el.style.top=y+'px';
     });
   }
 
@@ -3256,7 +3275,7 @@ window.__PROVENANCE = Object.freeze({
     }
     function tickPending(dt){
       const p=st.pending; if(!p) return;
-      const gpu=gpuComp(); if(active!==gpu||introOn){ st.pending=null; return; }   // the learner moved on
+      const gpu=gpuComp(); if(active!==gpu||introOn){ st.pending=null; endCarry(); return; }   // the learner moved on
       if(gpu._t<1||overlayOpen()) return;
       p.t+=dt;
       if(!p.shown && p.t>=p.hold*0.4){ p.shown=true;                                // frame the GPU itself first
@@ -3274,7 +3293,7 @@ window.__PROVENANCE = Object.freeze({
       Object.assign(st,{on:true,q:0,qT:0,auto:!!auto,ai:1,hold:0,rewind:false,ci:-1,acc:0,wacc:0});
       curChapter=-1;                                                                // the hall ride re-captions itself next time
       capSkipEl.textContent='Back to the rack ›';
-      rotPref=autoRotate; document.body.classList.add('dive-on'); setRotate(false); dragging=false; pinchD=0; hideRideNext();
+      rotPref=autoRotate; document.body.classList.add('dive-on'); endCarry(); setRotate(false); dragging=false; pinchD=0; hideRideNext();
       ident.style.opacity=0; renderer.domElement.style.cursor=''; focusRideControl();
     }
     function exit(){
@@ -3611,7 +3630,7 @@ window.__PROVENANCE = Object.freeze({
   rideNextEl.addEventListener('click',()=>{ hideRideNext();
     const gpu=components.find(c=>c.userData.def.cat==='gpu'); if(gpu) openComponent(gpu); });
   // any deliberate input cancels the ride's pending hand-off into the GPU node
-  ['pointerdown','wheel','keydown'].forEach(ev=>window.addEventListener(ev,()=>{ cancelAutoOpen(); DIVE.cancelPending(); },{capture:true,passive:true}));
+  ['pointerdown','wheel','keydown'].forEach(ev=>window.addEventListener(ev,()=>{ cancelAutoOpen(); DIVE.cancelPending(); endCarry(); },{capture:true,passive:true}));
   /* dive keyboard: arrows/space/page keys step levels, Esc returns to the GPU node */
   window.addEventListener('keydown',e=>{
     if(!DIVE.on()) return;
