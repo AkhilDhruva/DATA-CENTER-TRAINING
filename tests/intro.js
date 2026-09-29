@@ -65,8 +65,9 @@ async function assertTrainerHome(page, label) {
   check(label + ': lens, far plane and fog restored', s.fov === 45 && s.far === 240 && s.fogN === 42 && s.fogF === 78, s);
   const name = await page.evaluate(() => document.getElementById('cardName').textContent);
   check(label + ': inspector shows the rack', /42U Data Center Rack/.test(name), name);
-  const back = await page.waitForFunction(() => ['sidebar', 'card', 'controls'].every((id) => { const cs = getComputedStyle(document.getElementById(id));
-    return cs.visibility === 'visible' && parseFloat(cs.opacity) > 0.9; }), null, { timeout: 8000 }).then(() => true, () => false);
+  // a CSS fade only advances when a frame is drawn: poll on a timer, with the ride waits' software-GL ceiling
+  const back = await waitRide(page, () => ['sidebar', 'card', 'controls'].every((id) => { const cs = getComputedStyle(document.getElementById(id));
+    return cs.visibility === 'visible' && parseFloat(cs.opacity) > 0.9; })).then(() => true, () => false);
   check(label + ': trainer chrome visible again', back);
 }
 
@@ -147,11 +148,13 @@ async function assertTrainerHome(page, label) {
 
   // End → hand-over
   await page.keyboard.press('End');
+  // the continue offer appears at the hand-over and hides itself 20 s later, so watch for it from here on
+  const offer = page.waitForFunction(() => { const el = document.getElementById('rideNext');
+    return el.classList.contains('on') && parseFloat(getComputedStyle(el).opacity) > 0.9; }, null, { timeout: 120000, polling: 250 }).then(() => true, () => false);
   await waitRide(page, () => !window.__ride.st().on, null, 30000);
   await settle(page, 1500);
   await assertTrainerHome(page, 'after the ride');
-  check('the ride offers to continue into the GPU node', await page.waitForFunction(() => { const el = document.getElementById('rideNext');
-    return el.classList.contains('on') && parseFloat(getComputedStyle(el).opacity) > 0.9; }, null, { timeout: 8000 }).then(() => true, () => false));
+  check('the ride offers to continue into the GPU node', await offer);
   const crumb = await page.evaluate(() => document.getElementById('crumb').textContent.replace(/\s+/g, ''));
   check('breadcrumb roots at the data hall', /^Datahall›Rack/.test(crumb), crumb);
   const fovT = await page.evaluate(() => document.getElementById('fovVal').textContent);
@@ -289,8 +292,8 @@ async function assertTrainerHome(page, label) {
   const chromeNow = await page.evaluate(() => ({ vis: getComputedStyle(document.getElementById('card')).visibility,
     focus: document.activeElement && document.activeElement !== document.body }));
   check('the inspector is visible at once after the dive, with keyboard focus on it', chromeNow.vis === 'visible' && chromeNow.focus, chromeNow);
-  check('trainer chrome fades back in after the dive', await page.waitForFunction(() => { const cs = getComputedStyle(document.getElementById('card'));
-    return !document.body.classList.contains('dive-on') && cs.visibility === 'visible' && parseFloat(cs.opacity) > 0.9; }, null, { timeout: 30000, polling: 250 }).then(() => true, () => false));
+  check('trainer chrome fades back in after the dive', await waitRide(page, () => { const cs = getComputedStyle(document.getElementById('card'));
+    return !document.body.classList.contains('dive-on') && cs.visibility === 'visible' && parseFloat(cs.opacity) > 0.9; }).then(() => true, () => false));
   // scrolling deeper at the closest orbit keeps going into the silicon; scrolling back up comes back out
   await page.mouse.move(420, 600);   // open canvas, clear of the explorer, controls dock and inspector
   for (let i = 0; i < 4; i++) { await page.mouse.wheel(0, 500); await page.waitForTimeout(250); }
@@ -337,7 +340,9 @@ async function assertTrainerHome(page, label) {
   page = await boot(browser, 1536, 900, { reduced: true });
   await page.keyboard.press('ArrowDown');
   await waitRide(page, () => window.__ride.st().pT === 0.18, null, 10000);
-  await settle(page, 2500);    // at least one rendered frame, even on software GL
+  // two animation frames guarantee the app's own frame has run since the key press (a fixed wait does not on
+  // software GL); a flight would leave pC short of pT after one frame, a cut lands on it
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
   s = await st(page);
   check('chapters cut instead of fly (pC === pT)', s.pT === 0.18 && s.pC === s.pT, s);
   await page.mouse.move(768, 450);
