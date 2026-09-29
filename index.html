@@ -3030,12 +3030,12 @@ window.__PROVENANCE = Object.freeze({
       packets.forEach((p,i)=>pk.setColorAt(i,_c.set(i%3?0x6fe3ff:0xffd23f))); pk.instanceColor.needsUpdate=true;
       return { key:'die', mpu:0.001, bg:0x0a0e14, fog:[40,110], fogK:[1.5,6], group:g,     // fog kept far: the corridor runs 29 mm ahead
         keys:[{t:0,pos:[-9.07,27.2,16.3],tgt:[0,0,0],fov:45},                 // = the package's closing shot (3.0 cm, el 55.6°, az −29°)
-              {t:0.16,pos:[-17,13,15],tgt:[-3,0,1],fov:45},
-              {t:0.42,pos:[0,3.6,19.5],tgt:[0,0.3,8],fov:50},{t:0.56,pos:[0,1.0,3.2],tgt:[0,0.35,-3],fov:52},
-              {t:0.74,pos:[0.79,4.29,-3.21],tgt:[3.2,0.25,-6.0],fov:45},        // up out of the corridor, over the GPC, before the dissolve
+              {t:0.2,pos:[-17,13,15],tgt:[-3,0,1],fov:45},                     // the whole die, once the dissolve into it is done
+              {t:0.44,pos:[0,3.6,19.5],tgt:[0,0.3,8],fov:50},{t:0.56,pos:[0,1.0,3.2],tgt:[0,0.35,-3],fov:52},   // down into the L2 corridor
+              {t:0.82,pos:[0.79,4.29,-3.21],tgt:[3.2,0.25,-6.0],fov:45},        // up out of the corridor, over the GPC, as the dissolve begins
               {t:1,pos:[1.3,3.43,-3.8],tgt:[3.2,0.25,-6.0],fov:45}],           // = the SM level's opening shot (3.55 mm, el 47.3°, az −40.8°) on the same SM
         caps:[{t:0,title:'104 billion transistors',sub:'One Blackwell die · TSMC 4NP · logical block layout — illustrative, not a silicon floorplan'},
-              {t:0.44,title:'L2 cache',sub:'Shared by both banks of GPCs · data movement shown is illustrative'}],
+              {t:0.5,title:'L2 cache',sub:'Shared by both banks of GPCs · data movement shown is illustrative'}],
         tags:[{text:'HBM interface',sub:'memory controllers',pos:[-11.5,0.5,-4.1],from:0.08,to:0.42,cls:'o'},
               {text:'Die-to-die link',sub:'to the second die',pos:[11.7,0.4,6],from:0.08,to:0.42,cls:'c'},
               {text:'GPC',sub:'10 SMs',pos:[-4.45,0.5,-7.2],from:0.1,to:0.44,cls:'y'},
@@ -4072,7 +4072,7 @@ window.__PROVENANCE = Object.freeze({
   const DIVE=(function(){
     let S=null, SC=null, CH=null, STOPS=null, rt=null;
     // progress ranges: 0 = the trainer scene closing on the GPU, 1..6 = the micro stages (overlaps = cross-fades)
-    const R=[[0,0.07],[0.052,0.137],[0.113,0.208],[0.184,0.334],[0.31,0.485],[0.461,0.561],[0.549,0.634],[0.61,0.757],[0.733,0.838],[0.814,0.92],[0.896,1]];
+    const R=[[0,0.07],[0.052,0.137],[0.113,0.243],[0.219,0.369],[0.345,0.507],[0.483,0.583],[0.571,0.656],[0.632,0.767],[0.743,0.848],[0.824,0.924],[0.9,1]];
     const camB=new THREE.PerspectiveCamera(45,1,0.1,100), camC=new THREE.PerspectiveCamera(45,1,0.1,100);
     const tB=new THREE.Vector3(), tC=new THREE.Vector3(), _sz=new THREE.Vector2();
     const s0={from:new THREE.Vector3(),fromT:new THREE.Vector3(),to:new THREE.Vector3(),toT:new THREE.Vector3(),hs:1};
