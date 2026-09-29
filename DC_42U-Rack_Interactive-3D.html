@@ -1643,24 +1643,24 @@ window.__PROVENANCE = Object.freeze({
 
     /* GPUs: two Blackwell packages under liquid cold plates w/ coolant ports */
     groups.GPUs.position.set(0,fTop+0.1,-d*0.1);
-    [-1.15,1.15].forEach(x=>{
-      const sub=bevelBox(1.6,0.08,1.6,0.02,mat(0x101820,{metalness:.5,roughness:.5})); sub.position.x=x; groups.GPUs.add(sub);
-      const plate=bevelBox(1.34,0.18,1.34,0.04,mat(0x9fb9d6,{metalness:.9,roughness:.2})); plate.position.set(x,0.16,0); groups.GPUs.add(plate);
-      for(let i=0;i<3;i++){const ch=box(1.1,0.03,0.08,mat(0x36c2ff,{emissive:0x36c2ff,emissiveIntensity:.7}));
-        ch.position.set(x,0.27,-0.4+i*0.4); groups.GPUs.add(ch);}
-      const idStrip=box(1.42,0.035,0.06,mat(0xff5470,{emissive:0xff5470,emissiveIntensity:.8})); idStrip.position.set(x,0.1,0.78); groups.GPUs.add(idStrip);
-      [-0.35,0.35].forEach(px=>{
-        const port=pm(gCyl(0.09,0.16,10),mat(0x8fb4d8,{metalness:.85,roughness:.3})); port.position.set(x+px,0.32,-0.45); groups.GPUs.add(port);
-        const hose=pm(gCyl(0.055,0.9,8),mat(0x1b2430,{metalness:.3,roughness:.7})); hose.rotation.x=Math.PI/2; hose.position.set(x+px,0.36,0.05); groups.GPUs.add(hose);
+    [-1.15,1.15].forEach(x=>{                       // a B200 package: 10.6 cm substrate, sealed cold plate over dies + HBM
+      const sub=bevelBox(0.95,0.08,0.95,0.02,mat(0x101820,{metalness:.5,roughness:.5})); sub.position.x=x; groups.GPUs.add(sub);
+      const plate=bevelBox(0.85,0.18,0.85,0.04,mat(0x9fb9d6,{metalness:.9,roughness:.2})); plate.position.set(x,0.16,0); groups.GPUs.add(plate);
+      for(let i=0;i<3;i++){const ch=box(0.7,0.03,0.06,mat(0x36c2ff,{emissive:0x36c2ff,emissiveIntensity:.7}));
+        ch.position.set(x,0.27,-0.26+i*0.26); groups.GPUs.add(ch);}
+      const idStrip=box(0.9,0.035,0.05,mat(0xff5470,{emissive:0xff5470,emissiveIntensity:.8})); idStrip.position.set(x,0.1,0.5); groups.GPUs.add(idStrip);
+      [-0.22,0.22].forEach(px=>{
+        const port=pm(gCyl(0.07,0.16,10),mat(0x8fb4d8,{metalness:.85,roughness:.3})); port.position.set(x+px,0.32,-0.3); groups.GPUs.add(port);
+        const hose=pm(gCyl(0.05,0.7,8),mat(0x1b2430,{metalness:.3,roughness:.7})); hose.rotation.x=Math.PI/2; hose.position.set(x+px,0.36,0.1); groups.GPUs.add(hose);
       });
     });
 
-    /* HBM: stacked memory flanking each GPU package */
+    /* HBM: eight HBM3e stacks on each package, four along either edge of the die pair, under the plate's edge */
     groups.HBM.position.copy(groups.GPUs.position);
-    [-1.15,1.15].forEach(x=>{[-0.52,0.52].forEach(hz=>{[-0.95,0.95].forEach(hx=>{
+    [-1.15,1.15].forEach(x=>{[-0.33,-0.11,0.11,0.33].forEach(hz=>{[-0.36,0.36].forEach(hx=>{
       const st=new THREE.Group();
-      for(let i2=0;i2<3;i2++){const l2=box(0.3,0.045,0.22,mat(0xffd23f,{emissive:0xffd23f,emissiveIntensity:.25,metalness:.5,roughness:.4}));
-        l2.position.y=0.03+i2*0.055; st.add(l2);}
+      for(let i2=0;i2<3;i2++){const l2=box(0.16,0.04,0.2,mat(i2%2?0x3a424c:0x8d97a2,{metalness:.5,roughness:.4}));
+        l2.position.y=0.06+i2*0.045; st.add(l2);}
       st.position.set(x+hx,0,hz); groups.HBM.add(st);
     });});});
 
@@ -1702,7 +1702,7 @@ window.__PROVENANCE = Object.freeze({
     const lug=box(1.0,0.07,0.07,mat(0xff8c32,{emissive:0xff8c32,emissiveIntensity:.4})); lug.position.set(-0.75,0,0.12); groups.Busbar.add(lug);
 
     k.periAnchor('gpu',     groups.GPUs,    new THREE.Vector3(1.0,1.75,0.3));
-    k.periAnchor('hbm',     groups.HBM,     new THREE.Vector3(2.5,1.35,-0.5));
+    k.periAnchor('hbm',     groups.HBM,     new THREE.Vector3(2.1,1.35,-0.5));
     k.periAnchor('cpu',     groups.CPU,     new THREE.Vector3(-0.4,1.6,0.5));
     k.periAnchor('nvswitch',groups.NVSwitch,new THREE.Vector3(0.2,2.0,-0.9));
     k.periAnchor('nic',     groups.NICs,    new THREE.Vector3(0.6,1.35,-0.8));
@@ -2108,70 +2108,72 @@ window.__PROVENANCE = Object.freeze({
       network:[...[].concat(...R_(0,0,8).map(()=>[['patch',1],['sw',1]])),['cable',2],...[].concat(...R_(0,0,8).map(()=>[['patch',1],['sw',1]])),['cable',2],['blank',3],['pwr',3]]
     };
     function drawFront(kind,seed){
-      const W=384,H=1152,EW=128,EH=384,sx=EW/W,sy=EH/H, rnd=rng(seed);
+      const W=768,H=2304,EW=128,EH=384,sx=EW/W,sy=EH/H, K=W/384, rnd=rng(seed);
       const cv=canvas(W,H), c=cv.getContext('2d'), ev=canvas(EW,EH), e=ev.getContext('2d');
-      c.fillStyle='#262d37'; c.fillRect(0,0,W,H); c.fillStyle='#07090d'; c.fillRect(12,14,W-40,H-28);
+      c.fillStyle='#262d37'; c.fillRect(0,0,W,H); c.fillStyle='#07090d'; c.fillRect(12*K,14*K,W-40*K,H-28*K);
       e.fillStyle='#000'; e.fillRect(0,0,EW,EH);
       const glow=(x,y,w,h,col)=>{ e.fillStyle=col; e.fillRect(x*sx,y*sy,Math.max(1,w*sx),Math.max(1,h*sy)); };
-      const led=(x,y,col)=>{ c.fillStyle=col; c.fillRect(x-2,y-2,4,4); glow(x-3,y-3,6,6,col); };
-      const L=20,R=W-36, uH=(H-40)/42; let u=0;
+      const led=(x,y,col)=>{ const gr=c.createRadialGradient(x,y,0,x,y,3.2*K); gr.addColorStop(0,'#fff'); gr.addColorStop(0.35,col); gr.addColorStop(1,'rgba(0,0,0,0)');
+        c.fillStyle=gr; c.fillRect(x-3.2*K,y-3.2*K,6.4*K,6.4*K);
+        const ge=e.createRadialGradient(x*sx,y*sy,0,x*sx,y*sy,4); ge.addColorStop(0,col); ge.addColorStop(1,'rgba(0,0,0,0)'); e.fillStyle=ge; e.fillRect(x*sx-4,y*sy-4,8,8); };
+      const L=20*K,R=W-36*K, uH=(H-40*K)/42; let u=0;
       PLANS[kind].forEach(([t,h])=>{
-        const x=L,y=20+u*uH+1,w=R-L,hh=h*uH-2; u+=h;
+        const x=L,y=20*K+u*uH+K,w=R-L,hh=h*uH-2*K; u+=h;
         if(t==='srv'||t==='srv1'){ c.fillStyle='#96a0ab'; c.fillRect(x,y,w,hh);
           const n=10,bw=(w*0.8)/n;
-          for(let i=0;i<n;i++){ c.fillStyle='#c8cfd7'; c.fillRect(x+5+i*bw,y+3,bw-3,hh-7);
-            c.fillStyle='#5b6470'; c.fillRect(x+6+i*bw,y+hh*0.5,bw-5,2); }
-          c.fillStyle='#4a535e'; c.fillRect(x+w*0.84,y+3,w*0.14,hh-6);
+          for(let i=0;i<n;i++){ c.fillStyle='#c8cfd7'; c.fillRect(x+5*K+i*bw,y+3*K,bw-3*K,hh-7*K);
+            c.fillStyle='#5b6470'; c.fillRect(x+6*K+i*bw,y+hh*0.5,bw-5*K,2*K); }
+          c.fillStyle='#4a535e'; c.fillRect(x+w*0.84,y+3*K,w*0.14,hh-6*K);
           led(x+w*0.82,y+hh*0.35,rnd()<0.93?'#39d98a':'#ffd23f');
         } else if(t==='gpu'){ c.fillStyle='#1a2029'; c.fillRect(x,y,w,hh);
-          for(let i=0;i<4;i++){ c.fillStyle='#2b333e'; c.fillRect(x+6+i*w*0.16,y+3,w*0.14,hh-6); }
-          c.fillStyle='#8fb4d8'; c.fillRect(x+w*0.7,y+hh*0.25,6,hh*0.5); c.fillRect(x+w*0.76,y+hh*0.25,6,hh*0.5);
-          c.fillStyle='#2fd2f5'; c.fillRect(x+w*0.82,y+hh*0.4,w*0.14,3); glow(x+w*0.82,y+hh*0.3,w*0.14,6,'#2fd2f5');
+          for(let i=0;i<4;i++){ c.fillStyle='#2b333e'; c.fillRect(x+6*K+i*w*0.16,y+3*K,w*0.14,hh-6*K); }
+          c.fillStyle='#8fb4d8'; c.fillRect(x+w*0.7,y+hh*0.25,6*K,hh*0.5); c.fillRect(x+w*0.76,y+hh*0.25,6*K,hh*0.5);
+          c.fillStyle='#2fd2f5'; c.fillRect(x+w*0.82,y+hh*0.4,w*0.14,3*K); glow(x+w*0.82,y+hh*0.3,w*0.14,6,'#2fd2f5');
         } else if(t==='nvs'){ c.fillStyle='#10151c'; c.fillRect(x,y,w,hh);
-          for(let i=0;i<18;i++){ c.fillStyle='#05070a'; c.fillRect(x+6+i*(w-12)/18,y+4,(w-12)/18-3,hh-8);
-            if(rnd()<0.8) led(x+8+i*(w-12)/18,y+hh-5,'#39d98a'); }
+          for(let i=0;i<18;i++){ c.fillStyle='#05070a'; c.fillRect(x+6*K+i*(w-12*K)/18,y+4*K,(w-12*K)/18-3*K,hh-8*K);
+            if(rnd()<0.8) led(x+8*K+i*(w-12*K)/18,y+hh-5*K,'#39d98a'); }
         } else if(t==='sw'){ c.fillStyle='#1b222c'; c.fillRect(x,y,w,hh);
-          for(let i=0;i<24;i++){ c.fillStyle='#05070a'; c.fillRect(x+6+i*(w*0.86)/24,y+4,(w*0.86)/24-3,hh-8);
-            if(rnd()<0.7) led(x+8+i*(w*0.86)/24,y+4,'#39d98a'); }
+          for(let i=0;i<24;i++){ c.fillStyle='#05070a'; c.fillRect(x+6*K+i*(w*0.86)/24,y+4*K,(w*0.86)/24-3*K,hh-8*K);
+            if(rnd()<0.7) led(x+8*K+i*(w*0.86)/24,y+4*K,'#39d98a'); }
         } else if(t==='patch'){ c.fillStyle='#2a323d'; c.fillRect(x,y,w,hh);
-          for(let i=0;i<24;i++){ c.fillStyle=rnd()<0.5?'#2e7cf6':'#f2c230'; c.fillRect(x+6+i*(w*0.9)/24,y+hh*0.3,(w*0.9)/24-4,hh*0.5); }
+          for(let i=0;i<24;i++){ c.fillStyle=rnd()<0.5?'#2e7cf6':'#f2c230'; c.fillRect(x+6*K+i*(w*0.9)/24,y+hh*0.3,(w*0.9)/24-4*K,hh*0.5); }
         } else if(t==='stor'){ c.fillStyle='#7f8994'; c.fillRect(x,y,w,hh);
-          for(let i=0;i<12;i++){ c.fillStyle='#b8c0c9'; c.fillRect(x+5+i*(w-10)/12,y+4,(w-10)/12-3,hh-8);
-            c.fillStyle='#48515c'; c.fillRect(x+6+i*(w-10)/12,y+hh*0.1,(w-10)/12-5,2);
-            led(x+9+i*(w-10)/12,y+hh-9,'#b06bff'); }
+          for(let i=0;i<12;i++){ c.fillStyle='#b8c0c9'; c.fillRect(x+5*K+i*(w-10*K)/12,y+4*K,(w-10*K)/12-3*K,hh-8*K);
+            c.fillStyle='#48515c'; c.fillRect(x+6*K+i*(w-10*K)/12,y+hh*0.1,(w-10*K)/12-5*K,2*K);
+            led(x+9*K+i*(w-10*K)/12,y+hh-9*K,'#b06bff'); }
         } else if(t==='pwr'||t==='ups'){ c.fillStyle=t==='ups'?'#3a424d':'#5c6672'; c.fillRect(x,y,w,hh);
-          for(let i=0;i<6;i++){ c.fillStyle='#2f3741'; c.fillRect(x+6+i*w*0.13,y+4,w*0.11,hh-8); led(x+10+i*w*0.13,y+8,i%3?'#39d98a':'#ff8c32'); }
+          for(let i=0;i<6;i++){ c.fillStyle='#2f3741'; c.fillRect(x+6*K+i*w*0.13,y+4*K,w*0.11,hh-8*K); led(x+10*K+i*w*0.13,y+8*K,i%3?'#39d98a':'#ff8c32'); }
           if(t==='ups'){ c.fillStyle='#36c2ff'; c.fillRect(x+w*0.82,y+hh*0.25,w*0.12,hh*0.3); glow(x+w*0.82,y+hh*0.25,w*0.12,hh*0.3,'#1f7aa0'); }
         } else if(t==='cable'){ c.fillStyle='#0d1117'; c.fillRect(x,y,w,hh);
-          for(let i=0;i<14;i++){ c.fillStyle=['#2e7cf6','#f2c230','#1c2330'][i%3]; c.fillRect(x+8+i*(w-16)/14,y+2,3,hh-4); }
+          for(let i=0;i<14;i++){ c.fillStyle=['#2e7cf6','#f2c230','#1c2330'][i%3]; c.fillRect(x+8*K+i*(w-16*K)/14,y+2*K,3*K,hh-4*K); }
         } else { c.fillStyle='#1c232d'; c.fillRect(x,y,w,hh);
-          c.fillStyle='#10151c'; for(let k=1;k<4;k++) c.fillRect(x+w*0.06,y+hh*k/4-1,w*0.88,2); }
+          c.fillStyle='#10151c'; for(let k=1;k<4;k++) c.fillRect(x+w*0.06,y+hh*k/4-K,w*0.88,2*K); }
       });
       // perforated door: a fine dot grid over the whole face, then the handle
-      c.fillStyle='rgba(0,0,0,.26)';
-      for(let yy=16;yy<H-14;yy+=6) for(let xx=14+((yy/6)%2)*3;xx<W-28;xx+=6) c.fillRect(xx,yy,2,2);
-      c.fillStyle='#aab4bf'; c.fillRect(W-22,H*0.43,8,H*0.12); c.fillStyle='#39414b'; c.fillRect(W-20,H*0.47,4,10);
+      c.fillStyle='rgba(0,0,0,.26)'; const ps=6*K;
+      for(let yy=16*K,r=0;yy<H-14*K;yy+=ps,r++) for(let xx=14*K+(r%2)*ps/2;xx<W-28*K;xx+=ps) c.fillRect(xx,yy,2*K,2*K);
+      c.fillStyle='#aab4bf'; c.fillRect(W-22*K,H*0.43,8*K,H*0.12); c.fillStyle='#39414b'; c.fillRect(W-20*K,H*0.47,4*K,10*K);
       return {map:tex(cv), emi:tex(ev)};
     }
     function drawRear(){
-      const W=256,H=768,EW=64,EH=192,sx=EW/W,sy=EH/H;
+      const W=512,H=1536,EW=64,EH=192,sx=EW/W,sy=EH/H, K=W/256;
       const cv=canvas(W,H), c=cv.getContext('2d'), ev=canvas(EW,EH), e=ev.getContext('2d');
-      c.fillStyle='#161c24'; c.fillRect(0,0,W,H); c.fillStyle='#0b0f14'; c.fillRect(8,10,W-16,H-20);
+      c.fillStyle='#161c24'; c.fillRect(0,0,W,H); c.fillStyle='#0b0f14'; c.fillRect(8*K,10*K,W-16*K,H-20*K);
       e.fillStyle='#000'; e.fillRect(0,0,EW,EH);
-      const uH=(H-20)/42;
-      for(let u=0;u<42;u+=2){ const y=10+u*uH;
-        for(let i=0;i<4;i++){ c.strokeStyle='#3a434f'; c.lineWidth=2; c.beginPath(); c.arc(60+i*28,y+uH,uH*0.8,0,7); c.stroke(); }
-        c.fillStyle='#2b333e'; c.fillRect(W-86,y+3,26,uH*2-6); c.fillRect(W-56,y+3,26,uH*2-6);
-        if(u%6===0){ e.fillStyle='#39d98a'; e.fillRect((W-80)*sx,(y+6)*sy,2,2); }
+      const uH=(H-20*K)/42;
+      for(let u=0;u<42;u+=2){ const y=10*K+u*uH;
+        for(let i=0;i<4;i++){ c.strokeStyle='#3a434f'; c.lineWidth=2*K; c.beginPath(); c.arc((60+i*28)*K,y+uH,uH*0.8,0,7); c.stroke(); }
+        c.fillStyle='#2b333e'; c.fillRect(W-86*K,y+3*K,26*K,uH*2-6*K); c.fillRect(W-56*K,y+3*K,26*K,uH*2-6*K);
+        if(u%6===0){ e.fillStyle='#39d98a'; e.fillRect((W-80*K)*sx,(y+6*K)*sy,2,2); }
       }
       // A-feed (amber) and B-feed (cyan) power cords + network bundle, like the trainer rack's rPDUs
-      c.fillStyle='#ff8c32'; c.fillRect(14,10,7,H-20); c.fillStyle='#36c2ff'; c.fillRect(W-22,10,7,H-20);
-      c.fillStyle='#2e7cf6'; c.fillRect(28,10,5,H-20); c.fillStyle='#f2c230'; c.fillRect(35,10,4,H-20);
-      e.fillStyle='#5a2c0c'; e.fillRect(14*sx,0,2,EH); e.fillStyle='#0f4560'; e.fillRect((W-22)*sx,0,2,EH);
+      c.fillStyle='#ff8c32'; c.fillRect(14*K,10*K,7*K,H-20*K); c.fillStyle='#36c2ff'; c.fillRect(W-22*K,10*K,7*K,H-20*K);
+      c.fillStyle='#2e7cf6'; c.fillRect(28*K,10*K,5*K,H-20*K); c.fillStyle='#f2c230'; c.fillRect(35*K,10*K,4*K,H-20*K);
+      e.fillStyle='#5a2c0c'; e.fillRect(14*K*sx,0,2,EH); e.fillStyle='#0f4560'; e.fillRect((W-22*K)*sx,0,2,EH);
       return {map:tex(cv), emi:tex(ev)};
     }
     function drawTop(){
-      const cv=canvas(256,320), c=cv.getContext('2d');
+      const K=2, cv=canvas(256*K,320*K), c=cv.getContext('2d'); c.scale(K,K);
       c.fillStyle='#8b95a0'; c.fillRect(0,0,256,320); c.fillStyle='#707a86'; c.fillRect(0,0,256,8); c.fillRect(0,312,256,8);
       c.fillRect(0,0,8,320); c.fillRect(248,0,8,320);
       c.fillStyle='#1b2129'; [[40,40],[150,40],[40,236],[150,236]].forEach(([x,y])=>c.fillRect(x,y,66,40));
@@ -2180,15 +2182,15 @@ window.__PROVENANCE = Object.freeze({
       return tex(cv);
     }
     function drawTile(perf){
-      const cv=canvas(128,128), c=cv.getContext('2d');
+      const cv=canvas(256,256), c=cv.getContext('2d'); c.scale(2,2);
       c.fillStyle=perf?'#1c2838':'#121923'; c.fillRect(0,0,128,128);
       c.fillStyle=perf?'#27374b':'#1c2632'; c.fillRect(0,0,128,3); c.fillRect(0,0,3,128);
-      if(perf){ c.fillStyle='#0a0f16'; for(let y=14;y<120;y+=9) for(let x=14;x<120;x+=9){ c.beginPath(); c.arc(x,y,2.4,0,7); c.fill(); } }
+      if(perf){ c.fillStyle='#0a0f16'; for(let y=6;y<124;y+=4.5) for(let x=6;x<124;x+=4.5){ c.beginPath(); c.arc(x,y,1.1,0,7); c.fill(); } }   // ≈6 mm holes, 10 mm pitch
       else { c.fillStyle='#18212c'; [[10,10],[118,10],[10,118],[118,118]].forEach(([x,y])=>c.fillRect(x-2,y-2,4,4)); }
       return tex(cv,true);
     }
     function drawLouver(){
-      const cv=canvas(128,256), c=cv.getContext('2d');
+      const cv=canvas(256,512), c=cv.getContext('2d'); c.scale(2,2);
       c.fillStyle='#4a535f'; c.fillRect(0,0,128,256);
       for(let y=10;y<246;y+=8){ c.fillStyle='#2a313b'; c.fillRect(8,y,112,4); }
       return tex(cv);
@@ -2229,7 +2231,7 @@ window.__PROVENANCE = Object.freeze({
     const roofMat  =M(fadeOver,{color:0x0e1620,roughness:.2,metalness:.6,transparent:true,opacity:.62,emissive:0x2a1206,emissiveIntensity:.9});
     const floorTex=drawTile(false); floorTex.repeat.set(560/5.4,560/5.4);
     const floorMat =M(fadeFloor,{map:floorTex,roughness:.92,metalness:.05});
-    const perfMat  =M(fadeFloor,Object.assign({map:drawTile(true),roughness:.85,metalness:.05,emissive:0x0b2a44,emissiveIntensity:.55},PO));
+    const perfMat  =M(fadeFloor,Object.assign({map:drawTile(true),roughness:.85,metalness:.05,emissive:0x0b2a44,emissiveIntensity:.35},PO));
     const crahMat  =M(fadeLate,{color:0x3a434f,roughness:.55,metalness:.5});
     const louverMat=M(fadeLate,Object.assign({map:drawLouver(),roughness:.6,metalness:.4},PO));
     const pduMat   =M(fadeLate,{color:0x2b333e,roughness:.55,metalness:.5});
@@ -2554,8 +2556,9 @@ window.__PROVENANCE = Object.freeze({
   const cam={theta:0.7,phi:1.12,radius:31,tx:0,ty:0,tz:0};
   const goal={theta:0.7,phi:1.12,radius:31,tx:0,ty:0,tz:0};
   const target=new THREE.Vector3();
+  let camK=0.10;                          // orbit ease per frame; slower while the ride hands the tray over
   function applyCamera(){
-    const k=REDUCED?1:0.10;
+    const k=REDUCED?1:camK;
     cam.theta+=(goal.theta-cam.theta)*k;
     cam.phi  +=(goal.phi-cam.phi)*k;
     cam.radius+=(goal.radius-cam.radius)*k;
@@ -2644,7 +2647,7 @@ window.__PROVENANCE = Object.freeze({
   function ridePose(p,outPos,outTgt){
     let i=0; while(i<RIDE_KEYS.length-2 && p>RIDE_KEYS[i+1].p) i++;
     const a=RIDE_KEYS[i], b=RIDE_KEYS[i+1], lt=clamp01((p-a.p)/(b.p-a.p));
-    const tt=0.45*lt+0.55*smooth(lt);      // ease into each beat without stopping dead
+    const tt=b.p>=1? 0.45*lt+0.55*smooth(lt) : 0.8*lt+0.2*smooth(lt);   // keep moving through the beats; settle only into the hand-over
     const u=(i+tt)/(RIDE_KEYS.length-1);
     RIDE_POS.getPoint(u,outPos); RIDE_TGT.getPoint(u,outTgt);
     const mix=(x,y)=>x+(y-x)*tt;
@@ -2667,13 +2670,13 @@ window.__PROVENANCE = Object.freeze({
   }
   function stepChapter(dir){ auto.on=false; pT=nextStop(pT,dir); }
   function cancelAutoOpen(){ if(autoOpenTimer){ clearTimeout(autoOpenTimer); autoOpenTimer=0; } }
-  function endCarry(){ if(!document.body.classList.contains('ride-carry')) return;
+  function endCarry(){ camK=0.10; if(!document.body.classList.contains('ride-carry')) return;
     document.body.classList.remove('ride-carry'); if(!introOn&&!DIVE.on()) introCap.classList.remove('on'); }
   function startRide(){
     cancelAutoOpen(); auto.on=true; auto.hold=REDUCED?2.8:0;
     auto.i=STOPS.findIndex(s=>s>pT+0.004); if(auto.i<0) auto.i=STOPS.length-1;
   }
-  const AUTO_SPEED=0.085, AUTO_HOLD=1.35;
+  const AUTO_SPEED=0.085, AUTO_HOLD=1.35, AUTO_CREEP=0.12;
   function autoStep(dt){
     if(!auto.on||overlayOpen()) return;  // a hands-free ride waits while a dialog is open
     const stop=STOPS[auto.i];
@@ -2682,17 +2685,18 @@ window.__PROVENANCE = Object.freeze({
       return;
     }
     if(pT<stop){ const slow=(pT>0.36&&pT<0.47)?0.6:(pT>0.52?1.25:1); pT=Math.min(stop,pT+AUTO_SPEED*slow*dt); auto.hold=0; }
-    else if(auto.i<STOPS.length-1 && Math.abs(pC-stop)<0.012){ auto.hold+=dt;
+    else if(auto.i<STOPS.length-1){                 // at a chapter: dwell for the caption, creeping on so the flight never freezes
+      if(pC>=stop-0.012){ auto.hold+=dt; pT=Math.min(STOPS[auto.i+1],pT+AUTO_SPEED*AUTO_CREEP*dt); }
       if(auto.hold>(stop>=0.5?0.9:AUTO_HOLD)){ auto.hold=0; auto.i++; } }
   }
 
-  function enterHall(dest){
+  function enterHall(dest,instant){        // instant: the hall is already at rest at dest on the first frame (the finale's dissolve)
     cancelAutoOpen(); hideRideNext(); DIVE.cancelPending(); if(DIVE.on()) DIVE.exit();
     if(introOn){ auto.on=false; pT=clamp01(dest); return; }
     if(mode!=='all') setMode(mode);                     // back to the full view (toggle off power/airflow)
     if(active || curReport!==RACKREPORT) closeCardFlow();
     blend.pos.copy(camera.position); blend.tgt.copy(target); blend.fov=camera.fov; blend.t=REDUCED?1:0;
-    introOn=true; auto.on=false; endHold=0; pC=1; pT=clamp01(dest); if(REDUCED) pC=pT;
+    introOn=true; auto.on=false; endHold=0; pC=1; pT=clamp01(dest); if(REDUCED||instant){ pC=pT; blend.t=1; }
     rotPref=autoRotate;
     HALL.group.visible=true; dragging=false; setRotate(false);
     ident.style.opacity=0; renderer.domElement.style.cursor='';
@@ -2724,7 +2728,7 @@ window.__PROVENANCE = Object.freeze({
           if(overlayOpen()){ autoOpenTimer=setTimeout(go,500); return; }   // wait for the dialog to close
           const gpu=components.find(c=>c.userData.def.cat==='gpu'); if(gpu&&!active&&!introOn){ DIVE.enter({auto:true}); } else endCarry(); };
         try{ DIVE.prebuild(); }catch(e){}                  // absorbed by the parked view before the pull-out starts
-        autoOpenTimer=setTimeout(go,1100);
+        camK=0.045; autoOpenTimer=setTimeout(go,700);
         // keep it one continuous shot: no chrome, a caption for the "open the server" beat
         document.body.classList.add('ride-carry'); introCap.classList.add('on'); curChapter=-1;
         capT.textContent='Open the server'; capS.textContent='The AI GPU node slides out of '+HALL.heroId+' and opens up'; capN.textContent='';
@@ -2913,72 +2917,89 @@ window.__PROVENANCE = Object.freeze({
       const g=new THREE.Group();
       const sub=new THREE.Mesh(UBOX,SM(0x16211d,{roughness:.75,metalness:.15})); sub.scale.set(11,0.3,8.4); sub.position.y=-0.15; g.add(sub);
       const ip=new THREE.Mesh(UBOX,SM(0x5d666f,{roughness:.3,metalness:.75})); ip.scale.set(8.2,0.12,4.4); ip.position.y=0.06; g.add(ip);
-      // die tops foreshadow the floorplan the next level flies into
-      const dieTop=tex(256,320,(c,w,h)=>{ c.fillStyle='#161b22'; c.fillRect(0,0,w,h);
-        c.fillStyle='#2a3139'; c.fillRect(w*0.44,10,w*0.12,h-20);
-        for(let s=0;s<2;s++) for(let r=0;r<2;r++) for(let k=0;k<2;k++){ const x=(s?w*0.58:w*0.06)+k*w*0.18, y=12+r*(h-24)/2;
-          c.fillStyle='#232a31'; c.fillRect(x,y,w*0.16,(h-24)/2-6);
-          for(let i=0;i<5;i++){ c.fillStyle='rgba(217,179,74,.35)'; c.fillRect(x+4,y+6+i*((h-24)/2-12)/5,w*0.16-8,5); } }
-        c.fillStyle='rgba(217,120,46,.6)'; c.fillRect(2,10,6,h-20); });
+      // die top = the next level's floorplan (same placement numbers, same colours), so the dissolve into it is seamless.
+      // On the box's top face texture u runs along world z and v along world x; the die is 26 × 33 mm.
+      const dieTop=tex(1024,1280,(c,w,h)=>{
+        const X=(xw,zw)=>[(zw+16.5)/33*w,(xw+13)/26*h], R=(xw,zw,sx,sz,col)=>{ const [u,v]=X(xw-sx/2,zw-sz/2); c.fillStyle=col; c.fillRect(u,v,sz/33*w,sx/26*h); };
+        c.fillStyle='#1b2129'; c.fillRect(0,0,w,h);
+        R(-12.7,0,0.25,32.6,'#6b747e'); R(12.7,0,0.25,32.6,'#6b747e'); R(0,-16.3,25.6,0.25,'#6b747e'); R(0,16.3,25.6,0.25,'#6b747e');   // seal ring
+        for(let i=0;i<6;i++){ R(-8.5+i*3.4,-15.6,3.0,1.0,'#9aa4ae'); R(-8.5+i*3.4,15.6,3.0,1.0,'#9aa4ae'); }                    // NVLink · PCIe PHY
+        for(let i=0;i<4;i++) R(-11.5,-12.3+i*8.2,1.5,4.9,'#d9782e');                                                            // HBM interface
+        R(11.7,0,0.9,29,'#2fd2f5');                                                                                              // die-to-die link
+        for(let r=0;r<24;r++) for(let k=0;k<2;k++) R(k?0.9:-0.9,-13.9+r*1.21,1.62,1.14,'#b6bfc9');                              // L2 cache
+        [-1,1].forEach(side=>{ for(let col=0;col<2;col++) for(let row=0;row<2;row++){ const gx=side*(2.3+2+col*4.3), gz=-7.2+row*14.4;
+          R(gx,gz,4.0,14.25,'#2a323b');
+          for(let sc=0;sc<2;sc++) for(let sr=0;sr<5;sr++){ const sx=gx-1.0+sc*2.0, sz=gz-5.6+sr*2.8;
+            R(sx,sz,1.84,2.62,'#39424c'); R(sx,sz+1.12,1.64,0.28,'#d9b34a'); R(sx,sz-1.2,1.64,0.13,'#9aa4ae');
+            for(let p=0;p<4;p++){ const px=sx-0.45+(p%2)*0.9, pz=sz-0.72+(p>>1)*1.1;
+              R(px,pz-0.39,0.74,0.22,'#b58cc0'); R(px,pz-0.05,0.74,0.30,'#b8d99a'); R(px+0.16,pz+0.33,0.46,0.34,'#7d9450'); R(px-0.24,pz+0.33,0.2,0.32,'#d9824a'); } } } }); });
       const dieSide=SM(0x0d1117,{roughness:.25,metalness:.8});
       const dieMat=[dieSide,dieSide,SM(0xffffff,{map:dieTop,roughness:.22,metalness:.55}),dieSide,dieSide,dieSide];
       [-1,1].forEach(s=>{ const d=new THREE.Mesh(UBOX,dieMat); d.scale.set(2.6,0.08,3.3); d.position.set(s*1.36,0.16,0);
         if(s>0) d.rotation.y=Math.PI; g.add(d); });
       const seam=new THREE.Mesh(UBOX,SM(0x2fd2f5,{emissive:0x2fd2f5,emissiveIntensity:1.2})); seam.scale.set(0.06,0.05,3.3); seam.position.y=0.16; g.add(seam);
       // 8 × HBM3e stacks: four beside each die, layered sides
-      const hbmSide=tex(64,32,(c,w,h)=>{ for(let i=0;i<12;i++){ c.fillStyle=i%2?'#3a424c':'#8d97a2'; c.fillRect(0,i*h/12,w,h/12); } });
+      const hbmSide=tex(256,128,(c,w,h)=>{ for(let i=0;i<9;i++){ c.fillStyle=i===8?'#5b636c':'#8d97a2'; c.fillRect(0,i*h/9,w,h/9);   // 8 DRAM dies on a base die
+        c.fillStyle='#3a424c'; c.fillRect(0,i*h/9,w,Math.max(1,h/40)); } });
       const hbmSideM=SM(0xffffff,{map:hbmSide,roughness:.4,metalness:.5}), hbmTopM=SM(0xc3ccd6,{roughness:.3,metalness:.3});
       const hbmMat=[hbmSideM,hbmSideM,hbmTopM,hbmSideM,hbmSideM,hbmSideM];
-      [-1,1].forEach(s=>{ for(let i=0;i<4;i++){ const hb=new THREE.Mesh(UBOX,hbmMat); hb.scale.set(1.08,0.26,0.96);
-        hb.position.set(s*3.32,0.25,-1.53+i*1.02); g.add(hb); } });
+      [-1,1].forEach(s=>{ for(let i=0;i<4;i++){ const hb=new THREE.Mesh(UBOX,hbmMat); hb.scale.set(1.08,0.08,0.96);   // an HBM3e stack is about as tall as the die
+        hb.position.set(s*3.32,0.16,-1.53+i*1.02); g.add(hb); } });
       // decoupling capacitors around the package edge
       const caps=[], r=rng(7);
       for(let i=0;i<46;i++){ const side=i%4, u=-0.9+1.8*r();
         const x=side<2?u*5.1:(side===2?-5.05:5.05), z=side<2?(side?3.7:-3.7):u*3.7;
         caps.push({x,y:0.05,z,sx:side<2?0.32:0.16,sy:0.1,sz:side<2?0.16:0.32,c:r()<0.5?0xb8a27a:0x8f98a3}); }
       inst(UBOX,SM(0xffffff,{roughness:.5,metalness:.3}),caps,g);
-      // copper cold plate with coolant tubes — lifts off to reveal the silicon
+      // sealed direct-to-chip cold plate (nickel-plated, as in the tray one level up) with coolant tubes — lifts off to reveal the silicon
       const plate=new THREE.Group(); g.add(plate);
-      const cu=SM(0xd08a4e,{roughness:.38,metalness:.4,transparent:true}), tube=SM(0x8fb4d8,{roughness:.25,metalness:.8,transparent:true});
+      const cu=SM(0x9fb9d6,{roughness:.22,metalness:.42,transparent:true}), tube=SM(0x8fb4d8,{roughness:.25,metalness:.8,transparent:true});
+      const strip=SM(0x36c2ff,{emissive:0x36c2ff,emissiveIntensity:.7,transparent:true});
       const pb=new THREE.Mesh(UBOX,cu); pb.scale.set(8.4,0.7,4.6); plate.add(pb);
-      const fins=[]; for(let i=0;i<22;i++) fins.push({x:-3.9+i*0.37,y:0.52,z:0,sx:0.12,sy:0.34,sz:4.2});
-      const finIM=inst(UBOX,cu,fins,plate);
+      [-1.2,0,1.2].forEach(z=>{ const st=new THREE.Mesh(UBOX,strip); st.scale.set(8.0,0.03,0.08); st.position.set(0,0.36,z); plate.add(st); });
       [-1,1].forEach(s=>{ const t=new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.34,3.2,18),tube); t.rotation.x=Math.PI/2;
         t.position.set(s*2.6,0.7,-3.6); plate.add(t); });
-      plate.position.y=0.78;
+      plate.position.y=0.57;                                        // sits on the dies and the HBM through a thin interface layer
       let lastK=-1;
       return { key:'package', mpu:0.01, bg:0x0a0e14, fog:[30,90], group:g,
-        keys:[{t:0,pos:[-7,17,16],tgt:[0,0.2,0],fov:45},{t:0.45,pos:[-6,9.5,9],tgt:[-0.3,0.2,0],fov:45},
-              {t:1,pos:[-2.2,2.9,1.7],tgt:[-1.36,0.2,0],fov:45}],
+        keys:[{t:0,pos:[9.3,15.8,16.1],tgt:[0,0.2,0],fov:45},           // = where the trainer scene lands (az +30°, el 40°, 20 cm)
+              {t:0.45,pos:[-1.2,9.6,10.4],tgt:[-0.3,0.2,0],fov:45},        // orbits round while the cold plate lifts
+              {t:1,pos:[-2.36,3.2,1.8],tgt:[-1.36,0.2,0],fov:45}],           // = the die level's opening shot (3.0 cm, el 55.5°, az −29°)
         caps:[{t:0,title:'One Blackwell GPU',sub:'Two reticle-sized dies work as one GPU · 208 billion transistors · 8 HBM3e stacks = 192 GB · TSMC 4NP'}],
-        tags:[{text:'Cold plate',sub:'direct-to-chip liquid',pos:[2.6,1.4,-1.8],from:0.02,to:0.2,cls:'o'},
-              {text:'HBM3e stack',sub:'memory, 12-high',pos:[-3.32,0.45,1.53],from:0.34,to:0.8,cls:'g'},
-              {text:'GPU die',sub:'1 of 2',pos:[-1.36,0.25,-1.2],from:0.32,to:0.84,cls:'y'},
-              {text:'Die-to-die link',sub:'10 TB/s',pos:[0,0.22,1.4],from:0.36,to:0.8,cls:'c'}],
-        update(t){ const k=Math.max(0,Math.min(1,(t-0.04)/0.34)); if(k===lastK) return; lastK=k;
-          const e=k*k*(3-2*k); plate.position.set(-e*1.2,0.78+e*9,-e*2.5); plate.rotation.set(-e*0.5,0,e*0.25);
-          cu.opacity=tube.opacity=1-e; cu.depthWrite=tube.depthWrite=e<0.6; plate.visible=e<1; } };
+        tags:[{text:'Cold plate',sub:'direct-to-chip liquid',pos:[2.6,1.2,-1.8],from:0.02,to:0.2,cls:'o'},
+              {text:'HBM3e stack',sub:'24 GB · 8-high',pos:[-3.32,0.3,-1.53],from:0.42,to:0.8,cls:'g'},
+              {text:'GPU die',sub:'1 of 2',pos:[-1.36,0.25,-1.2],from:0.42,to:0.84,cls:'y'},
+              {text:'Die-to-die link',sub:'10 TB/s',pos:[0,0.22,1.4],from:0.44,to:0.8,cls:'c'}],
+        update(t){ const k=Math.max(0,Math.min(1,(t-0.22)/0.23)); if(k===lastK) return; lastK=k;   // the plate lifts after the caption, in one move
+          const e=k*k*(3-2*k); plate.position.set(-e*1.2,0.57+e*9,-e*2.5); plate.rotation.set(-e*0.5,0,e*0.25);
+          cu.opacity=tube.opacity=strip.opacity=1-e; cu.depthWrite=tube.depthWrite=strip.depthWrite=e<0.6; plate.visible=e<1; } };
     })());
 
     /* ---- 2 · one die → the L2 corridor (1 unit = 1 mm) ------------------- */
     S.push((function(){
       const g=new THREE.Group();
-      const base=new THREE.Mesh(UBOX,SM(0x1b2129,{roughness:.55,metalness:.45})); base.scale.set(27,0.5,34); base.position.y=-0.25; g.add(base);
-      const ring=[]; [[0,-16.8,26.6,0.25],[0,16.8,26.6,0.25]].forEach(([x,z,sx,sz])=>ring.push({x,y:0.06,z,sx,sy:0.12,sz}));
-      [[-13.2,0],[13.2,0]].forEach(([x,z])=>ring.push({x,y:0.06,z,sx:0.25,sy:0.12,sz:33.6}));
+      const base=new THREE.Mesh(UBOX,SM(0x1b2129,{roughness:.55,metalness:.45})); base.scale.set(26,0.5,33); base.position.y=-0.25; g.add(base);   // reticle-sized: 26 × 33 mm
+      const ring=[]; [[0,-16.3,25.6,0.25],[0,16.3,25.6,0.25]].forEach(([x,z,sx,sz])=>ring.push({x,y:0.06,z,sx,sy:0.12,sz}));
+      [[-12.7,0],[12.7,0]].forEach(([x,z])=>ring.push({x,y:0.06,z,sx:0.25,sy:0.12,sz:32.6}));
       inst(UBOX,SM(0x6b747e,{roughness:.3,metalness:.8}),ring,g);
-      // I/O bumps along the edges
-      const bumps=[]; for(let i=0;i<14;i++){ bumps.push({x:-10.4+i*1.6,y:0.18,z:-15.9,sx:0.8,sy:0.36,sz:0.5}); bumps.push({x:-10.4+i*1.6,y:0.18,z:15.9,sx:0.8,sy:0.36,sz:0.5}); }
-      inst(UBOX,SM(0x9aa4ae,{roughness:.35,metalness:.7}),bumps,g);
-      // HBM PHY + memory controllers (orange) · die-to-die interface (cyan)
-      const phy=[]; for(let i=0;i<6;i++) phy.push({x:-11.9,y:0.2,z:-13.1+i*5.24,sx:1.5,sy:0.4,sz:4.9});
+      // NVLink · PCIe PHY along the two ends of the die
+      const io=[]; for(let i=0;i<6;i++){ io.push({x:-8.5+i*3.4,y:0.15,z:-15.6,sx:3.0,sy:0.3,sz:1.0}); io.push({x:-8.5+i*3.4,y:0.15,z:15.6,sx:3.0,sy:0.3,sz:1.0}); }
+      inst(UBOX,SM(0x9aa4ae,{roughness:.35,metalness:.4}),io,g);
+      // HBM PHY + memory controllers (orange), one per stack on this side · die-to-die interface (cyan) on the inner edge
+      const phy=[]; for(let i=0;i<4;i++) phy.push({x:-11.5,y:0.2,z:-12.3+i*8.2,sx:1.5,sy:0.4,sz:4.9});
       inst(UBOX,SM(0xd9782e,{roughness:.45,metalness:.3,emissive:0x3a1a06,emissiveIntensity:.8}),phy,g);
-      const d2d=new THREE.Mesh(UBOX,SM(0x2fd2f5,{emissive:0x2fd2f5,emissiveIntensity:.8,roughness:.3})); d2d.scale.set(0.9,0.3,29); d2d.position.set(12.1,0.15,0); g.add(d2d);
-      // L2 cache: two columns of tiles with a dark seam — the corridor
+      const d2d=new THREE.Mesh(UBOX,SM(0x2fd2f5,{emissive:0x2fd2f5,emissiveIntensity:.8,roughness:.3})); d2d.scale.set(0.9,0.3,29); d2d.position.set(11.7,0.15,0); g.add(d2d);
+      // L2 cache: two columns of tiles with a dark seam — the corridor. Each tile carries its own macro grid, so the
+      // low corridor shot reads as rows of cache tiles rather than a white plane
+      const l2Tex=tex(512,384,(c,w,h)=>{ c.fillStyle='#d6dce3'; c.fillRect(0,0,w,h);
+        for(let j=0;j<8;j++) for(let i=0;i<12;i++){ c.fillStyle=(i+j)&1?'#cfd6dd':'#dde2e8'; c.fillRect(i*w/12+2,j*h/8+2,w/12-4,h/8-4);
+          c.fillStyle='rgba(18,26,34,.18)'; for(let k=6;k<h/8-6;k+=4) c.fillRect(i*w/12+5,j*h/8+k,w/12-10,1); }
+        c.fillStyle='rgba(18,26,34,.6)'; for(let i=0;i<=12;i++) c.fillRect(i*w/12-1,0,3,h); for(let j=0;j<=8;j++) c.fillRect(0,j*h/8-1,w,3); });
       const l2=[]; for(let r=0;r<24;r++) for(let c=0;c<2;c++) l2.push({x:c?0.9:-0.9,y:0.15,z:-13.9+r*1.21,sx:1.62,sy:0.3,sz:1.14});
-      inst(UBOX,SM(0xd3d9e0,{roughness:.35,metalness:.2,emissive:0x1d2630,emissiveIntensity:.6}),l2,g);
-      // eight GPCs (two banks of four), ten SMs each — same colour language as the SM level
-      const smBase=[],gold=[],green=[],rf=[],l1=[],gpc=[];
+      inst(UBOX,SM(0xb6bfc9,{map:l2Tex,roughness:.5,metalness:.2,emissive:0x0c1218,emissiveIntensity:.6}),l2,g);
+      // eight GPCs (two banks of four), ten SMs each — the SM level's block order and colours (register file, cores, Tensor Core + LD/ST)
+      const warm=(hex,m)=>{ const c=new THREE.Color(hex), k=0.97*(1-m); c.setRGB(Math.min(1,c.r/(1.37*k)),Math.min(1,c.g/(1.6*k)),Math.min(1,c.b/(1.83*k))); return c; };
+      const smBase=[],gold=[],green=[],rf=[],l1=[],gpc=[],ldst=[],tx=[];
       const GPC_W=4.0, GPC_D=14.25;
       [-1,1].forEach(side=>{ for(let col=0;col<2;col++) for(let row=0;row<2;row++){
         const gx=side*(2.3+GPC_W/2+col*(GPC_W+0.3)), gz=-7.2+row*14.4;
@@ -2987,15 +3008,19 @@ window.__PROVENANCE = Object.freeze({
           const sx=gx-1.0+sc*2.0, sz=gz-5.6+sr*2.8;
           smBase.push({x:sx,y:0.17,z:sz,sx:1.84,sy:0.16,sz:2.62});
           for(let p=0;p<4;p++){ const px=sx-0.45+(p%2)*0.9, pz=sz-0.72+(p>>1)*1.1;
-            gold.push({x:px,y:0.33,z:pz-0.3,sx:0.74,sy:0.16,sz:0.26});
-            green.push({x:px,y:0.29,z:pz+0.1,sx:0.74,sy:0.08,sz:0.42});
-            rf.push({x:px,y:0.3,z:pz+0.42,sx:0.74,sy:0.1,sz:0.16}); }
-          l1.push({x:sx,y:0.3,z:sz+1.12,sx:1.64,sy:0.12,sz:0.28}); } } });
+            rf.push({x:px,y:0.3,z:pz-0.39,sx:0.74,sy:0.1,sz:0.22});
+            green.push({x:px,y:0.29,z:pz-0.05,sx:0.74,sy:0.08,sz:0.30});
+            gold.push({x:px+0.16,y:0.33,z:pz+0.33,sx:0.46,sy:0.16,sz:0.34});
+            ldst.push({x:px-0.24,y:0.3,z:pz+0.33,sx:0.2,sy:0.1,sz:0.32}); }
+          l1.push({x:sx,y:0.3,z:sz+1.12,sx:1.64,sy:0.12,sz:0.28});
+          tx.push({x:sx,y:0.28,z:sz-1.2,sx:1.64,sy:0.1,sz:0.13}); } } });
       inst(UBOX,SM(0x2a323b,{roughness:.6,metalness:.4}),gpc,g);
       inst(UBOX,SM(0x39424c,{roughness:.55,metalness:.45}),smBase,g);
       inst(UBOX,SM(0x7d9450,{roughness:.45,metalness:.15}),gold,g);                 // Tensor Cores (olive)
       inst(UBOX,SM(0xb8d99a,{roughness:.45,metalness:.1}),green,g);                 // CUDA cores
-      inst(UBOX,SM(0xa89bd0,{roughness:.4,metalness:.15}),rf,g);                    // register files
+      const rfM=SM(0xffffff,{roughness:.55,metalness:.18}); rfM.color.copy(warm(0xcda2d2,.18)); inst(UBOX,rfM,rf,g);   // register files (warm lilac)
+      inst(UBOX,SM(0xd9824a,{roughness:.45,metalness:.15}),ldst,g);                 // LD/ST · SFU
+      inst(UBOX,SM(0x9aa4ae,{roughness:.4,metalness:.3}),tx,g);                     // texture units
       inst(UBOX,SM(0xd9b34a,{roughness:.35,metalness:.35,emissive:0x2a1e05,emissiveIntensity:.6}),l1,g); // L1 / shared memory
       // data packets streaming along the L2 (illustrative)
       const PK=36, pr=rng(19), packets=[];
@@ -3003,14 +3028,16 @@ window.__PROVENANCE = Object.freeze({
       const pkM=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false});
       const pk=new THREE.InstancedMesh(UBOX,pkM,PK); pk.frustumCulled=false; pk.instanceMatrix.setUsage(THREE.DynamicDrawUsage); g.add(pk);
       packets.forEach((p,i)=>pk.setColorAt(i,_c.set(i%3?0x6fe3ff:0xffd23f))); pk.instanceColor.needsUpdate=true;
-      return { key:'die', mpu:0.001, bg:0x0a0e14, fog:[40,110], group:g,
-        keys:[{t:0,pos:[-10,30,18],tgt:[0,0,0],fov:45},{t:0.3,pos:[-17,13,15],tgt:[-3,0,1],fov:45},
-              {t:0.56,pos:[0,2.8,19.5],tgt:[0,0.3,8],fov:50},{t:0.8,pos:[0,1.0,3.2],tgt:[0,0.35,-3],fov:52},
-              {t:1,pos:[3.3,3.4,-1],tgt:[5.2,0.25,-3.2],fov:45}],
+      return { key:'die', mpu:0.001, bg:0x0a0e14, fog:[40,110], fogK:[1.5,6], group:g,     // fog kept far: the corridor runs 29 mm ahead
+        keys:[{t:0,pos:[-9.07,27.2,16.3],tgt:[0,0,0],fov:45},                 // = the package's closing shot (3.0 cm, el 55.6°, az −29°)
+              {t:0.16,pos:[-17,13,15],tgt:[-3,0,1],fov:45},
+              {t:0.42,pos:[0,3.6,19.5],tgt:[0,0.3,8],fov:50},{t:0.56,pos:[0,1.0,3.2],tgt:[0,0.35,-3],fov:52},
+              {t:0.74,pos:[0.79,4.29,-3.21],tgt:[3.2,0.25,-6.0],fov:45},        // up out of the corridor, over the GPC, before the dissolve
+              {t:1,pos:[1.3,3.43,-3.8],tgt:[3.2,0.25,-6.0],fov:45}],           // = the SM level's opening shot (3.55 mm, el 47.3°, az −40.8°) on the same SM
         caps:[{t:0,title:'104 billion transistors',sub:'One Blackwell die · TSMC 4NP · logical block layout — illustrative, not a silicon floorplan'},
-              {t:0.52,title:'L2 cache',sub:'Shared by both banks of GPCs · data movement shown is illustrative'}],
-        tags:[{text:'HBM interface',sub:'memory controllers',pos:[-11.9,0.5,-5.2],from:0.08,to:0.42,cls:'o'},
-              {text:'Die-to-die link',sub:'to the second die',pos:[12.1,0.4,6],from:0.08,to:0.42,cls:'c'},
+              {t:0.44,title:'L2 cache',sub:'Shared by both banks of GPCs · data movement shown is illustrative'}],
+        tags:[{text:'HBM interface',sub:'memory controllers',pos:[-11.5,0.5,-4.1],from:0.08,to:0.42,cls:'o'},
+              {text:'Die-to-die link',sub:'to the second die',pos:[11.7,0.4,6],from:0.08,to:0.42,cls:'c'},
               {text:'GPC',sub:'10 SMs',pos:[-4.45,0.5,-7.2],from:0.1,to:0.44,cls:'y'},
               {text:'L2 cache',sub:'',pos:[0,0.4,-10],from:0.14,to:0.46,cls:'g'}],
         update(t,time){ packets.forEach((p,i)=>{ const z=((p.off+time*p.v)%29+29)%29-14.5;
@@ -3022,66 +3049,138 @@ window.__PROVENANCE = Object.freeze({
        Colour language (matches the die level): olive Tensor Cores, light-green CUDA-core cells,
        lilac register-file banks, blue warp schedulers, orange LD/ST · SFU, gold L1 / shared memory.
        Ends over the register file, which the next level opens up. */
-    S.push((function(){
-      const g=new THREE.Group();
-      const floor=new THREE.Mesh(UBOX,SM(0x1b2129,{roughness:.6,metalness:.4})); floor.scale.set(80,0.6,160); floor.position.y=-0.3; g.add(floor);
-      const L={base:[],plate:[],cuda:[],tc:[],rf:[],sch:[],ldst:[],l1:[],l1n:[],tx:[]};
-      for(let sc=0;sc<2;sc++) for(let sr=-2;sr<=2;sr++){
-        const sx=-10+sc*20, sz=sr*28;                                    // one SM: 1.84 × 2.62 mm (illustrative)
-        L.base.push({x:sx,y:0.5,z:sz,sx:18.4,sy:1.0,sz:26.2});
-        L.l1.push({x:sx,y:1.6,z:sz+11.2,sx:16.6,sy:1.2,sz:3.2});           // L1 / shared memory, stepped like the reel
-        [-5.6,0,5.6].forEach(o=>L.l1n.push({x:sx+o,y:2.35,z:sz+10.6,sx:3.4,sy:0.32,sz:1.3}));
-        for(let k=0;k<4;k++) L.tx.push({x:sx-6.2+k*4.1,y:1.4,z:sz-12.0,sx:3.4,sy:0.8,sz:1.3});  // texture units
-        for(let p=0;p<4;p++){                                            // four processing blocks, 2 × 2
-          const px=sx-4.4+(p%2)*8.8, pz=sz-6.2+(p>>1)*10.6;
-          L.plate.push({x:px,y:1.05,z:pz,sx:8.4,sy:0.1,sz:10.2});
-          L.sch.push({x:px,y:1.45,z:pz-4.5,sx:7.8,sy:0.8,sz:0.9});         // warp scheduler + dispatch
-          for(let k=0;k<8;k++) L.rf.push({x:px-3.43+k*0.98,y:1.55,z:pz-3.25,sx:0.86,sy:1.0,sz:1.3});   // 64 KB register file, 8 banks
-          for(let r=0;r<4;r++) for(let c=0;c<8;c++) L.cuda.push({x:px-3.43+c*0.98,y:1.35,z:pz-2.0+r*0.98,sx:0.8,sy:0.6,sz:0.8}); // 32 CUDA cores
-          L.tc.push({x:px+1.6,y:1.9,z:pz+3.3,sx:4.6,sy:1.7,sz:3.4});        // Tensor Core
-          for(let k=0;k<4;k++) L.ldst.push({x:px-3.4+k*0.62,y:1.4,z:pz+3.3,sx:0.5,sy:0.7,sz:3.2});    // LD/ST · SFU
-        }
-      }
-      inst(UBOX,SM(0x2a3138,{roughness:.55,metalness:.4}),L.base,g);
-      inst(UBOX,SM(0x161b20,{roughness:.8,metalness:.2}),L.plate,g);
-      inst(UBOX,SM(0x9cc27f,{roughness:.55,metalness:.1}),L.cuda,g);
-      // the Tensor Core's fine grid is where the next level's wiring picks up
-      const tcTex=tex(256,256,(c,w,h)=>{ c.fillStyle='#7d9450'; c.fillRect(0,0,w,h);
-        for(let i=0;i<32;i++){ c.fillStyle='rgba(40,55,20,.45)'; c.fillRect(0,i*8,w,2); c.fillRect(i*8,0,2,h); }
-        for(let y=4;y<h;y+=8) for(let x=4;x<w;x+=8){ c.fillStyle='rgba(210,230,160,.35)'; c.fillRect(x,y,2,2); } });
-      inst(UBOX,SM(0xffffff,{map:tcTex,roughness:.45,metalness:.15}),L.tc,g);
-      inst(UBOX,SM(0xa89bd0,{roughness:.4,metalness:.15}),L.rf,g);
-      inst(UBOX,SM(0x8fb4d8,{roughness:.4,metalness:.2}),L.sch,g);
-      inst(UBOX,SM(0xd9824a,{roughness:.45,metalness:.15}),L.ldst,g);
-      inst(UBOX,SM(0xd9b34a,{roughness:.35,metalness:.35,emissive:0x2a1e05,emissiveIntensity:.6}),L.l1,g);
-      inst(UBOX,SM(0xe6c464,{roughness:.35,metalness:.35}),L.l1n,g);
-      inst(UBOX,SM(0x9aa4ae,{roughness:.4,metalness:.3}),L.tx,g);
-      // focus: processing block 0 of the centre-left SM (x -14.4, z -6.2); its Tensor Core sits at (-12.8, -2.9)
-      const TC=[-12.8,2.75,-2.9], RF=[-14.4,2.05,-9.45];
-      return { key:'sm', mpu:0.0001, bg:0x0a0e14, group:g,
-        keys:[{t:0,pos:[-26,34,28],tgt:[-6,0,0],fov:45},
-              {t:0.22,pos:[-22,20,14],tgt:[-10,1.2,-0.5],fov:45},        // whole SM
-              {t:0.45,pos:[-20,11.5,1.5],tgt:[-14.4,1.3,-6.0],fov:45},   // whole processing block
-              {t:0.68,pos:[-16.8,6.8,-1.0],tgt:[-14.5,1.5,-6.2],fov:45}, // its parts, labelled
-              {t:0.86,pos:[-15.4,4.8,-6.6],tgt:RF,fov:45},                // over the register file
-              {t:1,pos:[-14.5,4.1,-8.6],tgt:RF,fov:45}],
-        caps:[{t:0,title:'Logical block layout',sub:'One GPC of streaming multiprocessors (SMs) · illustrative, not a silicon floorplan'},
-              {t:0.24,title:'One streaming multiprocessor',sub:'128 CUDA cores · 4 Tensor Cores · shared L1 / shared memory'},
-              {t:0.42,title:'One processing block',sub:'1 of 4 per SM · 32 CUDA cores · 1 Tensor Core · 64 KB register file'},
-              {t:0.64,title:'Inside the processing block',sub:'Scheduler, register file, CUDA cores, Tensor Core · illustrative physical layout'}],
-        tags:[{text:'L1 / shared memory',sub:'',pos:[-10,2.7,11.2],from:0.12,to:0.4,cls:'y'},
-              {text:'Tensor Core',sub:'× 4 per SM',pos:[-12.8,2.9,-2.9],from:0.12,to:0.4,cls:'g'},
-              {text:'Texture units',sub:'',pos:[-10,2.0,-12],from:0.12,to:0.36,cls:'g'},
-              {text:'Warp scheduler · dispatch',sub:'',pos:[-14.4,2.1,-10.7],from:0.56,to:0.84,cls:'bx'},
-              {text:'Register file · 64 KB',sub:'',pos:[-14.4,2.3,-9.45],from:0.56,to:0.84,cls:'bx'},
-              {text:'32 CUDA cores',sub:'',pos:[-16.4,1.9,-6.7],from:0.56,to:0.84,cls:'bx'},
-              {text:'LD/ST · SFU',sub:'',pos:[-17.2,2.0,-2.9],from:0.6,to:0.84,cls:'bx'},
-              {text:'Tensor Core',sub:'',pos:TC,from:0.56,to:0.84,cls:'bx'}] };
-    })());
-
-    /* ---- 4 · the register file → one bank → memory cells (1 unit = 1 µm) ----------- */
     S.push((function(THREE,H){
-      const {UBOX,SM,inst,tex}=H;
+      const {UBOX,SM,inst,tex,rng,_m,_q,_e,_p,_s,_c}=H;
+      return (function(){
+        const g=new THREE.Group();
+        const sm=x=>{ x=Math.max(0,Math.min(1,x)); return x*x*(3-2*x); };
+        // same helper as the regfile level: the sky-blue hemisphere + white key + cyan rim brighten and cool a lit top face by
+        // ≈(1.37, 1.60, 1.83)·(1−metalness); divide that out so the register file renders in the reel's warm lilac, not periwinkle
+        const warm=(hex,m)=>{ const c=new THREE.Color(hex), k=0.97*(1-m); c.setRGB(Math.min(1,c.r/(1.37*k)),Math.min(1,c.g/(1.6*k)),Math.min(1,c.b/(1.83*k))); return c; };
+        const MAT=(hex,o)=>{ const m=SM(0xffffff,o); m.color.copy(warm(hex,m.metalness)); return m; };
+
+        /* ---- floor, GPC plates, and the L2 tile strip the die level shows at the edge of its closing frame ----------- */
+        const floor=new THREE.Mesh(UBOX,SM(0x1b2129,{roughness:.6,metalness:.4})); floor.scale.set(120,0.6,160); floor.position.y=-0.3; g.add(floor);
+        inst(UBOX,SM(0x2a323b,{roughness:.6,metalness:.4}),[0,43].map(x=>({x,y:0.05,z:0,sx:40,sy:0.1,sz:142.5})),g);   // this GPC and the next one's plate
+        const l2=[]; for(let r=0;r<12;r++) [-52,-34].forEach(x=>l2.push({x,y:0.15,z:-66.55+r*12.1,sx:16.2,sy:0.3,sz:11.4}));  // 2 × 12 L2 tiles alongside this GPC
+        inst(UBOX,SM(0xd3d9e0,{roughness:.35,metalness:.2,emissive:0x1d2630,emissiveIntensity:.6}),l2,g);
+
+        /* ---- SMs: 3 columns (x −10, +10 = this GPC; +33 = the first column of the next GPC) × 5 rows ------------------
+           One SM: 1.84 × 2.62 mm (from the die level). Every block is a flat region 12–34 µm high (sy ÷ 5 vs. the old slabs).
+           Processing block (8.4 × 10.2): scheduler strip (−z) · register file 16 banks (8 × 2, 224 × 144 µm) flanked by
+           operand-collector logic · 32 CUDA cores (4 × 8, 80 µm) · Tensor Core (+z, +x) · 4 LD/ST · SFU strips (+z, −x). */
+        const L={base:[],plate:[],cuda:[],tc:[],rf:[],sch:[],opc:[],ldst:[],l1:[],l1n:[],tx:[]};
+        [-10,10,33].forEach(sx=>{ for(let sr=-2;sr<=2;sr++){ const sz=sr*28;
+          L.base.push({x:sx,y:0.2,z:sz,sx:18.4,sy:0.2,sz:26.2});
+          L.l1.push({x:sx,y:0.42,z:sz+11.2,sx:16.6,sy:0.24,sz:3.2});                                  // 256 KB L1 / shared memory, stepped like the reel
+          [-5.6,0,5.6].forEach(o=>L.l1n.push({x:sx+o,y:0.572,z:sz+10.6,sx:3.4,sy:0.064,sz:1.3}));
+          for(let k=0;k<4;k++) L.tx.push({x:sx-6.2+k*4.1,y:0.38,z:sz-12.0,sx:3.4,sy:0.16,sz:1.3});     // texture units
+          for(let p=0;p<4;p++){ const px=sx-4.4+(p%2)*8.8, pz=sz-6.2+(p>>1)*10.6;                     // four processing blocks, 2 × 2
+            L.plate.push({x:px,y:0.31,z:pz,sx:8.4,sy:0.02,sz:10.2});
+            L.sch.push({x:px,y:0.40,z:pz-4.5,sx:7.8,sy:0.16,sz:0.9});                                   // L0 I-cache · warp scheduler · dispatch
+            for(let r=0;r<2;r++) for(let c=0;c<8;c++) L.rf.push({x:px-0.98+c*0.28,y:0.42,z:pz-3.61+r*0.72,sx:0.24,sy:0.2,sz:0.68});  // 64 KB register file: 16 banks, 24 × 68 µm at 28 × 72 (= the register-file level)
+            [-1,1].forEach(s=>L.opc.push({x:px+s*2.64,y:0.39,z:pz-3.25,sx:2.8,sy:0.14,sz:1.44}));      // operand collectors / result crossbar (illustrative)
+            for(let r=0;r<4;r++) for(let c=0;c<8;c++) L.cuda.push({x:px-3.43+c*0.98,y:0.38,z:pz-2.0+r*0.98,sx:0.8,sy:0.12,sz:0.8});  // 32 CUDA cores
+            L.tc.push({x:px+1.6,y:0.49,z:pz+3.3,sx:4.6,sy:0.34,sz:3.4});                                // Tensor Core
+            for(let k=0;k<4;k++) L.ldst.push({x:px-3.4+k*0.62,y:0.39,z:pz+3.3,sx:0.5,sy:0.14,sz:3.2});  // LD/ST · SFU
+          } } });
+
+        /* ---- textures (one CanvasTexture per material) --------------------------------------------------------------- */
+        // standard-cell rows for the logic blocks — shared with the regfile level's neighbour blocks (same seed, size and drawing)
+        const lr=rng(11), logicTex=tex(512,512,(c,w,h)=>{ c.fillStyle='#9a9a9a'; c.fillRect(0,0,w,h);
+          for(let y=0;y<h;y+=32){ let x=0; while(x<w){ const cw=6+Math.floor(lr()*6)*4, v=200+Math.floor(lr()*50);
+            c.fillStyle='rgb('+v+','+v+','+v+')'; c.fillRect(x+1,y+3,cw-2,26); x+=cw; }
+            c.fillStyle='rgba(60,60,60,.5)'; c.fillRect(0,y,w,1); c.fillRect(0,y+31,w,1); } });        // a power rail between rows
+        const rep=(t,x,z)=>{ const u=t.clone(); u.repeat.set(x,z); u.wrapS=u.wrapT=THREE.RepeatWrapping; u.needsUpdate=true; return u; };
+        // the Tensor Core's MAC-array grid (32 × 32 cells at 32 texels) — where the next level's wiring picks up
+        const tcTex=tex(1024,1024,(c,w,h)=>{ c.fillStyle='#7d9450'; c.fillRect(0,0,w,h);
+          for(let i=0;i<32;i++){ c.fillStyle='rgba(40,55,20,.45)'; c.fillRect(0,i*32,w,6); c.fillRect(i*32,0,6,h); }
+          for(let y=16;y<h;y+=32) for(let x=16;x<w;x+=32){ c.fillStyle='rgba(210,230,160,.35)'; c.fillRect(x-3,y-3,6,6); } });
+        // L1 / shared memory: 16 SRAM macros × 2 rows, each with a decoder stripe
+        const l1Tex=tex(1024,256,(c,w,h)=>{ c.fillStyle='#ffffff'; c.fillRect(0,0,w,h);
+          c.fillStyle='rgba(70,50,10,.45)'; for(let i=0;i<=16;i++) c.fillRect(i*64-2,0,4,h); c.fillRect(0,126,w,4); c.fillRect(0,0,w,4); c.fillRect(0,h-4,w,4);
+          c.fillStyle='rgba(255,240,200,.5)'; for(let i=0;i<16;i++){ c.fillRect(i*64+29,6,6,116); c.fillRect(i*64+29,134,6,116); } });
+        // register-file bank top, in the regfile level's colours, baked as ratios to the bank lilac so one lilac material
+        // renders arrays #f4f1f6·lilac, decoder ≈ 0xd99a5e, sense amps ≈ 0xb88a5a, control ≈ 0x82a2c6, plate ≈ 0x2c2a36.
+        // Bank 24 (x) × 68 (z) µm: sense-amp strip along z at the −x edge (x 0.8–6.8), two 12.8 × 30.72 arrays (x 7.6–20.4)
+        // stacked in z with the wordline decoder strip (z 31.9–36.1) between them, control block at the +x/−z corner.
+        const bankTex=tex(512,1024,(c,w,h)=>{ const X=x=>x/24*w, Z=z=>z/68*h, R=(x0,z0,x1,z1)=>c.fillRect(X(x0),Z(z0),X(x1)-X(x0),Z(z1)-Z(z0));
+          c.fillStyle='rgb(55,66,66)'; c.fillRect(0,0,w,h);                                           // plate margins
+          c.fillStyle='rgb(229,217,109)'; R(0.8,1.2,6.8,66.8);                                         // sense amplifiers
+          c.fillStyle='rgba(120,90,40,.45)'; for(let a=0;a<2;a++) for(let k=0;k<64;k++){ const z=1.2+a*34.88+k*0.48; R(1.3,z,6.3,z+0.2); }   // 64 tabs per array
+          c.fillStyle='rgba(40,30,20,.5)'; R(6.8,1.2,7.6,66.8);                                        // bitline channel
+          c.fillStyle='rgb(230,227,234)'; R(7.6,1.2,20.4,31.92); R(7.6,36.08,20.4,66.8);                // cell arrays (128-cell grid averaged in)
+          c.fillStyle='rgba(58,52,64,.5)';                                                              // a heavier line every 16 cells (1.6 µm in x, 3.84 µm in z)
+          for(let i=0;i<=8;i++){ const x=7.6+i*1.6; R(x-0.07,1.2,x+0.07,31.92); R(x-0.07,36.08,x+0.07,66.8); }
+          for(let a=0;a<2;a++) for(let j=0;j<=8;j++){ const z=(a?36.08:1.2)+j*3.84; R(7.6,z-0.1,20.4,z+0.1); }
+          c.fillStyle='rgb(255,242,114)'; R(7.6,31.92,20.4,36.08);                                     // wordline decoder
+          c.fillStyle='rgba(120,80,30,.5)'; for(let k=0;k<64;k++){ const x=7.6+k*0.2; R(x+0.04,32.4,x+0.12,35.6); }   // driver steps
+          c.fillStyle='rgb(162,255,240)'; R(21,1.2,23.4,8);                                            // control block
+          c.fillStyle='rgb(90,96,104)'; R(21.4,9,23,66.8); c.fillStyle='rgb(40,44,50)'; for(let z=10;z<66;z+=2.4) R(21.4,z,23,z+0.5);   // I/O bus along the +x edge
+        });
+
+        /* ---- materials: one InstancedMesh per part ------------------------------------------------------------------- */
+        inst(UBOX,SM(0x2a3138,{roughness:.55,metalness:.4}),L.base,g);
+        inst(UBOX,SM(0x161b20,{roughness:.8,metalness:.2}),L.plate,g);
+        inst(UBOX,SM(0x9cc27f,{map:logicTex,roughness:.55,metalness:.1}),L.cuda,g);                    // CUDA cores (the regfile level uses the same)
+        inst(UBOX,SM(0xffffff,{map:tcTex,roughness:.45,metalness:.15}),L.tc,g);
+        const rfTop=MAT(0xcda2d2,{map:bankTex,roughness:.55,metalness:.18}), rfSide=MAT(0x6a5f78,{roughness:.6,metalness:.18});
+        inst(UBOX,[rfSide,rfSide,rfTop,rfSide,rfSide,rfSide],L.rf,g);                                    // register file — the regfile level's bank lilac; texture on the top face only
+        inst(UBOX,SM(0x8fb4d8,{map:rep(logicTex,9,1),roughness:.4,metalness:.2}),L.sch,g);              // warp scheduler (the regfile level uses the same)
+        inst(UBOX,SM(0x6f7f94,{map:rep(logicTex,2,2),roughness:.5,metalness:.2}),L.opc,g);
+        inst(UBOX,SM(0xd9824a,{roughness:.45,metalness:.15}),L.ldst,g);
+        inst(UBOX,SM(0xd9b34a,{map:l1Tex,roughness:.35,metalness:.35,emissive:0x2a1e05,emissiveIntensity:.6}),L.l1,g);
+        inst(UBOX,SM(0xe6c464,{roughness:.35,metalness:.35}),L.l1n,g);
+        inst(UBOX,SM(0x9aa4ae,{roughness:.4,metalness:.3}),L.tx,g);
+
+        /* ---- outline around the target processing block (PB 0 of SM (−10,0): centre (−14.4, −6.2)) ------------------ */
+        const ol=new THREE.MeshBasicMaterial({color:0xffd23f,transparent:true,opacity:0,fog:false}),
+              glow=new THREE.MeshBasicMaterial({color:0xffc21a,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,fog:false});
+        const E=[0,0,0,0].map(()=>({x:0,y:0,z:0,sx:1,sy:1,sz:1})), olIM=inst(UBOX,ol,E,g), glIM=inst(UBOX,glow,E,g);
+        const PB={x:-14.4,z:-6.2,hx:4.25,hz:5.15}, OY=0.34, M=new THREE.Matrix4(), Q=new THREE.Quaternion(), P=new THREE.Vector3(), S=new THREE.Vector3(), PBC=new THREE.Vector3(PB.x,0.3,PB.z);
+        function setOutline(im,w,hgt){
+          [[PB.x,PB.z-PB.hz,2*PB.hx+w,w],[PB.x,PB.z+PB.hz,2*PB.hx+w,w],[PB.x-PB.hx,PB.z,w,2*PB.hz+w],[PB.x+PB.hx,PB.z,w,2*PB.hz+w]].forEach((e,i)=>{
+            im.setMatrixAt(i,M.compose(P.set(e[0],OY,e[1]),Q,S.set(e[2],hgt,e[3]))); });
+          im.instanceMatrix.needsUpdate=true; }
+        setOutline(olIM,0.06,0.04); setOutline(glIM,0.18,0.03); olIM.visible=glIM.visible=false;
+
+        /* ---- camera: keyframes from a target, a distance, an elevation and an azimuth ---------------------------------
+           FOV (m) = 2·d·tan(22.5°)·1e-4 → d 42.86 (3.55 mm), 35.9 (2.97 mm), 15 (1.24 mm), 7.8 (646 µm), 4.6 (381 µm), 2.22 (184 µm). */
+        const key=(t,tgt,d,el,az)=>{ const e=el*Math.PI/180, a=az*Math.PI/180;
+          return {t,pos:[tgt[0]+d*Math.cos(e)*Math.sin(a),tgt[1]+d*Math.sin(e),tgt[2]+d*Math.cos(e)*Math.cos(a)],tgt,fov:45}; };
+        const RF=[-14.4,0.52,-9.45], TC=[-12.8,0.72,-2.9];          // RF = centre of the target block's register-file field (its top)
+        const keys=[{t:0,pos:[-30,31.8,34],tgt:[-11,0.3,12],fov:45},  // = the die level's closing shot: the L1 strip of this SM, 3.55 mm, el 47.3°, az −40.8°
+                    key(0.22,[-10,0.4,-0.5],35.9,43.6,-38),           // the whole SM (2.97 mm tall, 5.3 mm wide)
+                    key(0.42,[-14.4,0.4,-6.0],15,47,-36),             // one processing block, outlined
+                    key(0.64,[-14.5,0.4,-6.2],7.8,43,-24),            // its parts, labelled
+                    key(0.86,RF,4.6,52,-16),                          // over the register file
+                    key(1,RF,2.22,67.3,-6.7)];                        // = the regfile level's opening shot: 184 µm, el 67.3°, az −6.7°
+
+        return { key:'sm', mpu:0.0001, bg:0x0a0e14, group:g, keys,
+          caps:[{t:0,title:'Logical block layout',sub:'Streaming multiprocessors (SMs) inside one GPC · illustrative, not a silicon floorplan'},
+                {t:0.22,title:'One streaming multiprocessor',sub:'128 CUDA cores · 4 Tensor Cores · 256 KB L1 / shared memory · 4 processing blocks'},
+                {t:0.42,title:'One processing block',sub:'1 of 4 per SM · 32 CUDA cores · 1 Tensor Core · 64 KB register file'},
+                {t:0.64,title:'Inside the processing block',sub:'Scheduler, register file, CUDA cores, Tensor Core · illustrative physical layout'}],
+          tags:[{text:'L1 / shared memory',sub:'256 KB',pos:[-10,0.6,11.2],from:0.12,to:0.38,cls:'y'},
+                {text:'Tensor Core',sub:'× 4 per SM',pos:[-12.8,0.7,-2.9],from:0.12,to:0.36,cls:'g'},
+                {text:'Texture units',sub:'',pos:[-10,0.5,-12],from:0.12,to:0.36,cls:'g'},
+                {text:'Warp scheduler · dispatch',sub:'',pos:[-17.4,0.5,-10.7],from:0.56,to:0.84,cls:'bx'},
+                {text:'Register file · 64 KB',sub:'16 banks',pos:[-14.4,0.55,-10.45],from:0.56,to:0.84,cls:'bx'},
+                {text:'32 CUDA cores',sub:'',pos:[-16.4,0.45,-6.7],from:0.56,to:0.84,cls:'bx'},
+                {text:'LD/ST · SFU',sub:'',pos:[-17.2,0.45,-4.3],from:0.38,to:0.58,cls:'bx'},
+                {text:'Tensor Core',sub:'',pos:TC,from:0.56,to:0.84,cls:'bx'}],
+          update(t,time,cam){
+            // the target block is outlined while the caption says 'One processing block'; width follows the camera (~3 px)
+            const a=sm((t-0.34)/0.06)*(1-sm((t-0.58)/0.06)), d=cam.position.distanceTo(PBC), w=Math.max(0.02,d*0.0045);
+            ol.opacity=a; glow.opacity=0.25*a; olIM.visible=glIM.visible=a>0.01;
+            if(a>0.01){ setOutline(olIM,w,0.04); setOutline(glIM,w*3,0.03); }
+          } };
+      })();
+    })(THREE,{UBOX,SM,inst,tex,rng,_m,_q,_e,_p,_s,_c}));
+
+/* ---- 4 · the register file → one bank → memory cells (1 unit = 1 µm) ----------- */
+    S.push((function(THREE,H){
+      const {UBOX,SM,inst,tex,rng}=H;
       return (function(){
         const g=new THREE.Group();
         const sm=x=>{ x=Math.max(0,Math.min(1,x)); return x*x*(3-2*x); };
@@ -3090,77 +3189,116 @@ window.__PROVENANCE = Object.freeze({
         const warm=(hex,m)=>{ const c=new THREE.Color(hex), k=0.97*(1-m); c.setRGB(Math.min(1,c.r/(1.37*k)),Math.min(1,c.g/(1.6*k)),Math.min(1,c.b/(1.83*k))); return c; };
         const MAT=(hex,o)=>{ const m=SM(0xffffff,o); m.color.copy(warm(hex,m.metalness)); return m; };
 
-        /* ---- floor: the processing block's dark plate --------------------------------------------- */
+        /* ---- floor: the processing block's dark plate (the SM level's 0x161b20) ------------------------- */
         const floor=new THREE.Mesh(UBOX,SM(0x161b20,{roughness:.8,metalness:.2})); floor.scale.set(1400,1,900); floor.position.y=-0.5; g.add(floor);
 
-        /* ---- 16 banks: 8 columns (x) × 2 rows (z); footprint 86 × 62, pitch 98 × 66 ------------------
-           per bank (y up): base plate top 0.8 · two 38 × 40 cell arrays (top 2.3) · wordline decoder between
-           them (6 wide, top 2.8) · sense-amplifier row on the outer long edge (8 deep) · control block inside.
-           Rows are mirrored, so both rows keep their sense amplifiers on the outside edge.                   */
-        const COLS=[-343,-245,-147,-49,49,147,245,343], ROWS=[-33,33];
-        const TB={x:-49,z:-33};                                        // the target bank
-        const TA={x:TB.x-22,z:TB.z};                                   // its left array — where the dive ends
-        const L={base:[],arr:[],dec:[],decT:[],sa:[],saT:[],ctl:[],bus:[]};
-        ROWS.forEach(bz=>{ const s=Math.sign(bz);
-          COLS.forEach(bx=>{
-            L.base.push({x:bx,y:0.4,z:bz,sx:86,sy:0.8,sz:62});
-            [-1,1].forEach(side=>{ const ax=bx+side*22;
-              if(!(bx===TB.x&&bz===TB.z&&side<0)) L.arr.push({x:ax,y:1.55,z:bz,sx:38,sy:1.5,sz:40});
-              for(let k=0;k<32;k++) L.saT.push({x:ax-19+(k+0.5)*38/32,y:2.62,z:bz+s*26.4,sx:0.62,sy:0.44,sz:5.2}); });
-            L.dec.push({x:bx,y:1.8,z:bz,sx:6,sy:2,sz:40});
-            for(let k=0;k<40;k++) L.decT.push({x:bx,y:2.94,z:bz-19.5+k,sx:4.4,sy:0.28,sz:0.5});
-            L.sa.push({x:bx,y:1.6,z:bz+s*26,sx:84,sy:1.6,sz:8});
-            L.ctl.push({x:bx,y:1.9,z:bz-s*25.5,sx:16,sy:2.2,sz:7});
-            L.ctl.push({x:bx+(bx<0?-14:14),y:1.5,z:bz-s*25.5,sx:7,sy:1.4,sz:5});   // small I/O-side control block
-          }); });
-        // routing on the plate: a bus in the gap between the two rows, and data paths in each column gap
-        for(let k=-1;k<=1;k++) L.bus.push({x:0,y:0.14,z:k*1.1,sx:790,sy:0.28,sz:0.55});
-        for(let c=0;c<=8;c++){ const gx=-392+c*98;
-          for(let k=-2;k<=2;k++) L.bus.push({x:gx+k*1.9,y:0.14,z:0,sx:0.7,sy:0.28,sz:150}); }
+        /* ---- geometry of one bank (local coords, s = ±1 mirrors x so neighbouring columns face each other) ----
+           plate 24 (x) × 68 (z), top 0.8 · two arrays 12.8 × 30.72 stacked in z (top 2.3) · wordline decoder strip
+           between them along x (sz 4, top 2.8; 128 driver steps per array at the 0.10 row pitch, drawn in its texture)
+           · sense amplifiers along the −x edge (strip 6 wide along z, 64 tabs per array = 2 columns per tab) · a column
+           mux strip between array and sense amps · control at the decoder / sense-amp junction · I/O on the +x margin.
+           Banks: 8 columns (x, pitch 28) × 2 rows (z, pitch 72) centred on the origin = 224 × 144 µm.             */
+        const AW=12.8, AL=30.72, AZ=17.36, AX=1.6;                     // array size and local centre (x 1.6, z ±17.36)
+        const COLS=[-98,-70,-42,-14,14,42,70,98], ROWS=[-36,36];
+        const TB={x:-14,z:-36,s:-1};                                     // the target bank (column 3, the far row): mirrored
+        const TA={x:TB.x+TB.s*AX,z:TB.z+AZ};                             // its +z array — where the dive ends
+        const L={base:[],arr:[],dec:[],sa:[],saT:[],mux:[],ctl:[],io:[],ln:[],bus:[]};
+        ROWS.forEach(bz=>COLS.forEach((bx,ci)=>{ const s=(ci&1)?-1:1, X=x=>bx+s*x;
+          L.base.push({x:bx,y:0.4,z:bz,sx:24,sy:0.8,sz:68});
+          L.dec.push({x:X(AX),y:1.8,z:bz,sx:AW,sy:2,sz:4});
+          L.ctl.push({x:X(-8.6),y:1.75,z:bz,sx:6,sy:1.9,sz:4});
+          L.io.push({x:X(10),y:1.65,z:bz,sx:3.2,sy:1.7,sz:16});
+          for(let k=0;k<4;k++) L.ln.push({x:X(8.7+k*0.55),y:0.9,z:bz,sx:0.22,sy:0.2,sz:66});
+          [-1,1].forEach(side=>{ const az=bz+side*AZ;
+            if(!(bx===TB.x&&bz===TB.z&&side>0)) L.arr.push({x:X(AX),y:1.55,z:az,sx:AW,sy:1.5,sz:AL});
+            L.sa.push({x:X(-8.6),y:1.6,z:az,sx:6,sy:1.6,sz:AL});
+            L.mux.push({x:X(-5.2),y:1.55,z:az,sx:0.8,sy:1.5,sz:AL});
+            if(bx===TB.x&&bz===TB.z) for(let k=0;k<64;k++) L.saT.push({x:X(-8.6),y:2.58,z:az-AL/2+(k+0.5)*AL/64,sx:5.2,sy:0.36,sz:0.26}); });
+        }));
+        // routing on the plate: a bus in the gap between the two rows, and address / data lines in each column gap
+        for(let k=-1;k<=1;k++) L.bus.push({x:0,y:0.14,z:k*1.2,sx:226,sy:0.28,sz:0.5});
+        for(let c=0;c<=8;c++){ const gx=-112+c*28; for(let k=-1;k<=1;k++) L.bus.push({x:gx+k*1.1,y:0.14,z:0,sx:0.45,sy:0.28,sz:142}); }
 
-        // cell-array texture: 128 × 128 cells per array, one grid line every 8 texels (lines sit exactly on i/128)
-        const arrTex=tex(1024,1024,(c,w,h)=>{ c.fillStyle='#f4f1f6'; c.fillRect(0,0,w,h);
-          c.fillStyle='rgba(58,52,64,.34)'; for(let i=0;i<=128;i++){ c.fillRect(i*8-1,0,2,h); c.fillRect(0,i*8-1,w,2); }
-          c.fillStyle='rgba(58,52,64,.5)'; c.fillRect(0,0,w,5); c.fillRect(0,h-5,w,5); c.fillRect(0,0,5,h); c.fillRect(w-5,0,5,h); });
-        const LILAC=warm(0xcda2d2,.18), CELL_LILAC=warm(0xcda2d2,.15), CELLGREY=warm(0xb9c0c8,.15), GAPGREY=warm(0x7c828b,.18);
+        /* ---- textures --------------------------------------------------------------------------------------- */
+        // cell-array top: 128 × 128 cells, one grid line every 16 texels, a heavier line every 16 cells (well-tap rows /
+        // bitline-twist columns), a dark rim. Near-white so the material colour carries the hue (it lerps at the boundary).
+        const arrTex=tex(2048,2048,(c,w,h)=>{ c.fillStyle='#f4f1f6'; c.fillRect(0,0,w,h);
+          c.fillStyle='rgba(58,52,64,.30)'; for(let i=0;i<=128;i++){ c.fillRect(i*16-1,0,2,h); c.fillRect(0,i*16-1,w,2); }
+          c.fillStyle='rgba(58,52,64,.55)'; for(let i=0;i<=128;i+=16){ c.fillRect(i*16-2,0,4,h); c.fillRect(0,i*16-2,w,4); }
+          c.fillStyle='rgba(58,52,64,.6)'; c.fillRect(0,0,w,6); c.fillRect(0,h-6,w,6); c.fillRect(0,0,6,h); c.fillRect(w-6,0,6,h); });
+        // wordline-decoder top: 128 driver steps per array (one per row, 0.10 pitch) as a comb toward each array, predecoder pads between
+        const decTex=tex(2048,640,(c,w,h)=>{ c.fillStyle='#b07f50'; c.fillRect(0,0,w,h);
+          c.fillStyle='#6b4a2e'; c.fillRect(0,0,w,6); c.fillRect(0,h-6,w,6);
+          for(let i=0;i<128;i++){ const x=i*16;
+            c.fillStyle='#f0c48c'; c.fillRect(x+3,30,10,200); c.fillRect(x+3,h-230,10,200);
+            c.fillStyle='#d9a56a'; c.fillRect(x+3,236,10,40); c.fillRect(x+3,h-276,10,40); }
+          c.fillStyle='#8a6038'; c.fillRect(0,286,w,68);
+          for(let i=0;i<16;i++){ c.fillStyle='#e6b47a'; c.fillRect(i*128+18,294,92,52); c.fillStyle='#6b4a2e'; c.fillRect(i*128+58,300,12,40); } });
+        // sense-amplifier strip top: 64 tabs per array (one per bitline pair, 0.48 pitch), each with its amplifier in the middle
+        const saTex=tex(512,4096,(c,w,h)=>{ c.fillStyle='#a87c4e'; c.fillRect(0,0,w,h);
+          for(let k=0;k<64;k++){ const y=k*64; c.fillStyle='#e8c088'; c.fillRect(40,y+9,432,46); c.fillStyle='#c9975c'; c.fillRect(200,y+19,112,26); c.fillStyle='#7d5a3a'; c.fillRect(0,y+61,w,3); } });
+        // one memory cell, top view of the next level's 6T layout (cell 10 × 24 in 10 nm units; fins along x, gates along z):
+        //   fins at z = ±9 (N) and the short P fins at z = ∓3 · gate A x=−2.5: z∈[−12,−6.3] (wordline piece) + [−1.6,11.3];
+        //   gate B x=+2.5: [−11.3,1.6] + [6.3,12] · Q / Q̄ node contacts at x=0, z∈[−9.9,−2.1] / [2.1,9.9] · BL / VDD / VSS edge
+        //   contacts at x=±5 · cross-couple "L"s of local interconnect. Reel greys #8e969f–#e3e7eb on a dark oxide floor.
+        const cellTex=tex(256,256,(c,w,h)=>{ const U=x=>(x+5)/10*w, V=z=>(z+12)/24*h;
+          const R=(x0,x1,z0,z1,col)=>{ c.fillStyle=col; c.fillRect(U(x0),V(z0),U(x1)-U(x0),V(z1)-V(z0)); };
+          c.fillStyle='#5a5f67'; c.fillRect(0,0,w,h);
+          R(-5,5,-1.1,1.1,'#50555d');                                   // n-well seam, a touch darker
+          R(-5,5,-9.4,-8.6,'#8e969f'); R(-5,5,8.6,9.4,'#8e969f');       // NMOS fins
+          R(-0.5,5,-3.4,-2.6,'#8e969f'); R(-5,0.5,2.6,3.4,'#8e969f');   // PMOS fins
+          R(-3.3,-1.7,-12,-6.3,'#d7dce2'); R(-3.3,-1.7,-1.6,11.3,'#d7dce2');   // gate A
+          R(1.7,3.3,-11.3,1.6,'#d7dce2');  R(1.7,3.3,6.3,12,'#d7dce2');      // gate B
+          R(-0.7,0.7,-9.9,-2.1,'#aab1b9'); R(-0.7,0.7,2.1,9.9,'#aab1b9');    // Q, Q̄ trench contacts
+          [[-5,-9],[-5,3],[-5,9],[5,-9],[5,-3],[5,9]].forEach(([x,z])=>{ R(x-0.7,x+0.7,z-1.2,z+1.2,'#aab1b9'); R(x-0.6,x+0.6,z-0.6,z+0.6,'#c2c8cf'); });
+          [[-2.5,-12],[2.5,12]].forEach(([x,z])=>R(x-0.6,x+0.6,z-0.6,z+0.6,'#c2c8cf'));                 // wordline gate contacts
+          R(-0.5,0.5,-3.4,-0.6,'#e3e7eb'); R(-3.0,0.5,-1.6,-0.6,'#e3e7eb');   // cross-couple L (Q → gate A)
+          R(-0.5,0.5,0.6,3.4,'#e3e7eb');   R(-0.5,3.0,0.6,1.6,'#e3e7eb');     // cross-couple L (Q̄ → gate B)
+          R(-3.0,-2.0,-1.6,-0.6,'#c2c8cf'); R(2.0,3.0,0.6,1.6,'#c2c8cf'); });
+        // neighbours' standard-cell rows (the SM level draws its scheduler and CUDA cores with the same texture and colours)
+        const r=rng(11), logicTex=tex(512,512,(c,w,h)=>{ c.fillStyle='#9a9a9a'; c.fillRect(0,0,w,h);
+          for(let y=0;y<h;y+=16){ c.fillStyle='#828282'; c.fillRect(0,y,w,2); let x=0; while(x<w){ const cw=6+Math.floor(r()*6)*4, v=170+Math.floor(r()*40);
+            c.fillStyle='rgb('+v+','+v+','+v+')'; c.fillRect(x+1,y+3,cw-2,11); x+=cw; } } });
+        const schTex=logicTex.clone(); schTex.needsUpdate=true; schTex.wrapS=THREE.RepeatWrapping; schTex.repeat.set(8,1);
+
+        /* ---- materials & meshes ---------------------------------------------------------------------------- */
+        const A0=new THREE.Color(0xa89bd0);                              // the SM level's raw register-file lilac (lit by the same lights)
+        const LILAC=warm(0xcda2d2,.18), CELL_LILAC=warm(0xcda2d2,.15), CELLGREY=warm(0xd3d8de,.15), GAPGREY=warm(0x6c727b,.18);
+        const arrSide=MAT(0xcda2d2,{roughness:.55,metalness:.18}), arrTop=MAT(0xcda2d2,{map:arrTex,roughness:.55,metalness:.18});
+        const faces=(side,top)=>[side,side,top,side,side,side];        // BoxGeometry groups: +x −x +y −y +z −z → texture on +y only
         inst(UBOX,MAT(0x2c2a36,{roughness:.7,metalness:.25}),L.base,g);
-        inst(UBOX,MAT(0xcda2d2,{map:arrTex,roughness:.55,metalness:.18}),L.arr,g);
-        const tArrMat=MAT(0xcda2d2,{map:arrTex,roughness:.55,metalness:.18});
-        const tArr=new THREE.Mesh(UBOX,tArrMat); tArr.scale.set(38,1.5,40); tArr.position.set(TA.x,1.55,TA.z); g.add(tArr);
-        inst(UBOX,MAT(0xd99a5e,{roughness:.5,metalness:.18}),L.dec,g);
-        inst(UBOX,MAT(0xeab27a,{roughness:.45,metalness:.2}),L.decT,g);
-        inst(UBOX,MAT(0xb88a5a,{roughness:.55,metalness:.18}),L.sa,g);
-        inst(UBOX,MAT(0xdcb880,{roughness:.45,metalness:.2}),L.saT,g);
+        inst(UBOX,faces(arrSide,arrTop),L.arr,g);
+        const tTop=MAT(0xcda2d2,{map:arrTex,roughness:.55,metalness:.18});
+        const tArr=new THREE.Mesh(UBOX,faces(arrSide,tTop)); tArr.scale.set(AW,1.5,AL); tArr.position.set(TA.x,1.55,TA.z); g.add(tArr);
+        inst(UBOX,faces(MAT(0xb8865a,{roughness:.5,metalness:.18,emissive:0x2a1a08}),MAT(0xffffff,{map:decTex,roughness:.45,metalness:.18})),L.dec,g);
+        inst(UBOX,faces(MAT(0xa87c4e,{roughness:.55,metalness:.18}),MAT(0xffffff,{map:saTex,roughness:.5,metalness:.18})),L.sa,g);
+        const saTabs=inst(UBOX,MAT(0xe8c088,{roughness:.45,metalness:.2,emissive:0x2a1a08}),L.saT,g); saTabs.visible=false;   // the target bank's tabs in relief once close
+        inst(UBOX,MAT(0x7d5a3a,{roughness:.6,metalness:.15}),L.mux,g);
         inst(UBOX,MAT(0x82a2c6,{roughness:.45,metalness:.2}),L.ctl,g);
+        inst(UBOX,MAT(0x6f8fb4,{roughness:.5,metalness:.2}),L.io,g);
+        inst(UBOX,MAT(0x4a5160,{roughness:.7,metalness:.15}),L.ln,g);
         inst(UBOX,MAT(0x3a404c,{roughness:.75,metalness:.15}),L.bus,g);
 
-        /* ---- neighbours from the previous level: warp scheduler strip (−z) and CUDA cores (+z) ---------- */
-        const nb=[], cc=[];
-        for(let k=0;k<8;k++) nb.push({x:-343+k*98,y:1.0,z:-125,sx:94,sy:2,sz:90});
-        COLS.forEach(bx=>{ [125,223].forEach(z=>cc.push({x:bx,y:0.9,z,sx:80,sy:1.8,sz:80})); });
-        const r=H.rng(11), logicTex=tex(256,256,(c,w,h)=>{ c.fillStyle='#8a8a8a'; c.fillRect(0,0,w,h);     // rows of standard cells
-          for(let y=0;y<h;y+=16){ let x=0; while(x<w){ const cw=4+Math.floor(r()*6)*3, v=190+Math.floor(r()*50);
-            c.fillStyle='rgb('+v+','+v+','+v+')'; c.fillRect(x+1,y+2,cw-1,12); x+=cw; } } });
-        inst(UBOX,MAT(0x4f6682,{map:logicTex,roughness:.6,metalness:.15}),nb,g);
-        inst(UBOX,MAT(0x71895c,{map:logicTex,roughness:.6,metalness:.1}),cc,g);
+        /* ---- neighbours from the SM level: the warp-scheduler strip (−z) and the 32 CUDA cores (+z), its colours ---- */
+        const cc=[]; [-343,-245,-147,-49,49,147,245,343].forEach(x=>[125,223,321].forEach(z=>cc.push({x,y:0.9,z,sx:80,sy:1.8,sz:80})));
+        inst(UBOX,SM(0x8fb4d8,{map:schTex,roughness:.4,metalness:.2}),[{x:0,y:1.0,z:-125,sx:780,sy:2,sz:90}],g);
+        inst(UBOX,SM(0x9cc27f,{map:logicTex,roughness:.55,metalness:.1}),cc,g);
 
-        /* ---- memory cells: the target array's 128 × 128 cells as blocks, aligned to the texture grid ---- */
-        const PX=38/128, PZ=40/128, AX0=TA.x-19, AZ0=TA.z-20, cells=[];
-        for(let i=0;i<128;i++) for(let j=0;j<128;j++)
-          cells.push({x:AX0+(i+0.5)*PX,y:2.36,z:AZ0+(j+0.5)*PZ,sx:0.23,sy:0.12,sz:0.24});
-        const cellTex=tex(64,64,(c,w,h)=>{ c.fillStyle='#c9cdd2'; c.fillRect(0,0,w,h);
-          c.fillStyle='#eceef0'; c.fillRect(5,5,w-10,h-10);
-          c.fillStyle='#b4b9c0'; c.fillRect(14,5,9,h-10); c.fillRect(w-23,5,9,h-10);
-          c.fillStyle='#6a7079'; c.fillRect(28,10,8,8); c.fillRect(28,h-18,8,8); });
+        /* ---- memory cells: the target array's 128 × 128 cells, 0.10 × 0.24 boxes aligned to the texture grid ---- */
+        const PX=AW/128, PZ=AL/128, CH=0.07, AX0=TA.x-AW/2, AZ0=TA.z-AL/2, cells=[];
+        for(let i=0;i<128;i++) for(let j=0;j<128;j++) cells.push({x:AX0+(i+0.5)*PX,y:2.3+CH/2,z:AZ0+(j+0.5)*PZ,sx:PX-0.004,sy:CH,sz:PZ-0.006});
         const cellMat=MAT(0xcda2d2,{map:cellTex,roughness:.5,metalness:.15}), CELL_EM=new THREE.Color(0.05,0.033,0.02);   // warm lift: keeps the cyan-rim side faces from going teal
+        // once grey, the lit cells are desaturated like the 6T level's city so the blue sky light does not tint them
+        const uSat={value:1}; cellMat.onBeforeCompile=sh=>{ sh.uniforms.uSat=uSat; sh.fragmentShader='uniform float uSat;\n'+sh.fragmentShader.replace('#include <tonemapping_fragment>',
+          'gl_FragColor.rgb=mix(vec3(dot(gl_FragColor.rgb,vec3(.2126,.7152,.0722))),gl_FragColor.rgb,uSat);\n#include <tonemapping_fragment>'); }; cellMat.customProgramCacheKey=()=>'rf-cell-desat';
         const cellsIM=inst(UBOX,cellMat,cells,g); cellsIM.visible=false;
 
-        /* ---- glowing outline around the target bank (width follows the camera so it stays ~4 px) ----- */
+        /* ---- glowing outline around the target bank (width follows the camera so it stays ≈4 px) ---------- */
         const ol=new THREE.MeshBasicMaterial({color:0xffd23f,transparent:true}),
               glow=new THREE.MeshBasicMaterial({color:0xffc21a,transparent:true,opacity:.22,blending:THREE.AdditiveBlending,depthWrite:false});
         const E=[0,0,0,0].map(()=>({x:0,y:0,z:0,sx:1,sy:1,sz:1}));
         const olIM=inst(UBOX,ol,E,g), glIM=inst(UBOX,glow,E,g);
-        const X0=TB.x-43.9, X1=TB.x+43.9, Z0=TB.z-31.9, Z1=TB.z+31.9, OY=3.3;
+        const X0=TB.x-12.6, X1=TB.x+12.6, Z0=TB.z-34.6, Z1=TB.z+34.6, OY=3.1;
         const M=new THREE.Matrix4(), Q=new THREE.Quaternion(), P=new THREE.Vector3(), S=new THREE.Vector3(), BC=new THREE.Vector3(TB.x,2,TB.z);
         function setOutline(im,w,hgt){
           [[(X0+X1)/2,Z0,X1-X0+w,w],[(X0+X1)/2,Z1,X1-X0+w,w],[X0,(Z0+Z1)/2,w,Z1-Z0+w],[X1,(Z0+Z1)/2,w,Z1-Z0+w]].forEach((e,i)=>{
@@ -3168,40 +3306,47 @@ window.__PROVENANCE = Object.freeze({
           im.instanceMatrix.needsUpdate=true; }
         setOutline(olIM,1,0.3); setOutline(glIM,3,0.3);
 
-        /* ---- camera: keyframes from a target, a distance, an elevation and an azimuth ------------------
-           FOV (m) = 2·d·tan(22.5°)·1e-6 → d = 241 (200 µm), 102.6 (85 µm), 42.3 (35 µm), 7.24 (6 µm).     */
-        const key=(t,tgt,d,el,az)=>{ const e=el*Math.PI/180, a=az*Math.PI/180;
+        /* ---- camera: keys from a target, an elevation and an azimuth; the distance follows a uniform zoom rate ------
+           FOV (m) = 2·d·tan(22.5°)·1e-6: 184 µm (d 222.1) at t=0 → 2.0 µm (d 2.414) at t=1, log-uniform in t.       */
+        const D0=184/(2*Math.tan(Math.PI/8)), D1=2/(2*Math.tan(Math.PI/8)), dist=t=>D0*Math.pow(D1/D0,t);
+        const key=(t,tgt,el,az,tz)=>{ const e=el*Math.PI/180, a=az*Math.PI/180, d=dist(tz==null?t:tz);   // tz: the zoom depth, when a key sits off the uniform schedule
           return {t,pos:[tgt[0]+d*Math.cos(e)*Math.sin(a),tgt[1]+d*Math.sin(e),tgt[2]+d*Math.cos(e)*Math.cos(a)],tgt,fov:45}; };
-        // t=0 matches the SM level's closing shot (over the register-file centre from +z, ≈67° down, ≈7° to −x), so the
-        // cross-fade lines up; the dive then heads for the target bank and ends near its left array's decoder/sense-amp corner.
-        const KP=[[0,[0,2.3,0],241,67.3,-6.7],                       // = the SM level's last frame, 200 µm
-                  [0.3,[TB.x,2.3,TB.z+7],102.6,58,4],                   // 85 µm: the whole outlined bank, above the caption
-                  [0.62,[-58,2.3,-46],42.3,56,6],                       // 35 µm: left array, decoder, sense amps (labelled)
-                  [0.82,[-59,2.4,-48.5],16.9,68,4],                     // 14 µm: the array's corner by the decoder
-                  [1,[-61,2.42,-47.5],7.24,80,3]];                      // 6 µm: nothing but cells
-        const keys=KP.map(k=>key(...k));
+        // t=0 is the SM level's closing shot (register-file centre from +z, 67.3° down, 6.7° to −x); the dive heads for the
+        // outlined bank, then its +z array, and ends over cells a few in from the array's corner by the decoder and sense amps
+        // — at the pose the 6T-cell level opens on (2.0 µm, el 72°, az 2°).
+        const CX=AX0+(96+0.5)*PX, CZ=AZ0+(6+0.5)*PZ;                    // the closing target: a cell centre (row 6 from the decoder)
+        const keys=[key(0,[0,2.3,0],67.3,-6.7),                          // 184 µm: the whole register file
+                    key(0.3,[TB.x-8,2.3,TB.z+9],63,2,0.2),               // 74 µm: the outlined bank, right of the caption (after the dissolve in and the first caption)
+                    key(0.48,[-12.5,2.3,-28.5],58,5,0.42),               // 28 µm: the +z array, its decoder and sense amplifiers (labelled)
+                    key(0.68,[-14,2.37,-31.2],65,4,0.64),                // 10 µm: the array's corner by the decoder — thousands of cells
+                    key(0.86,[-12.6,2.37,-32.1],70,2.5,0.84),            // 4.1 µm: the periphery has left the frame
+                    key(1,[CX,2.3+CH,CZ],72,2)];                         // 2.0 µm: nothing but cells (= the 6T level's first frame)
 
         return { key:'regfile', mpu:1e-6, bg:0x0a0e14, group:g, keys,
-          caps:[{t:0,title:'Register file — 16,384 × 32-bit',sub:'Drawn here as 16 banks × 2 arrays of 128 × 128 memory cells · illustrative organisation'},
-                {t:0.55,title:'One bank',sub:'Two 128 × 128 cell arrays · a wordline decoder picks the row · sense amplifiers read the bits'},
-                {t:0.8,title:'Memory cells',sub:'Thousands of identical cells in rows and columns — each stores one bit'}],
+          caps:[{t:0,title:'Register file — 16,384 × 32-bit',sub:'64 KB per processing block · drawn as 16 banks × 2 arrays of 128 × 128 cells · organisation illustrative'},
+                {t:0.3,title:'One bank',sub:'Two 128 × 128 cell arrays · the wordline decoder picks the row · sense amplifiers read the bits'},
+                {t:0.68,title:'Memory cells',sub:'Thousands of identical 6T cells (0.10 × 0.24 µm) in rows and columns — each stores one bit'}],
           // anchors sit near the zoom's path so each label fades out before it leaves the frame, and none reaches the caption
-          tags:[{text:'Sense amplifiers',sub:'',pos:[-60,2.9,-57.5],from:0.5,to:0.69,cls:'bx'},
-                {text:'Wordline decoder',sub:'',pos:[TB.x,3.0,-50],from:0.5,to:0.76,cls:'bx'},
-                {text:'128 × 128 memory cells',sub:'',pos:[-67,2.4,-49],from:0.5,to:0.79,cls:'bx'}],
+          tags:[{text:'Sense amplifiers',sub:'',pos:[TB.x-TB.s*8.6,2.9,TA.z-6],from:0.4,to:0.56,cls:'bx'},
+                {text:'Wordline decoder',sub:'',pos:[TA.x,3.0,TB.z],from:0.4,to:0.6,cls:'bx'},
+                {text:'128 × 128 memory cells',sub:'',pos:[TA.x-2,2.4,TA.z-9],from:0.4,to:0.54,cls:'bx'}],
           update(t,time,cam){
-            // cells rise out of the array as the camera closes in, and the array turns from lilac to silicon grey
-            const k=sm((t-0.64)/0.16), c=sm((t-0.7)/0.2);
-            cellsIM.visible=t>0.63; cellsIM.position.y=-(1-k)*0.16;
-            cellMat.color.copy(CELL_LILAC).lerp(CELLGREY,c); cellMat.emissive.copy(CELL_EM).multiplyScalar(c); tArrMat.color.copy(LILAC).lerp(GAPGREY,c);
-            const d=cam.position.distanceTo(BC), w=Math.max(0.1,d*0.0055), a=sm((t-0.03)/0.1)*(1-sm((t-0.74)/0.08));
+            // the arrays start in the SM level's lit lilac and settle into the reel's warm pink over the cross-fade
+            const c1=sm(t/0.25); arrSide.color.copy(LILAC); arrTop.color.copy(LILAC);            // the SM level already draws the banks in this lilac
+            // cells rise out of the target array as the camera closes in, and turn from lilac to the 6T level's silicon greys
+            const k=sm((t-0.5)/0.16), c=sm((t-0.54)/0.3);
+            cellsIM.visible=t>0.49; cellsIM.position.y=-(1-k)*(CH+0.01);
+            cellMat.color.copy(CELL_LILAC).lerp(CELLGREY,c); cellMat.emissive.copy(CELL_EM).multiplyScalar(c); uSat.value=1-0.75*c; saTabs.visible=t>0.3;
+            tTop.color.copy(LILAC).lerp(GAPGREY,c);
+            if(c>0.5&&tTop.map){ tTop.map=null; tTop.needsUpdate=true; } else if(c<=0.5&&!tTop.map){ tTop.map=arrTex; tTop.needsUpdate=true; }
+            const d=cam.position.distanceTo(BC), w=Math.max(0.1,d*0.0028), a=sm((t-0.03)/0.1)*(1-sm((t-0.4)/0.08));
             ol.opacity=a; glow.opacity=0.22*a; olIM.visible=glIM.visible=a>0.01;
             setOutline(olIM,w,0.3); setOutline(glIM,w*3.2,0.25);
           } };
       })();
     })(THREE,{UBOX,SM,inst,tex,rng,_m,_q,_e,_p,_s,_c}));
 
-    /* ---- 5 · one memory cell: six transistors; reading the bit (1 unit = 10 nm) ---- */
+/* ---- 5 · one memory cell: six transistors; reading the bit (1 unit = 10 nm) ---- */
     S.push((function(THREE,H){
       const {UBOX,SM,inst,tex,rng,_m,_q,_e,_p,_s,_c}=H;
         /* ---- one memory cell: six transistors (1 unit = 10 nm) ---------------- */
@@ -3216,13 +3361,13 @@ window.__PROVENANCE = Object.freeze({
           //   gate A (x=-2.5): wordline piece z∈[-12,-6.3] (PG1) + inverter-2 gate z∈[-1.6,11.3] (PU2+PD2)
           //   gate B (x=+2.5): inverter-1 gate z∈[-11.3,1.6] (PD1+PU1) + wordline piece z∈[6.3,12] (PG2)
           //   Q/QB are cross-coupled to the opposite inverter's gate through small local-interconnect "L"s.
-          const CX=10, CZ=24, I0=-11, I1=11, J0=-4, J1=4;              // 23 × 9 cells fill the opening view; the focus cell (0,0) sits at the origin
+          const CX=10, CZ=24, I0=-20, I1=20, J0=-5, J1=5;              // 41 × 11 cells fill the 2 µm opening view; the focus cell (0,0) sits at the origin
           const XMIN=I0*CX-CX/2, XMAX=I1*CX+CX/2, ZMIN=J0*CZ-CZ/2, ZMAX=J1*CZ+CZ/2;
           const Y={fin:2.6, gate:5.2, tc:4.4, via:6.4, li:7.4};
           const L={fin:[],finC:[],gate:[],gateK:[],tc:[],via:[],li:[],q1:[],q0:[]}, seen=new Set();
           // greys straight from the reel palette (#8e969f–#e3e7eb) with a little per-block jitter; the city shader below
           // desaturates the lit result so the scene's blue sky / cyan rim lights don't tint them
-          const grey=(hex,a)=>{ _c.set(hex); const k=0.9*(1+(R()-0.5)*a);
+          const grey=(hex,a)=>{ _c.set(hex); const k=0.62*(1+(R()-0.5)*a);   // the three scene lights add ≈1.5× on a top face
             return _c.setRGB(Math.min(1,_c.r*k),Math.min(1,_c.g*k),Math.min(1,_c.b*k)).getHex(); };
           // box in cell-local coords → global, with optional de-duplication of parts shared with a mirrored neighbour
           function B(list,cell,x0,x1,y0,y1,z0,z1,c,share){
@@ -3276,9 +3421,9 @@ window.__PROVENANCE = Object.freeze({
               '#endif',
               '  vec4 aoW=modelMatrix*instanceMatrix*vec4(transformed,1.0);',
               '#ifdef SRAM_LIFT',
-              '  vAO=clamp(0.66+aoW.y*0.13,0.66,1.0);',
+              '  vAO=clamp(0.72+aoW.y*0.11,0.72,1.0);',
               '#else',
-              '  vAO=clamp(0.42+aoW.y*0.095,0.42,1.0);',
+              '  vAO=clamp(0.52+aoW.y*0.08,0.52,1.0);',
               '#endif'].join('\n'));
             sh.fragmentShader='varying float vAO;\n'+sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n  diffuseColor.rgb*=vAO;')
               .replace('#include <tonemapping_fragment>',['#ifdef SRAM_LIFT','  gl_FragColor.rgb=mix(vec3(dot(gl_FragColor.rgb,vec3(.2126,.7152,.0722))),gl_FragColor.rgb,0.32);','#else',
@@ -3307,403 +3452,617 @@ window.__PROVENANCE = Object.freeze({
           const bandM=new THREE.MeshBasicMaterial({color:0xe8f26a,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,fog:false});
           const bands=new THREE.Group(); g.add(bands);
           const band=(x,y,z,sx,sy,sz)=>{ const m=new THREE.Mesh(UBOX,bandM); m.position.set(x,y,z); m.scale.set(sx,sy,sz); bands.add(m); };
-          band((XMIN+XMAX)/2,9.2,0,XMAX-XMIN,1.0,4.2);                       // wordline
-          [-5,5].forEach(x=>band(x,10.8,(ZMIN+ZMAX)/2,2.6,1.0,ZMAX-ZMIN));      // BL, BLB
+          band(0,10.4,(ZMIN+ZMAX)/2,2.2,1.0,ZMAX-ZMIN);                       // wordline: an M2 line along the row (z), parallel to the gates
+          [-9,9].forEach(z=>band((XMIN+XMAX)/2,8.8,z,XMAX-XMIN,1.0,1.6));       // BL, BLB: M1 lines along the column (x), over the NMOS fin rows
           [[-2.5,-9],[2.5,9]].forEach(([x,z])=>band(x,6.2,z,2.4,2.2,6.2));      // the two access transistors, switched on
           const bitM=new THREE.SpriteMaterial({map:glowTex,color:0xffffff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,fog:false});
-          const bits=[]; [-5,5].forEach(x=>{ for(let k=0;k<3;k++){ const sp=new THREE.Sprite(bitM); sp.scale.set(5,5,1); sp.position.set(x,11.4,0); g.add(sp); bits.push({sp,x,k}); } });
+          const bits=[]; [-9,9].forEach(z=>{ for(let k=0;k<3;k++){ const sp=new THREE.Sprite(bitM); sp.scale.set(5,5,1); sp.position.set(0,9.6,z); g.add(sp); bits.push({sp,z,k}); } });
           const key=(t,tgt,az,pitch,d)=>{ const a=az*Math.PI/180, p=pitch*Math.PI/180;
             return {t,pos:[tgt[0]+d*Math.cos(p)*Math.cos(a),tgt[1]+d*Math.sin(p),tgt[2]+d*Math.cos(p)*Math.sin(a)],tgt,fov:45}; };
           const sm=x=>{ x=Math.max(0,Math.min(1,x)); return x*x*(3-2*x); };
           return { key:'sram', mpu:1e-8, bg:0x0a0e14, group:g,
-            // in to ≈330 nm on the cell's transistors, then back up to ≈570 nm to watch the bit being read
-            keys:[key(0,[1,0,-1],88,72,108.6), key(0.22,[0.5,2,0],52,63,80), key(0.44,[0,3.5,0],20,55,58), key(0.62,[1.2,3.2,-3.5],22,56,40),
+            // from 2.0 µm (the register file's last frame) in to ≈330 nm on the cell's transistors, then back up to ≈570 nm to watch the bit being read
+            keys:[key(0,[0,0,0],88,72,241), key(0.22,[0.5,2,0],52,66,140), key(0.44,[0,3.5,0],20,55,58), key(0.62,[1.2,3.2,-3.5],22,56,40),
                   key(0.82,[0,5,0],30,60,58), key(1,[0,6,0],36,60,69)],
             caps:[{t:0,title:'One memory cell: six transistors',sub:'Two cross-coupled inverters hold the bit (here a 1) · pull-up P, pull-down N, access N'},
                   {t:0.72,title:'Reading the bit',sub:'The wordline turns on the two access transistors; the bitlines carry the bit out'}],
             // tags fade out as their parts leave the frame (Access first); the two on the final transistor fade ≈0.92–0.98
             tags:[{text:'Pull-up (P)',sub:'',pos:[-2.5,5.4,4.5],from:0.26,to:0.64,cls:'bx'},
-                  {text:'Q = 0',sub:'',pos:[0,4.4,6],from:0.26,to:0.64,cls:'bx'},
+                  {text:'Q̄ = 0',sub:'',pos:[0,4.4,6],from:0.26,to:0.64,cls:'bx'},
                   {text:'Access (N)',sub:'',pos:[2.5,5.4,9],from:0.26,to:0.6,cls:'bx'},
                   {text:'Q = 1',sub:'',pos:[0,4.4,-5],from:0.26,to:0.66,cls:'bx'},
                   {text:'Pull-down (N)',sub:'',pos:[2.5,9.5,-9],from:0.26,to:0.66,cls:'bx'},
-                  {text:'Wordline',sub:'',pos:[-14,10,0],from:0.76,to:1.01,cls:'bx'},
-                  {text:'Bitline (BL)',sub:'',pos:[-5,11.5,-16],from:0.78,to:1.01,cls:'bx'},
-                  {text:'Bitline (BLB)',sub:'',pos:[5,11.5,10],from:0.78,to:1.01,cls:'bx'}],
+                  {text:'Wordline',sub:'',pos:[0,11,-14],from:0.76,to:1.01,cls:'bx'},
+                  {text:'Bitline (BL)',sub:'',pos:[-16,9.8,-9],from:0.78,to:1.01,cls:'bx'},
+                  {text:'Bitline (BLB)',sub:'',pos:[12,9.8,9],from:0.78,to:1.01,cls:'bx'}],
             update(t,time){ const p=0.5+0.5*Math.sin(time*2.2);
               mQ1.emissiveIntensity=0.68+0.16*p; mQ0.emissiveIntensity=0.26+0.07*p;
               h1.material.opacity=0.42+0.18*p; h0.material.opacity=0.12+0.05*p;
               const rd=sm((t-0.66)/0.12);                                // reading: wordline, access transistors and bitlines light up
-              bandM.opacity=rd*(0.42+0.12*p); bands.visible=rd>0.001;
+              bandM.opacity=rd*(0.6+0.15*p); bands.visible=rd>0.001;
               bitM.opacity=rd*0.9; bits.forEach(b=>{ const u=((time*0.35+b.k/3)%1);   // the bit travels out along both bitlines
-                b.sp.position.set(b.x,11.4,(b.x<0?-1:1)*u*(ZMAX-8)); b.sp.visible=rd>0.001; }); } };
+                b.sp.position.set((b.z<0?-1:1)*u*(XMAX-8),9.6,b.z); b.sp.visible=rd>0.001; }); } };
         })();
     })(THREE,{UBOX,SM,inst,tex,rng,_m,_q,_e,_p,_s,_c}));
 
     /* ---- 6 · back out to the logic: one CUDA core → inside it (1 unit = 1 µm) ------- */
     S.push((function(THREE,H){
       const {UBOX,SM,inst,tex,rng}=H;
-        /* A processing block's CUDA-core area: 4 × 8 cores (75 × 60 µm, 98 µm pitch) on a dark-tan floor,
-           lilac register banks and orange LD/ST units round the edges. Each core is a generic FMA floorplan
-           (illustrative): pipeline registers top and bottom, INT32 unit, multiplier array, and a column of
-           alignment shifter · adder · normalise/round. One core near the centre is outlined in yellow. */
-        return (function(){
-          const g=new THREE.Group(), R=rng(4417);
-          // lit, textured top faces come out brighter and bluer under the shared key + (blue) hemisphere light,
-          // so colours are pre-compensated (measured in the harness) to land near the reel's warm palette
-          const W=(hex,k)=>{ const c=new THREE.Color(hex); k=k||1; c.r*=0.884*k; c.g*=0.753*k; c.b*=0.658*k; return c.getHex(); };
-          const mat=map=>SM(0xffffff,{map,roughness:.8,metalness:.04,emissive:0x1c1106});   // small warm lift
-          // floorplan box: side-face normals tilted mostly upward, so the thin block walls shade like the tops
-          // (flat, like the reel) instead of going dark teal under the cyan rim light
-          const FBOX=UBOX.clone(), nrm=FBOX.attributes.normal, _n=new THREE.Vector3();
-          for(let i=0;i<nrm.count;i++){ if(Math.abs(nrm.getY(i))<0.5){ _n.set(nrm.getX(i)*0.3,1,nrm.getZ(i)*0.3).normalize(); nrm.setXYZ(i,_n.x,_n.y,_n.z); } }
-          const grey=v=>{ v=Math.max(0,Math.min(255,v|0)); return 'rgb('+v+','+v+','+v+')'; };
+      /* A processing block's CUDA-core area: 4 × 8 cores (75 × 60 µm on an 84 µm pitch, illustrative) on a dark-tan floor
+         of routing channel, lilac register banks and orange LD/ST units round the edges. Each core is a generic FMA
+         floorplan (illustrative): pipeline registers top and bottom (3 × 32-bit operand rows), INT32 unit, a 24 × 24
+         partial-product multiplier array, and a column of alignment shifter · 48-bit adder · normalise/round.
+         One core near the centre is outlined in yellow. */
+      return (function(){
+        const g=new THREE.Group(), R=rng(4417);
+        const sm=x=>{ x=Math.max(0,Math.min(1,x)); return x*x*(3-2*x); };
+        // lit, textured top faces come out brighter and bluer under the shared key + (blue) hemisphere light,
+        // so colours are pre-compensated (measured in the harness) to land near the reel's warm palette
+        const W=(hex,k)=>{ const c=new THREE.Color(hex); k=k||1; c.r*=0.884*k; c.g*=0.753*k; c.b*=0.658*k; return c.getHex(); };
+        const mat=map=>SM(0xffffff,{map,roughness:.8,metalness:.04,emissive:0x1c1106});   // small warm lift
+        // floorplan box: side-face normals tilted mostly upward, so the thin block walls shade like the tops
+        // (flat, like the reel) instead of going dark teal under the cyan rim light
+        const FBOX=UBOX.clone(), nrm=FBOX.attributes.normal, _n=new THREE.Vector3();
+        for(let i=0;i<nrm.count;i++){ if(Math.abs(nrm.getY(i))<0.5){ _n.set(nrm.getX(i)*0.3,1,nrm.getZ(i)*0.3).normalize(); nrm.setXYZ(i,_n.x,_n.y,_n.z); } }
+        const grey=v=>{ v=Math.max(0,Math.min(255,v|0)); return 'rgb('+v+','+v+','+v+')'; };
 
-          /* ---- shared textures (greyscale; per-instance colour tints them) ---- */
-          const tBase=tex(128,128,(x,w,h)=>{ x.fillStyle=grey(236); x.fillRect(0,0,w,h);              // faint cell rows + rails
-            for(let y=0;y<h;y+=16){ let px=0; while(px<w){ const cw=4+(R()*14|0); x.fillStyle=grey(214+R()*20); x.fillRect(px+1,y+2,cw-1,13); px+=cw; } } });
-          tBase.wrapS=tBase.wrapT=THREE.RepeatWrapping; tBase.repeat.set(60,45);
-          const tSea=tex(512,512,(x,w,h)=>{ x.fillStyle=grey(170); x.fillRect(0,0,w,h);               // standard-cell rows
-            for(let y=0;y<h;y+=16){ x.fillStyle=grey(214); x.fillRect(0,y,w,2);
-              let px=0; while(px<w){ const cw=6+(R()*26|0); x.fillStyle=grey(186+R()*52); x.fillRect(px+1,y+3,cw-1,12); px+=cw; } } });
-          const tReg=tex(1024,64,(x,w,h)=>{ x.fillStyle=grey(150); x.fillRect(0,0,w,h);               // pipeline-register bars
-            const n=52, p=w/n; for(let i=0;i<n;i++){ x.fillStyle=grey(i%2?246:228); x.fillRect(i*p+p*0.2,7,p*0.6,h-14); } });
-          const tChk=tex(256,512,(x,w,h)=>{ x.fillStyle=grey(160); x.fillRect(0,0,w,h);               // checkered logic blocks
-            const bw=w/6, bh=h/16;
-            for(let j=0;j<16;j++) for(let i=0;i<6;i++){ x.fillStyle=grey(((i+j)&1?240:208)+R()*14-7); x.fillRect(i*bw+1.5,j*bh+1.5,bw-3,bh-3);
-              x.fillStyle='rgba(0,0,0,.07)'; for(let k=6;k<bh-6;k+=6) x.fillRect(i*bw+5,j*bh+k,bw-10,2); } });
-          const tGrid=tex(512,512,(x,w,h)=>{ x.fillStyle=grey(236); x.fillRect(0,0,w,h);              // fine array grid
-            for(let j=0;j<32;j++) for(let i=0;i<32;i++){ x.fillStyle=grey(222+R()*32); x.fillRect(i*16+1,j*16+1,14,14); }
-            x.fillStyle='rgba(50,40,30,.42)'; for(let k=0;k<=w;k+=16){ x.fillRect(k-1,0,2,h); x.fillRect(0,k-1,w,2); }
-            x.fillStyle='rgba(40,30,20,.18)'; for(let k=0;k<=w;k+=128){ x.fillRect(k-2,0,4,h); x.fillRect(0,k-2,w,4); } });
-          const tHatch=tex(256,256,(x,w,h)=>{ x.fillStyle=grey(212); x.fillRect(0,0,w,h);             // diagonal hatch
-            x.strokeStyle=grey(255); x.lineWidth=5; for(let k=-h;k<w+h;k+=12){ x.beginPath(); x.moveTo(k,0); x.lineTo(k+h,h); x.stroke(); }
-            x.strokeStyle='rgba(0,0,0,.22)'; x.lineWidth=5; x.strokeRect(2,2,w-4,h-4); });
-          const tAdd=tex(256,128,(x,w,h)=>{ x.fillStyle=grey(214); x.fillRect(0,0,w,h);               // bit-slice columns + carry tree
-            for(let i=0;i<32;i++){ x.fillStyle=grey(236+R()*19); x.fillRect(i*8+1,4,6,h-8); }
-            x.fillStyle='rgba(0,0,0,.13)'; x.fillRect(0,h*0.44,w,h*0.12);
-            x.strokeStyle='rgba(0,0,0,.22)'; x.lineWidth=5; x.strokeRect(2,2,w-4,h-4); });
+        /* ---- shared textures (greyscale; per-instance colour tints them) ------------------------------------------
+           Sizing rule: the 61.5 µm close on a 2048-px-tall iPad frame is ≈33 px/µm; a surface of X µm needs ≥ X·33/2 texels. */
+        const tBase=tex(256,256,(x,w,h)=>{ x.fillStyle=grey(230); x.fillRect(0,0,w,h);          // routing channel between cores: tracks
+          for(let y=0;y<h;y+=8){ x.fillStyle=grey(206+R()*18); x.fillRect(0,y+2,w,3); }
+          for(let i=0;i<40;i++){ const px=R()*w, py=(R()*h/8|0)*8+2; x.fillStyle=grey(246); x.fillRect(px,py,2+R()*20,3); } });
+        tBase.wrapS=tBase.wrapT=THREE.RepeatWrapping; tBase.repeat.set(60,45);
+        const tSea=tex(2048,2048,(x,w,h)=>{ x.fillStyle=grey(170); x.fillRect(0,0,w,h);         // standard-cell rows (75 µm plate → 2048)
+          for(let y=0;y<h;y+=20){ x.fillStyle=grey(216); x.fillRect(0,y,w,3);                    // power rail per row (≈0.6 µm row pitch)
+            let px=0; while(px<w){ const cw=12+(R()*52|0), v=186+R()*52; x.fillStyle=grey(v); x.fillRect(px+1,y+4,cw-2,15);
+              x.fillStyle=grey(v-34); const nc=1+(cw/14|0); for(let k=0;k<nc;k++) x.fillRect(px+3+R()*(cw-6),y+6+R()*10,2,2);   // contacts
+              px+=cw; } } });
+        const tReg=tex(2048,128,(x,w,h)=>{ x.fillStyle=grey(150); x.fillRect(0,0,w,h);          // pipeline registers: 3 × 32 flip-flop cells
+          const n=96, p=w/n; for(let i=0;i<n;i++){ const gap=(i%32===0&&i)?p*0.35:0; x.fillStyle=grey(i%2?246:228); x.fillRect(i*p+p*0.2+gap*0.5,12,p*0.6-gap*0.5,h-24);
+            x.fillStyle='rgba(0,0,0,.12)'; x.fillRect(i*p+p*0.3,h*0.5-3,p*0.4,6); } });
+        const tChk=tex(512,1024,(x,w,h)=>{ x.fillStyle=grey(160); x.fillRect(0,0,w,h);          // checkered logic blocks (INT32, LD/ST)
+          const bw=w/6, bh=h/16;
+          for(let j=0;j<16;j++) for(let i=0;i<6;i++){ x.fillStyle=grey(((i+j)&1?240:208)+R()*14-7); x.fillRect(i*bw+3,j*bh+3,bw-6,bh-6);
+            x.fillStyle='rgba(0,0,0,.07)'; for(let k=12;k<bh-12;k+=12) x.fillRect(i*bw+10,j*bh+k,bw-20,4); } });
+        const tGrid=tex(1024,1024,(x,w,h)=>{ x.fillStyle=grey(236); x.fillRect(0,0,w,h);        // 24 × 24 partial-product array
+          const N=24, c=w/N;
+          for(let j=0;j<N;j++) for(let i=0;i<N;i++){ x.fillStyle=grey(222+R()*32); x.fillRect(Math.floor(i*c)+2,Math.floor(j*c)+2,Math.ceil(c)-4,Math.ceil(c)-4); }
+          x.fillStyle='rgba(50,40,30,.42)'; for(let k=0;k<=N;k++){ const q=Math.round(k*c); x.fillRect(q-1,0,3,h); x.fillRect(0,q-1,w,3); }
+          x.fillStyle='rgba(40,30,20,.18)'; for(let k=0;k<=N;k+=6){ const q=Math.round(k*c); x.fillRect(q-3,0,6,h); x.fillRect(0,q-3,w,6); } });
+        // diagonal hatch for the shifters: the box is 24 (x) × 14 (z) µm, so a 45° world line has dv/du = 24/14 in texture space,
+        // i.e. dx = h·(14/24) per dy = h in the square canvas
+        const HA=14/24;
+        const tHatch=tex(512,512,(x,w,h)=>{ x.fillStyle=grey(212); x.fillRect(0,0,w,h);
+          x.strokeStyle=grey(255); x.lineWidth=6; for(let k=-h;k<w+h;k+=24){ x.beginPath(); x.moveTo(k,0); x.lineTo(k+h*HA,h); x.stroke(); }
+          x.strokeStyle='rgba(0,0,0,.22)'; x.lineWidth=10; x.strokeRect(4,4,w-8,h-8); });
+        const tAdd=tex(512,256,(x,w,h)=>{ x.fillStyle=grey(214); x.fillRect(0,0,w,h);           // 48 bit-slice columns + carry tree band
+          const n=48, p=w/n; for(let i=0;i<n;i++){ x.fillStyle=grey(236+R()*19); x.fillRect(Math.round(i*p)+1,8,Math.round(p)-3,h-16); }
+          x.fillStyle='rgba(0,0,0,.13)'; x.fillRect(0,h*0.44,w,h*0.12);
+          x.strokeStyle='rgba(0,0,0,.22)'; x.lineWidth=10; x.strokeRect(4,4,w-8,h-8); });
 
-          /* ---- floor ---- */
-          const floor=new THREE.Mesh(UBOX,SM(W(0x5a4632,0.93),{map:tBase,roughness:.85,metalness:.04}));
-          floor.scale.set(2600,2,2000); floor.position.set(-50,-1,-60); g.add(floor);
+        /* ---- floor ---- */
+        const floor=new THREE.Mesh(UBOX,SM(W(0x5a4632,0.93),{map:tBase,roughness:.85,metalness:.04}));
+        floor.scale.set(2600,2,2000); floor.position.set(-50,-1,-60); g.add(floor);
 
-          /* ---- the core grid: 4 rows × 8 columns, 98 µm pitch; target core at column 4, row 2 (world origin) ---- */
-          // S: the core layout is drawn at 94 % of the nominal 80 × 64 µm (75 × 60 µm) so that at t = 1 the whole outlined core
-          // fits a 16:10 view with a margin, and clears the app's 64-px top bar, inside the FOV limit (≤ 55 µm + 15 %)
-          const P=98, S=0.94, CW=80*S, CD=64*S, COLS=8, ROWS=4, TCOL=4, TROW=2, Y0=0.8;
-          const plates=[],regs=[],chk=[],grid=[],hatch=[],add=[];
-          // tops come out ≈1.2× brighter under the shared lights even after W(); k pulls the parts back onto the brief's palette
-          const vary=(hex,s,k)=>{ const c=new THREE.Color(W(hex,k||0.83)); const v=1+(R()-0.5)*s; c.r*=v; c.g*=v; c.b*=v; return c.getHex(); };
-          const L=(X,Z,o)=>{ o.x=X+o.x*S; o.z=Z+o.z*S; o.sx*=S; o.sz*=S; return o; };      // core-local layout → world
-          for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const X=(c-TCOL)*P, Z=(r-TROW)*P;
-            plates.push({x:X,y:Y0/2,z:Z,sx:CW,sy:Y0,sz:CD,c:vary(0xa87c52,0.06,0.94)});
-            [-1,1].forEach(s=>regs.push(L(X,Z,{x:0,y:Y0+0.5,z:s*28,sx:78,sy:1.0,sz:8,c:vary(0xc9a26a,0.05,0.9)})));   // pipeline registers
-            chk.push(L(X,Z,{x:-30,y:Y0+0.7,z:0,sx:17,sy:1.4,sz:44,c:vary(0xd99a5e,0.05)}));                       // INT32 unit
-            grid.push(L(X,Z,{x:-3.5,y:Y0+1.0,z:0,sx:33,sy:2.0,sz:44,c:vary(0xd4a35c,0.05)}));                     // multiplier array (raised)
-            hatch.push(L(X,Z,{x:26.5,y:Y0+0.7,z:-15,sx:24,sy:1.4,sz:14,c:vary(0xc1a4e6,0.05)}));               // normalise · round
-            add.push(L(X,Z,{x:26.5,y:Y0+0.8,z:0,sx:24,sy:1.6,sz:14,c:vary(0xe0904a,0.05)}));                     // adder
-            hatch.push(L(X,Z,{x:26.5,y:Y0+0.7,z:15,sx:24,sy:1.4,sz:14,c:vary(0xc1a4e6,0.05)}));               // alignment shifter
-          }
-          /* ---- edges of the grid: lilac register banks (far edge + left), orange LD/ST (near edge + right) ---- */
-          const x0=-TCOL*P-CW/2, x1=(COLS-1-TCOL)*P+CW/2, z0=-TROW*P-CD/2, z1=(ROWS-1-TROW)*P+CD/2;   // grid extents
-          const nb=16, bp=(x1-x0)/nb;
-          for(let i=0;i<nb;i++){ const x=x0+bp*(i+0.5);
-            grid.push({x,y:0.8,z:z0-20-15,sx:bp-4,sy:1.6,sz:30,c:vary(0xa89bd0,0.06,0.94)});                     // register banks
-            chk.push({x,y:0.7,z:z1+20+15,sx:bp-4,sy:1.4,sz:30,c:vary(0xd9824a,0.06,0.94)}); }                     // LD/ST units
-          for(let r=0;r<ROWS;r++){ const z=(r-TROW)*P;
-            grid.push({x:x0-20-15,y:0.8,z,sx:30,sy:1.6,sz:CD,c:vary(0xa89bd0,0.06,0.94)});
-            chk.push({x:x1+20+15,y:0.7,z,sx:30,sy:1.4,sz:CD,c:vary(0xd9824a,0.06,0.94)}); }
-          inst(FBOX,mat(tSea),plates,g);
-          inst(FBOX,mat(tReg),regs,g);
-          inst(FBOX,mat(tChk),chk,g);
-          inst(FBOX,mat(tGrid),grid,g);
-          inst(FBOX,mat(tHatch),hatch,g);
-          inst(FBOX,mat(tAdd),add,g);
+        /* ---- the core grid: 4 rows × 8 columns, 84 µm pitch (A3: 8.8 µm routing gap); target core at column 4, row 2 (origin) ---- */
+        // the core layout is drawn at 94 % of the nominal 80 × 64 µm (75 × 60 µm) so that at t = 1 the whole outlined core
+        // fits a 16:10 view with a margin and clears the app's 64-px top bar
+        const P=84, S=0.94, CW=80*S, CD=64*S, COLS=8, ROWS=4, TCOL=4, TROW=2, Y0=0.8;
+        const plates=[],regs=[],chk=[],grid=[],hatch=[],add=[];
+        // tops come out ≈1.2× brighter under the shared lights even after W(); k pulls the parts back onto the reel's palette
+        const vary=(hex,s,k)=>{ const c=new THREE.Color(W(hex,k||0.83)); const v=1+(R()-0.5)*s; c.r*=v; c.g*=v; c.b*=v; return c.getHex(); };
+        const L=(X,Z,o)=>{ o.x=X+o.x*S; o.z=Z+o.z*S; o.sx*=S; o.sz*=S; return o; };      // core-local layout → world
+        for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const X=(c-TCOL)*P, Z=(r-TROW)*P;
+          plates.push({x:X,y:Y0/2,z:Z,sx:CW,sy:Y0,sz:CD,c:vary(0xa87c52,0.06,0.94)});
+          [-1,1].forEach(s=>regs.push(L(X,Z,{x:0,y:Y0+0.5,z:s*28,sx:78,sy:1.0,sz:8,c:vary(0xc9a26a,0.05,0.9)})));   // pipeline registers
+          chk.push(L(X,Z,{x:-30,y:Y0+0.7,z:0,sx:17,sy:1.4,sz:44,c:vary(0xd99a5e,0.05)}));                       // INT32 unit
+          grid.push(L(X,Z,{x:-3.5,y:Y0+1.0,z:0,sx:33,sy:2.0,sz:44,c:vary(0xd4a35c,0.05)}));                     // multiplier array (raised)
+          hatch.push(L(X,Z,{x:26.5,y:Y0+0.7,z:-15,sx:24,sy:1.4,sz:14,c:vary(0xc1a4e6,0.05)}));               // normalise · round
+          add.push(L(X,Z,{x:26.5,y:Y0+0.8,z:0,sx:24,sy:1.6,sz:14,c:vary(0xe0904a,0.05)}));                     // adder
+          hatch.push(L(X,Z,{x:26.5,y:Y0+0.7,z:15,sx:24,sy:1.4,sz:14,c:vary(0xc1a4e6,0.05)}));               // alignment shifter
+        }
+        /* ---- edges of the grid: lilac register banks (far edge + left), orange LD/ST (near edge + right) ---- */
+        const x0=-TCOL*P-CW/2, x1=(COLS-1-TCOL)*P+CW/2, z0=-TROW*P-CD/2, z1=(ROWS-1-TROW)*P+CD/2;   // grid extents
+        const nb=16, bp=(x1-x0)/nb;
+        for(let i=0;i<nb;i++){ const x=x0+bp*(i+0.5);
+          grid.push({x,y:0.8,z:z0-20-15,sx:bp-4,sy:1.6,sz:30,c:vary(0xa89bd0,0.06,0.94)});                     // register banks
+          chk.push({x,y:0.7,z:z1+20+15,sx:bp-4,sy:1.4,sz:30,c:vary(0xd9824a,0.06,0.94)}); }                     // LD/ST units
+        for(let r=0;r<ROWS;r++){ const z=(r-TROW)*P;
+          grid.push({x:x0-20-15,y:0.8,z,sx:30,sy:1.6,sz:CD,c:vary(0xa89bd0,0.06,0.94)});
+          chk.push({x:x1+20+15,y:0.7,z,sx:30,sy:1.4,sz:CD,c:vary(0xd9824a,0.06,0.94)}); }
+        inst(FBOX,mat(tSea),plates,g);
+        inst(FBOX,mat(tReg),regs,g);
+        inst(FBOX,mat(tChk),chk,g);
+        inst(FBOX,mat(tGrid),grid,g);
+        inst(FBOX,mat(tHatch),hatch,g);
+        inst(FBOX,mat(tAdd),add,g);
 
-          /* ---- the target core's thin glowing yellow outline; its width is kept ≈2 px by update() ---- */
-          const tGlow=tex(8,64,(x,w,h)=>{ const gr=x.createLinearGradient(0,0,0,h);
-            gr.addColorStop(0,'rgba(255,255,255,0)'); gr.addColorStop(0.5,'rgba(255,255,255,1)'); gr.addColorStop(1,'rgba(255,255,255,0)');
-            x.fillStyle=gr; x.fillRect(0,0,w,h); });
-          const OY=Y0+1.3, HX=CW/2+1, HZ=CD/2+1;
-          const four=()=>[0,1,2,3].map(()=>({x:0,y:OY,z:0,sx:1,sy:1,sz:1}));
-          const line=inst(UBOX,new THREE.MeshBasicMaterial({color:0xffd23f}),four(),g);
-          const glowM=new THREE.MeshBasicMaterial({color:0xffc21a,map:tGlow,transparent:true,opacity:.55,blending:THREE.AdditiveBlending,depthWrite:false});
-          const glow=inst(UBOX,glowM,four(),g); glow.renderOrder=2;
-          const oM=new THREE.Matrix4(), oQ=new THREE.Quaternion(), oQ90=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.PI/2),
-                oP=new THREE.Vector3(), oS=new THREE.Vector3(), C0=new THREE.Vector3(0,OY,0);
-          function setOutline(im,w,o){                         // each bar: local x = along the edge, local z = across it
-            const e=o?-w:w;                                     // glow: side bars stop short of the long ones (no double-add at corners)
-            [[0,-HZ,2*HX+w,false],[0,HZ,2*HX+w,false],[-HX,0,2*HZ+e,true],[HX,0,2*HZ+e,true]].forEach((b,i)=>
-              im.setMatrixAt(i,oM.compose(oP.set(b[0],OY,b[1]),b[3]?oQ90:oQ,oS.set(b[2],Math.min(w,0.6)*0.5,w))));
-            im.instanceMatrix.needsUpdate=true; }
-          setOutline(line,0.6); setOutline(glow,2.4,1);
+        /* ---- F2: top-metal power straps over the target core (= the wiring level's first layer: 13 bars along x,
+                2 µm wide at 4.5 µm pitch, span 60) fade in over t 0.72 → 0.94 so the next level's opening frame is already here ---- */
+        const strapM=SM(W(0xb8aca2),{roughness:.4,metalness:.3,transparent:true,opacity:0,depthWrite:false});
+        const straps=[]; for(let i=0;i<13;i++) straps.push({x:0,y:Y0+2.6,z:(i-6)*4.5,sx:60,sy:0.3,sz:2.0});   // = the wiring level's top layer: 60 µm bars
+        const strapMesh=inst(UBOX,strapM,straps,g); strapMesh.renderOrder=1; strapMesh.visible=false;
 
-          return { key:'cudacore', mpu:1e-6, bg:0x0a0e14, group:g,
-            keys:[{t:0,pos:[-129.9,296.1,207.2],tgt:[-30,0,-40],fov:45},        // ≈330 µm, oblique over the core grid
-                  {t:0.35,pos:[-33.8,158.0,119.9],tgt:[0,1,2],fov:45},          // ≈165 µm, the outlined core near centre
-                  {t:0.62,pos:[-7.6,97.2,67.0],tgt:[0,1,5],fov:45},             // ≈95 µm
-                  {t:1,pos:[0,66.93,41.39],tgt:[0,2,5.4],fov:45}],              // ≈61.5 µm, looking down ≈61° on the core
-            caps:[{t:0,title:'One CUDA core',sub:'1 of 128 per SM · this whole view is about the width of a human hair'},
-                  {t:0.58,title:'Inside one CUDA core',sub:'A fused multiply-add unit: multiply, align, add, normalise, round · generic floorplan, illustrative'}],
-            tags:[{text:'One CUDA core',sub:'',pos:[0,3,-HZ],from:0.15,to:0.55,cls:'y'},
-                  {text:'INT32 unit',sub:'',pos:[-30*S,Y0+1.5,-10*S],from:0.62,to:1.01,cls:'bx'},
-                  {text:'Multiplier array',sub:'',pos:[-3.5*S,Y0+2.1,2*S],from:0.63,to:1.01,cls:'bx'},
-                  {text:'Normalise · round',sub:'',pos:[26.5*S,Y0+1.5,-15*S],from:0.64,to:1.01,cls:'bx'},
-                  {text:'Adder',sub:'',pos:[26.5*S,Y0+1.7,0],from:0.65,to:1.01,cls:'bx'},
-                  {text:'Alignment shifter',sub:'',pos:[26.5*S,Y0+1.5,15*S],from:0.66,to:1.01,cls:'bx'},
-                  {text:'Pipeline registers',sub:'',pos:[24*S,Y0+1.1,27*S],from:0.67,to:1.01,cls:'bx'}],
-            update(t,time,cam){                                 // keep the outline ≈2.5 px wide at every zoom
-              const d=cam.position.distanceTo(C0), fu=2*d*Math.tan(cam.fov*Math.PI/360), w=fu*0.0044;
-              setOutline(line,w); setOutline(glow,w*4,1); } };
-        })();
+        /* ---- the target core's thin glowing yellow outline; its width is kept ≈2 px by update() ---- */
+        const tGlow=tex(8,64,(x,w,h)=>{ const gr=x.createLinearGradient(0,0,0,h);
+          gr.addColorStop(0,'rgba(255,255,255,0)'); gr.addColorStop(0.5,'rgba(255,255,255,1)'); gr.addColorStop(1,'rgba(255,255,255,0)');
+          x.fillStyle=gr; x.fillRect(0,0,w,h); });
+        const OY=Y0+1.3, HX=CW/2+1, HZ=CD/2+1;
+        const four=()=>[0,1,2,3].map(()=>({x:0,y:OY,z:0,sx:1,sy:1,sz:1}));
+        const line=inst(UBOX,new THREE.MeshBasicMaterial({color:0xffd23f}),four(),g);
+        const glowM=new THREE.MeshBasicMaterial({color:0xffc21a,map:tGlow,transparent:true,opacity:.55,blending:THREE.AdditiveBlending,depthWrite:false});
+        const glow=inst(UBOX,glowM,four(),g); glow.renderOrder=2;
+        const oM=new THREE.Matrix4(), oQ=new THREE.Quaternion(), oQ90=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.PI/2),
+              oP=new THREE.Vector3(), oS=new THREE.Vector3(), C0=new THREE.Vector3(0,OY,0);
+        function setOutline(im,w,o){                         // each bar: local x = along the edge, local z = across it
+          const e=o?-w:w;                                     // glow: side bars stop short of the long ones (no double-add at corners)
+          [[0,-HZ,2*HX+w,false],[0,HZ,2*HX+w,false],[-HX,0,2*HZ+e,true],[HX,0,2*HZ+e,true]].forEach((b,i)=>
+            im.setMatrixAt(i,oM.compose(oP.set(b[0],OY,b[1]),b[3]?oQ90:oQ,oS.set(b[2],Math.min(w,0.6)*0.5,w))));
+          im.instanceMatrix.needsUpdate=true; }
+        setOutline(line,0.6); setOutline(glow,2.4,1);
+
+        /* ---- keys: d 398.5 → 199.2 → 114.7 → 74.24 (FOV 330 → 165 → 95 → 61.5 µm); el 60 → 60.3 → 60.6 → 61°, az −22 → −15 → −6 → 0° ---- */
+        const TY=1.5;                                          // tags raised (F2) so the straps pass under the labels
+        return { key:'cudacore', mpu:1e-6, bg:0x17110a, group:g,
+          keys:[{t:0,pos:[-104.6,345.1,144.7],tgt:[-30,0,-40],fov:45},        // ≈330 µm, oblique over the core grid (contract; el 60° = SRAM level's ground plane)
+                {t:0.36,pos:[-25.5,174.0,97.3],tgt:[0,1,2],fov:45},           // ≈165 µm, the outlined core near centre
+                {t:0.64,pos:[-5.9,100.9,61.0],tgt:[0,1,5],fov:45},            // ≈95 µm
+                {t:1,pos:[0,66.93,41.39],tgt:[0,2,5.4],fov:45}],              // ≈61.5 µm, looking down 61° on the core (contract, unchanged)
+          caps:[{t:0,title:'One CUDA core',sub:'1 of 128 per SM · one core is about the width of a human hair · layout illustrative'},
+                {t:0.58,title:'Inside one CUDA core',sub:'A fused multiply-add unit: multiply, align, add, normalise, round · generic floorplan, sizes illustrative'}],
+          tags:[{text:'One CUDA core',sub:'',pos:[0,3,-HZ],from:0.15,to:0.52,cls:'y'},
+                {text:'INT32 unit',sub:'',pos:[-30*S,Y0+1.5+TY,-10*S],from:0.62,to:1.01,cls:'bx'},
+                {text:'Multiplier array',sub:'24 × 24 partial products',pos:[-3.5*S,Y0+2.1+TY,2*S],from:0.63,to:1.01,cls:'bx'},
+                {text:'Normalise · round',sub:'',pos:[26.5*S,Y0+1.5+TY,-15*S],from:0.64,to:1.01,cls:'bx'},
+                {text:'Adder',sub:'48-bit',pos:[26.5*S,Y0+1.7+TY,0],from:0.65,to:1.01,cls:'bx'},
+                {text:'Alignment shifter',sub:'',pos:[26.5*S,Y0+1.5+TY,15*S],from:0.66,to:1.01,cls:'bx'},
+                {text:'Pipeline registers',sub:'',pos:[24*S,Y0+1.1+TY,27*S],from:0.67,to:1.01,cls:'bx'}],
+          update(t,time,cam){                                 // keep the outline ≈2.5 px wide at every zoom; fade the straps in
+            const d=cam.position.distanceTo(C0), fu=2*d*Math.tan(cam.fov*Math.PI/360), w=fu*0.0044;
+            setOutline(line,w); setOutline(glow,w*4,1);
+            const so=sm((t-0.72)/0.22)*0.55; strapM.opacity=so; strapMesh.visible=so>0.001; } };
+      })();
     })(THREE,{UBOX,SM,inst,tex,rng,_m,_q,_e,_p,_s,_c}));
 
-    /* ---- 7 · into the electron microscope: the wiring is polished away, rows of logic
+/* ---- 7 · into the electron microscope: the wiring is polished away, rows of logic
             cells, then gates and fins (1 unit = 1 µm) ------------------------------------ */
-    S.push((function(){
-      const g=new THREE.Group();
-      const cu=(o)=>SM(0xb8aca2,Object.assign({roughness:.4,metalness:.3,transparent:true},o||{}));   // copper, as an electron microscope sees it
-      // layers top → bottom: thick global wiring down to the finest local wires
-      const L=[{y:16,w:2.0,p:4.5,th:1.2,dir:'x',span:60},{y:12,w:1.2,p:2.6,th:0.8,dir:'z',span:44},
-               {y:9,w:0.7,p:1.5,th:0.5,dir:'x',span:30},{y:6.8,w:0.4,p:0.9,th:0.32,dir:'z',span:20},
-               {y:5.2,w:0.22,p:0.5,th:0.18,dir:'x',span:12},{y:4.1,w:0.12,p:0.28,th:0.12,dir:'z',span:7}];
-      const layers=L.map((l,li)=>{ const list=[], n=Math.floor(l.span/l.p);
-        for(let i=-n/2;i<n/2;i++){ const o=(i+0.5)*l.p;
-          list.push(l.dir==='x'?{x:0,y:l.y,z:o,sx:l.span,sy:l.th,sz:l.w}:{x:o,y:l.y,z:0,sx:l.w,sy:l.th,sz:l.span}); }
-        const m=cu(); const im=inst(UBOX,m,list,g); return {m,y:l.y,th:l.th}; });
-      // vias between layers
-      const vias=[], r=rng(29);
-      for(let li=0;li<L.length-1;li++){ const a=L[li], b=L[li+1], n=Math.round(40*(li+1));
-        for(let i=0;i<n;i++){ const x=(r()-0.5)*b.span, z=(r()-0.5)*b.span, h=a.y-b.y;
-          vias.push({x,y:(a.y+b.y)/2,z,sx:b.w*0.8,sy:h,sz:b.w*0.8}); } }
-      const viaM=SM(0x9aa4ae,{roughness:.35,metalness:.8,transparent:true}); inst(UBOX,viaM,vias,g);
-      // rows of standard cells in electron-microscope greys; gate lines across them, fins along them
-      const cells=[],gates=[],fins=[];
-      for(let row=-12;row<12;row++){ let x=-6; const z=row*0.28;
-        [-0.07,0.07].forEach(o=>fins.push({x:0,y:2.83,z:z+o,sx:12,sy:0.035,sz:0.022}));
-        while(x<6){ const w=0.2+Math.floor(r()*5)*0.1; cells.push({x:x+w/2,y:1.4,z,sx:w-0.03,sy:2.8,sz:0.25,c:r()<0.5?0x8e969f:0x9ea6b0});
-          for(let k=0.05;k<w-0.04;k+=0.051) gates.push({x:x+k+0.02,y:2.87,z,sx:0.016,sy:0.1,sz:0.24,c:0xd7dce2}); x+=w; } }
-      inst(UBOX,SM(0xffffff,{roughness:.55,metalness:.2}),cells,g);
-      inst(UBOX,SM(0xb9c0c8,{roughness:.45,metalness:.25}),fins,g);
-      const gateIM=inst(UBOX,SM(0xffffff,{roughness:.4,metalness:.2,emissive:0x0c1a0c,emissiveIntensity:.6}),gates,g);
-      const GON=0x6fe08a, GOFF=0xd7dce2, NG=gates.length, gr=rng(41), onSet=new Uint8Array(NG); let nextFlip=0;
-      const sub=new THREE.Mesh(UBOX,SM(0x6d747d,{roughness:.8,metalness:.1})); sub.scale.set(60,0.4,60); sub.position.y=-0.2; g.add(sub);
-      return { key:'wiring', mpu:1e-6, bg:0x0a0e14, group:g,
-        keys:[{t:0,pos:[-19,55,30],tgt:[0,9,0],fov:45},{t:0.35,pos:[-8,26,11],tgt:[0,7,0],fov:45},
-              {t:0.68,pos:[-1.8,9.2,2.6],tgt:[0,3.6,0],fov:45},{t:1,pos:[-0.45,3.9,0.75],tgt:[0,2.9,0],fov:45}],
-        caps:[{t:0,title:'Into the electron microscope',sub:'Polished down to the transistors — the wiring above is removed · illustrative'},
-              {t:0.62,title:'Rows of logic cells, then gates and fins',sub:'Every gate switches on (green) and off · the transistors come into view'}],
-        tags:[{text:'Copper wiring',sub:'polished away',pos:[-9,16.8,-6.75],from:0.04,to:0.3,cls:'o'},
-              {text:'Via',sub:'layer to layer',pos:[3,10.5,2],from:0.3,to:0.5,cls:'g'},
-              {text:'Local wiring',sub:'finest pitch',pos:[1.2,5.5,-1.1],from:0.46,to:0.66,cls:'o'},
-              {text:'Logic cells',sub:'rows of standard cells',pos:[-3.2,3.0,-1.54],from:0.66,to:0.86,cls:'g'},
-              {text:'Gates',sub:'switching',pos:[0.4,3.0,0.3],from:0.8,to:0.99,cls:'g'}],
-        update(t,time,cam){ // each layer is polished away as the camera passes through it
-          const cy=cam.position.y;
-          layers.forEach(l=>{ const a=Math.max(0,Math.min(1,(cy-l.y-l.th)/2.2)); l.m.opacity=a; l.m.depthWrite=a>0.6; l.m.visible=a>0.01; });
-          viaM.opacity=Math.max(0,Math.min(1,(cy-5)/3)); viaM.visible=viaM.opacity>0.01;
-          if(time>=nextFlip && t>0.5){ nextFlip=time+0.18;                 // gates switch on (green) and off
-            for(let i=0;i<180;i++){ const k=Math.floor(gr()*NG); onSet[k]^=1; gateIM.setColorAt(k,_c.set(onSet[k]?GON:GOFF)); }
-            gateIM.instanceColor.needsUpdate=true; } } };
-    })());
+    S.push((function(THREE,H){
+      const {UBOX,SM,inst,tex,rng}=H;
+      return (function(){
+        const g=new THREE.Group(), R=rng(29), clamp01=v=>Math.max(0,Math.min(1,v));
+        const Y0=2.9;                                   // the silicon surface: the closing target's plane (gates stand on it)
 
-    /* ---- 8 · the tile we zoom into → one full-adder tile → one XOR cell (1 unit = 10 nm) */
+        /* ---- materials: the controller's lights are cool (sky-blue hemisphere, cyan rim). Everything here is rendered
+           near-greyscale like a backscatter image by desaturating the lit result (copper keeps a little warmth); the
+           instance colour is divided out first so a green (switched-on) gate keeps its hue. A height term darkens the
+           canyon floors between gates and contacts (AO floor 0.55, like the logic-tile level). ---------------------- */
+        function emat(hex,o,sat,ao){ const m=SM(hex,Object.assign({roughness:.62,metalness:.12},o||{}));
+          m.onBeforeCompile=sh=>{
+            if(ao){ sh.vertexShader='varying float vAO;\n'+sh.vertexShader.replace('#include <begin_vertex>',
+                '#include <begin_vertex>\n#ifdef USE_INSTANCING\n  vec4 aoW = modelMatrix * instanceMatrix * vec4(transformed,1.0);\n#else\n  vec4 aoW = modelMatrix * vec4(transformed,1.0);\n#endif\n  vAO = clamp(0.55 + (aoW.y-'+Y0.toFixed(2)+')*7.5, 0.55, 1.0);');
+              sh.fragmentShader='varying float vAO;\n'+sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n  diffuseColor.rgb *= vAO;'); }
+            sh.fragmentShader=sh.fragmentShader.replace('#include <tonemapping_fragment>',
+              '{\n#ifdef USE_COLOR\n  vec3 tint = max(vColor.rgb, vec3(0.02));\n#else\n  vec3 tint = vec3(1.0);\n#endif\n'+
+              '  vec3 lit = gl_FragColor.rgb / tint;\n  lit = mix(vec3(dot(lit, vec3(0.299,0.587,0.114))), lit, '+sat.toFixed(2)+');\n  gl_FragColor.rgb = lit * tint;\n}\n#include <tonemapping_fragment>'); };
+          m.customProgramCacheKey=()=>'wiring-em-'+(ao?1:0)+'-'+sat.toFixed(2)+'-'+(o&&o.map?'m':'');
+          return m; }
+        const fillL=new THREE.DirectionalLight(0xffffff,0.42); fillL.position.set(-7,2.5,3); g.add(fillL);   // neutral fill from the viewer's side
+
+        /* ---- the copper stack, top → bottom. Alternating directions, pitch and thickness shrinking layer by layer;
+           gaps ≈ wire thickness so the vias are short plugs. The top straps (13 bars, 2 µm at 4.5 µm pitch, y 16.6)
+           are the ones the CUDA-core level fades in, in the plane the opening key looks at (tgt y 16). Every layer is a
+           full sheet under the camera, so each one fills the frame while it is the layer being polished away.
+           The last three are the local layers over the cell array (M0-class 30 nm pitch along the rows, 44 nm across). */
+        const L=[{y:15.8,th:1.6,w:2.0,p:4.5,span:60,dir:'x'},{y:13.1,th:1.2,w:1.4,p:3.0,span:52,dir:'z'},
+                 {y:10.9,th:1.0,w:1.1,p:2.4,span:44,dir:'x'},{y:9.05,th:0.8,w:0.85,p:1.9,span:37,dir:'z'},
+                 {y:7.55,th:0.6,w:0.62,p:1.4,span:30,dir:'x'},{y:6.35,th:0.45,w:0.45,p:1.0,span:24,dir:'z'},
+                 {y:5.4,th:0.32,w:0.32,p:0.72,span:19,dir:'x'},{y:4.68,th:0.22,w:0.22,p:0.5,span:15,dir:'z'},
+                 {y:4.15,th:0.15,w:0.15,p:0.34,span:12,dir:'x'},{y:3.78,th:0.10,w:0.10,p:0.23,span:9.5,dir:'z'},
+                 {y:3.52,th:0.07,w:0.07,p:0.15,span:7.5,dir:'x'},{y:3.33,th:0.05,w:0.05,p:0.10,span:6,dir:'z'},
+                 {y:3.19,th:0.04,w:0.03,p:0.064,len:8,cov:[-3.5,3.37],dir:'x'},          // local layers: cover the array in z
+                 {y:3.09,th:0.035,w:0.022,p:0.044,len:6.9,c:-0.1,cov:[-5,5],dir:'z'},
+                 {y:3.03,th:0.03,w:0.016,p:0.030,len:12,cov:[-3.5,3.37],dir:'x'}];
+        L.forEach(l=>{ if(!l.cov) l.span=60; });
+        const cu=()=>emat(0xa8743f,{roughness:.42,metalness:.3,transparent:true},0.5,false);   // lands near the CUDA-core straps' tan under these lights
+        const layers=L.map((l,li)=>{ const cov=l.cov||[-l.span/2,l.span/2], len=l.len||l.span, c=l.c||0, list=[], at=[];
+          const n=Math.floor((cov[1]-cov[0])/l.p+1e-6), o0=(cov[0]+cov[1])/2-(n-1)*l.p/2;
+          for(let i=0;i<n;i++){ const o=o0+i*l.p; at.push(o);
+            list.push(l.dir==='x'?{x:c,y:l.y,z:o,sx:len,sy:l.th,sz:l.w}:{x:o,y:l.y,z:c,sx:l.w,sy:l.th,sz:len}); }
+          const m=cu(), im=inst(UBOX,m,list,g); im.renderOrder=40-2*li;
+          return {m,im,at,len,c,dir:l.dir,y:l.y,th:l.th,w:l.w}; });
+        // vias: short plugs at wire crossings, joining a wire of one layer to a wire of the next
+        const viaGroups=[], viaAt=[];
+        for(let li=0;li<L.length-1;li++){ const a=layers[li], b=layers[li+1], list=[];
+          const xL=a.dir==='z'?a:b, zL=a.dir==='x'?a:b;                      // the 'z' layer gives x, the 'x' layer gives z
+          const xs=xL.at.filter(x=>Math.abs(x-zL.c)<=zL.len/2), zs=zL.at.filter(z=>Math.abs(z-xL.c)<=xL.len/2);
+          const n=Math.min(1200,Math.max(14+18*li,Math.round(0.01*xs.length*zs.length)));   // ≈1 % of the crossings carry a via
+          const top=a.y-a.th/2, bot=b.y+b.th/2, h=top-bot, s=Math.min(a.w,b.w)*0.8;
+          for(let i=0;i<n&&xs.length&&zs.length;i++){ const x=xs[Math.floor(R()*xs.length)], z=zs[Math.floor(R()*zs.length)];
+            list.push({x,y:(top+bot)/2,z,sx:s,sy:h*1.15,sz:s}); }
+          const m=emat(0x9aa4ae,{roughness:.35,metalness:.42,transparent:true},0.2,false);
+          const im=inst(UBOX,m,list,g); im.renderOrder=39-2*li; viaGroups.push({m}); viaAt.push(list); }
+        const T0=0.14, DT=0.0286;                        // layer i is polished away over t T0+i·DT → +0.06 (top straps 0.14–0.20, last local layer gone by 0.60)
+
+        /* ---- the cell array: rows of standard cells along x (row pitch 210 nm), gates every 51 nm across them, four fins
+           per row along them (two per N/P half-row), trench contacts and a few local-interconnect blocks in the gaps,
+           a power rail on every row boundary. The +z edge row ends at a flat wiring channel (the closing subject). */
+        const PITCH=0.051, NG=392, ROW=0.21, NR=33, XW=NG*PITCH, XL=-XW/2, ZOFF=-0.099;
+        const rowZ=r=>r*ROW+ZOFF, ZEDGE=rowZ(16)+ROW/2, ZBACK=rowZ(-16)-ROW/2;         // rows −16..16; +z edge at z 3.366
+        const gateX=k=>XL+(k+0.5)*PITCH, FZ=[-0.062,-0.034,0.034,0.062];
+        // one 16-gate × 4-row pattern tile shared by the mid-zoom texture and the 3-D geometry, so the two register
+        const TILE=32, TROWS=4, CELLS=[[3,5,4,4,6,3,4,3],[4,4,3,5,3,6,4,3],[5,3,4,4,3,4,6,3],[4,3,5,4,3,3,5,5]], GREYS=[0x9aa2ab,0xa4abb3,0xaeb5bc,0xb8bec5,0x9098a1];
+        const PR=rng(0x7a11), pat=[], tone=[], cellOf=[];
+        for(let j=0;j<TROWS;j++){ pat.push([]); tone.push([]); cellOf.push([]);
+          let c=0, acc=0; for(let i=0;i<TILE;i++){ if(i>=acc+CELLS[j][c]){ acc+=CELLS[j][c]; c++; } cellOf[j].push(c); }
+          CELLS[j].forEach(()=>tone[j].push(GREYS[Math.floor(PR()*GREYS.length)]));
+          for(let i=0;i<TILE;i++){ pat[j].push([0,1].map(()=>{ const q=PR(); return q<0.08?2:q<0.78?1:0; })); } }
+        const CT=[0xb9c0c6,0xaeb5bc,0xc4cacf];
+        const gates=[],cts=[],fins=[],rails=[],li=[];
+        const tileRow=r=>((r+3)%TROWS+TROWS)%TROWS;          // the texture's v runs −z-ward from the +z edge, so row 16 is tile row 3
+        for(let r=-16;r<=16;r++){ const z=rowZ(r), j=tileRow(r);
+          FZ.forEach(fz=>fins.push({x:0,y:Y0+0.025,z:z+fz,sx:XW,sy:0.05,sz:0.008,c:0xc4cad0}));
+          rails.push({x:0,y:Y0+0.0045,z:z-ROW/2,sx:XW+0.2,sy:0.009,sz:0.018});
+          for(let k=0;k<NG;k++){ const i=k%TILE, x=gateX(k), tn=tone[j][cellOf[j][i]];
+            gates.push({x,y:Y0+0.045,z,sx:0.025,sy:0.09,sz:0.18,c:tn});
+            if(k<NG-1) [0,1].forEach(s=>{ const p=pat[j][i][s], zc=z+(s?0.047:-0.047), xg=x+PITCH/2;
+              if(p===2) li.push({x:xg,y:Y0+0.057,z:zc,sx:0.021,sy:0.114,sz:0.034,c:0xdde2e6});
+              else if(p===1) cts.push({x:xg,y:Y0+0.026,z:zc,sx:0.012,sy:0.052,sz:0.052,c:CT[Math.floor(R()*3)]}); }); } }
+        rails.push({x:0,y:Y0+0.0045,z:ZEDGE,sx:XW+0.2,sy:0.009,sz:0.024});
+        // gate box: light spacer edges either side of the 16 nm gate, from a 64-px strip; broad faces sample the spacer
+        const gateTex=tex(64,4,(c,w,h)=>{ c.fillStyle='#ffffff'; c.fillRect(0,0,w,h); c.fillStyle='#cccccc'; c.fillRect(12,0,40,h); });
+        const GBOX=UBOX.clone(); { const P=GBOX.attributes.position, N=GBOX.attributes.normal, U=GBOX.attributes.uv;
+          for(let i=0;i<P.count;i++){ const x=P.getX(i),y=P.getY(i),z=P.getZ(i);
+            if(Math.abs(N.getY(i))>0.5) U.setXY(i,x+0.5,z+0.5); else if(Math.abs(N.getZ(i))>0.5) U.setXY(i,x+0.5,y+0.5); else U.setXY(i,0.06,0.5); }
+          U.needsUpdate=true; }
+        const gateM=emat(0xa6a6a6,{map:gateTex,roughness:.62,metalness:.12,transparent:true},0.12,true);
+        const GREY=emat(0xa6a6a6,{transparent:true},0.12,true), GREYN=emat(0xa6a6a6,{roughness:.5,transparent:true},0.12,false),
+              GREYF=emat(0x5d636b,{roughness:.8,metalness:.05,transparent:true},0.12,true);
+        // instance colours are the spacer tint (≈1.25 × the gate tone); the strip's centre brings the gate back to its tone
+        const gateIM=inst(GBOX,gateM,gates.map(o=>Object.assign({},o,{c:new THREE.Color(o.c).multiplyScalar(1.25).getHex()})),g);
+        const ctIM=inst(UBOX,GREY,cts,g), liIM=inst(UBOX,GREY,li,g), finIM=inst(UBOX,GREYN,fins,g), railIM=inst(UBOX,GREYF,rails,g);
+        railIM.renderOrder=2; finIM.renderOrder=3; ctIM.renderOrder=4; liIM.renderOrder=4; gateIM.renderOrder=5;
+        const fineM=[gateM,GREY,GREYN,GREYF];
+
+        // the silicon: a dark base whose top is the surface; the flat wiring channel along the +z edge of the array
+        const base=new THREE.Mesh(UBOX,emat(0x4a5058,{roughness:.85,metalness:.05},0.1,false));
+        base.scale.set(64,Y0,64); base.position.set(0,Y0/2,0); g.add(base);
+        const trackTex=tex(8,256,(c,w,h)=>{ c.fillStyle='#e2e2e2'; c.fillRect(0,0,w,h); c.fillStyle='#f6f6f6';
+          for(let y=6;y<h;y+=26.5) c.fillRect(0,Math.round(y),w,4); c.fillStyle='#cfcfcf'; c.fillRect(0,0,w,3); c.fillRect(0,h-3,w,3); });
+        const chan=new THREE.Mesh(UBOX,emat(0x373c42,{map:trackTex,roughness:.9,metalness:.05},0.1,false));
+        chan.scale.set(XW+0.6,0.006,0.29); chan.position.set(0,Y0+0.003,ZEDGE+0.012+0.145); g.add(chan);
+
+        /* ---- the mid-zoom 'sea' of cells: the same tile drawn as a texture on a plate over the array (and beyond it in
+           −z / ±x, so the rows do not end at the array's illustrative limits). It carries the wide and middle shots, where
+           16 nm gates would be sub-pixel noise, and fades out as the 3-D gates, fins and contacts fade in. ------------- */
+        const SX=1024/(TILE*PITCH), SZ=512/(TROWS*ROW), hx=v=>'#'+v.toString(16).padStart(6,'0');   // 1.6 nm per texel
+        const seaTex=tex(1024,512,(c,w,h)=>{ c.fillStyle='#565c63'; c.fillRect(0,0,w,h);
+          for(let j=0;j<TROWS;j++){ const zc=(j+0.5)*ROW, yc=zc*SZ;
+            c.fillStyle='#7c838b'; c.fillRect(0,j*ROW*SZ-0.011*SZ,w,0.022*SZ); c.fillRect(0,(j+1)*ROW*SZ-0.011*SZ,w,0.022*SZ);
+            c.fillStyle='#9aa2aa'; FZ.forEach(fz=>c.fillRect(0,yc+(fz-0.004)*SZ,w,0.008*SZ));
+            for(let i=0;i<TILE;i++){ const x=(i+0.5)*PITCH*SX;
+              c.fillStyle='#c0c6cc'; c.fillRect(x-0.0125*SX,yc-0.09*SZ,0.025*SX,0.18*SZ);
+              c.fillStyle=hx(tone[j][cellOf[j][i]]); c.fillRect(x-0.008*SX,yc-0.09*SZ,0.016*SX,0.18*SZ); }
+            for(let i=0;i<TILE;i++) [0,1].forEach(s=>{ const p=pat[j][i][s]; if(!p) return; const zq=yc+(s?0.047:-0.047)*SZ;
+              [(i+1)*PITCH*SX, i===TILE-1?0:-1e9].forEach(xq=>{ if(xq<-1e8) return;
+                if(p===2){ c.fillStyle='#d0d5da'; c.fillRect(xq-0.0105*SX,zq-0.017*SZ,0.021*SX,0.034*SZ); }
+                else { c.fillStyle='#b0b6bc'; c.fillRect(xq-0.006*SX,zq-0.026*SZ,0.012*SX,0.052*SZ); } }); }); } });
+        const TW=TILE*PITCH, TD=TROWS*ROW, SEA_TX=25, SEA_TZ=8;                      // extra tiles beyond the array: ±x, −z
+        // a plate of sea with its own copy of the texture, phased so tiles continue seamlessly from the array's grid
+        function seaBox(x0,x1,z0,z1,order){ const t=seaTex.clone(); t.needsUpdate=true; t.wrapS=t.wrapT=THREE.RepeatWrapping;
+          t.repeat.set((x1-x0)/TW,(z1-z0)/TD); const m=Math.round((ZEDGE-z1)/ROW);
+          t.offset.set((((x0-XL)/TW)%1+1)%1, (((-m)%TROWS)+TROWS)%TROWS/TROWS);
+          const mat=emat(0xa6a6a6,{map:t,roughness:.92,metalness:.02,transparent:true},0.12,false);   // matte: no grazing-angle sheen
+          const mesh=new THREE.Mesh(UBOX,mat); mesh.scale.set(x1-x0,0.002,z1-z0); mesh.position.set((x0+x1)/2,Y0+0.001,(z0+z1)/2);
+          mesh.renderOrder=order; g.add(mesh); return {mesh,mat}; }
+        const XR=XL+XW, ZFAR=ZBACK-SEA_TZ*TD;
+        const seaIn=seaBox(XL,XR,ZBACK,ZEDGE,1);                                    // under the 3-D array: hands over to it
+        const seaOut=[seaBox(XL-SEA_TX*TW,XL,ZFAR,ZEDGE,1),seaBox(XR,XR+SEA_TX*TW,ZFAR,ZEDGE,1),seaBox(XL,XR,ZFAR,ZBACK,1)];   // beyond it: stays until out of frame
+
+        /* ---- gate switching: ≈30 % of the gates are on (green) at any moment; they flip in bursts while the gates are
+           in view, and settle to grey after t 0.9 so nothing green is left when the logic-tile level dissolves in. --- */
+        const GON=new THREE.Color(0x7ce890), GOFF=gates.map(o=>new THREE.Color(o.c).multiplyScalar(1.25)), NGT=gates.length;
+        const gr=rng(41), onSet=new Uint8Array(NGT), _cc=new THREE.Color(); let nextFlip=0, greenK=1;
+        for(let k=0;k<NGT;k++){ if(gr()<0.3){ onSet[k]=1; gateIM.setColorAt(k,GON); } }
+        gateIM.instanceColor.needsUpdate=true;
+        function paintOn(k){ gateIM.setColorAt(k,onSet[k]?_cc.copy(GOFF[k]).lerp(GON,greenK):GOFF[k]); }
+
+        /* ---- labels (anchored on real parts) --------------------------------------------------------------------- */
+        const vias45=viaAt[4], viaTag=vias45.reduce((b,v)=>Math.hypot(v.x-2.5,v.z-1.5)<Math.hypot(b.x-2.5,b.z-1.5)?v:b,vias45[0]);
+        const tags=[
+          {text:'Copper wiring',sub:'≈15 layers, polished away',pos:[-9,16.6,-6.75],from:0.03,to:0.21,cls:'o'},
+          {text:'Via',sub:'joins one layer to the next',pos:[viaTag.x,layers[4].y-layers[4].th/2,viaTag.z],from:0.22,to:0.30,cls:'g'},
+          {text:'Intermediate wiring',sub:'finer pitch every layer down',pos:[1.15,3.83,-1.2],from:0.35,to:0.44,cls:'o'},
+          {text:'Local wiring',sub:'finest pitch ≈ 30 nm',pos:[1.4,3.05,0.9],from:0.48,to:0.575,cls:'o'},
+          {text:'Logic cells',sub:'rows of standard cells, 210 nm apart',pos:[1.3,Y0+0.1,0.9],from:0.58,to:0.78,cls:'g'},
+          {text:'Gates',sub:'switching on (green) and off',pos:[0.32,Y0+0.1,2.65],from:0.74,to:0.92,cls:'g'},
+          {text:'Fins',sub:'along the row · 8 nm wide',pos:[-0.28,Y0+0.05,3.32],from:0.84,to:0.95,cls:'g'}];
+
+        return { key:'wiring', mpu:1e-6, bg:0x0a0e14, group:g,
+          keys:[{t:0,pos:[0,80.9,36.0],tgt:[0,16,0],fov:45},                 // 61.5 µm, el 61°, az 0°: the CUDA core's closing pose
+                {t:0.4,pos:[-9.9,30.6,13.6],tgt:[0,7,0],fov:45},             // 24 µm
+                {t:0.72,pos:[-2.37,8.57,5.23],tgt:[0,3.3,2.4],fov:45},       // 5.3 µm, heading for the +z edge row
+                {t:1,pos:[-0.79,4.16,4.17],tgt:[0,2.9,3.36],fov:45}],        // 1.40 µm, el 48°, az −44°: the logic-tile level's opening pose
+          caps:[{t:0,title:'Into the electron microscope',sub:'Polished down through ≈15 layers of copper wiring to the transistors · illustrative'},
+                {t:0.62,title:'Rows of logic cells, then gates and fins',sub:'Standard cells in rows 210 nm apart · every gate switches on (green) and off'}],
+          tags,
+          update(t,time){
+            // the polish: each copper layer fades over 0.06 of progress, its vias just behind it
+            layers.forEach((l,i)=>{ const a=1-clamp01((t-(T0+i*DT))/0.06); l.m.opacity=a; l.m.depthWrite=a>0.6; l.m.visible=a>0.01; });
+            viaGroups.forEach((v,i)=>{ const a=1-clamp01((t-(T0+i*DT+0.02))/0.06); v.m.opacity=a; v.m.depthWrite=a>0.6; v.m.visible=a>0.01; });
+            // the cell sea (texture) hands over to the 3-D gates, fins, contacts and rails once they are ≥2 px
+            const gv=clamp01((t-0.50)/0.1), sv=1-clamp01((t-0.55)/0.1), ov=1-clamp01((t-0.72)/0.1);
+            fineM.forEach(m=>{ m.opacity=gv; m.visible=gv>0.01; }); seaIn.mat.opacity=sv; seaIn.mesh.visible=sv>0.01;
+            seaOut.forEach(o=>{ o.mat.opacity=ov; o.mesh.visible=ov>0.01; });
+            // gates switch while in view; after t 0.9 the greens settle to grey
+            const gk=1-clamp01((t-0.9)/0.05);
+            if(gk!==greenK){ greenK=gk; for(let k=0;k<NGT;k++) if(onSet[k]) paintOn(k); gateIM.instanceColor.needsUpdate=true; }
+            if(time>=nextFlip && t>0.52 && t<0.9){ nextFlip=time+0.18;
+              for(let i=0;i<260;i++){ const k=Math.floor(gr()*NGT), on=gr()<0.3?1:0; if(on!==onSet[k]){ onSet[k]=on; paintOn(k); } }
+              gateIM.instanceColor.needsUpdate=true; } } };
+      })();
+    })(THREE,{UBOX,SM,inst,tex,rng,_m,_q,_e,_p,_s,_c}));
+
+/* ---- 8 · the tile we zoom into → one full-adder tile → one XOR cell (1 unit = 10 nm) */
     S.push((function(THREE,H){
       const {UBOX,SM,inst,tex,rng}=H;
       return (function(){
         const g=new THREE.Group(), R=rng(0x5eed41);
-        const PITCH=5, GAP=1.2, ROW=21, ZEND=60, NR=13, XL=-270, XR=270, GH=9;   // gate pitch · cell gap · row pitch · array edge · rows · gate height
-        const rowZ=r=>ZEND-ROW*(r+0.5);                                           // row 0 is the edge row (centre z = 49.5)
-        const FZ=[-6.4,-3,3,6.4];                                                 // four fins per row: two per half-row (N / P)
+        const PITCH=5.1, ROW=21, ZEND=60, NR=15, NR2=0, GH=9, GW=1.6, SPW=0.44, GL=19;   // gate pitch · row pitch · array edge · rows · gate height/width · spacer · gate length
+        const rowZ=r=>ZEND-ROW*(r+0.5);                                                  // row 0 is the edge row (centre z = 49.5)
+        const FZ=[-6.2,-3.4,3.4,6.2];                                                    // four fins per row (pair pitch 28 nm), same set as the transistor level
+        const FIN_Y=2.5, FIN_H=5;                                                        // fins: y 0…5 (50 nm tall)
 
-        /* ---- the tile: four cells side by side in the edge row, centred on x = 0 -------------------------------- */
+        /* ---- the tile: four cells side by side in the edge row ---------------------------------------------------- */
         const TN=[8,8,7,3], TNAME=['XOR','XOR (sum)','Majority (carry)','Buffer'];
-        const TW=26*PITCH+3*GAP, TX0=-TW/2, TX1=TW/2, TZ=rowZ(0);
-        // per-gap trench-contact pattern of the XOR cell we land on (front half faces the wiring channel): 1 = contact, 0 = open
-        const XOR_FRONT=[0,0,0,1,0,0,0], XOR_BACK=[1,0,0,1,0,0,1];
+        const TX0=-64.3, TW=26*PITCH, TX1=TX0+TW, TZ=rowZ(0);
+        const NL=40, XL=TX0-NL*PITCH, XR=TX1+NL*PITCH, NG=Math.round((XR-XL)/PITCH);     // global gate grid: x = XL + k·PITCH, k = 0…NG
+        const GX=k=>XL+k*PITCH;
+        // per-gap trench-contact pattern of the XOR cell we land on (front half faces the wiring channel): 1 = contact, 0 = open (epi only)
+        const XOR_FRONT=[1,0,1,0,0,1,0,1], XOR_BACK=[1,0,0,1,0,1,0,1];
 
-        /* ---- lay the cells out: random 3–9-pitch cells, the tile forced into row 0 ------------------------------ */
+        /* ---- lay the cells out on the grid: random 3–9-pitch cells, the tile forced into row 0 ------------------ */
         const cells=[];
-        function fill(r,xa,xb,dir){ let x=dir>0?xa:xb;
-          for(;;){ const n=3+Math.floor(R()*7), w=n*PITCH;
-            if(dir>0){ if(x+w>xb) break; cells.push({r,x0:x,n}); x+=w+GAP; }
-            else { if(x-w<xa) break; cells.push({r,x0:x-w,n}); x-=w+GAP; } } }
-        for(let r=0;r<NR;r++){
-          if(r===0){ fill(0,XL,TX0-GAP,-1); fill(0,TX1+GAP,XR,1);
-            let x=TX0; TN.forEach((n,k)=>{ cells.push({r:0,x0:x,n,tile:k}); x+=n*PITCH+GAP; }); }
-          else fill(r,XL+R()*PITCH,XR,1); }
+        function fill(r,ka,kb){ let k=ka; while(k<kb){ let n=3+Math.floor(R()*7); if(k+n>kb) n=kb-k; if(n>=2) cells.push({r,k0:k,n}); k+=n; } }
+        for(let r=0;r<NR+NR2;r++){
+          if(r===0){ fill(0,0,NL); let k=NL; TN.forEach((n,i)=>{ cells.push({r:0,k0:k,n,tile:i}); k+=n; }); fill(0,k,NG); }
+          else fill(r,0,NG); }
+        const zOf=r=>r<NR?rowZ(r):ZEND+31+ROW*(r-NR+0.5);                                // (rows NR… would be an array beyond the channel; NR2 = 0 keeps the channel flat to the frame edge like the wiring level)
 
-        const L={fin:[],gate:[],spc:[],tc:[],li:[],top:[],rail:[]};
-        const GREYS=[0x9aa2ab,0xa4abb3,0xaeb5bc,0xb8bec5,0x9098a1];
+        const L={fin:[],gate:[],spc:[],cap:[],tc:[],epi:[],li:[],gc:[],rail:[]};
+        const GREYS=[0x9aa2ab,0xa4abb3,0xaeb5bc,0xb8bec5,0x9098a1], BOUND=0x8d949c;
+        const rowTone={};
         cells.forEach(c=>{
-          const zc=rowZ(c.r), w=c.n*PITCH, tile=c.tile!=null;
+          const zc=zOf(c.r), tile=c.tile!=null;
           const tone=tile?[0xaab1b8,0xa4abb3,0xb2b8bf,0xa9b0b7][c.tile]:GREYS[Math.floor(R()*GREYS.length)];
-          const striped=tile?(c.tile!==2):R()<0.32;
-          FZ.forEach(fz=>L.fin.push({x:c.x0+w/2,y:1.5,z:zc+fz,sx:w-0.6,sy:3,sz:0.8,c:0xc4cad0}));
-          for(let i=0;i<c.n;i++){ const x=c.x0+PITCH/2+i*PITCH;
-            L.gate.push({x,y:GH/2,z:zc,sx:1.6,sy:GH,sz:18,c:tone});
-            [-1,1].forEach(s=>L.spc.push({x:x+s*1.02,y:GH/2-0.25,z:zc,sx:0.44,sy:GH-0.5,sz:17.6,c:0xd3d8dd}));
-            if(striped && (tile||R()<0.85)) L.top.push({x,y:GH+0.14,z:zc,sx:1.5,sy:0.3,sz:16.2});
-          }
-          // trench (source / drain) contacts in the gaps between gates, over each half-row's fin pair; a few tall local-interconnect blocks
-          const liAt=tile?new Set([2+c.tile%3, c.n>5?c.n-3:-9]):new Set([1+Math.floor(R()*(c.n-1)), R()<0.5?1+Math.floor(R()*(c.n-1)):-9]);
-          for(let i=1;i<c.n;i++){ const x=c.x0+i*PITCH;
+          rowTone[c.r]=rowTone[c.r]||{}; for(let i=1;i<c.n;i++) rowTone[c.r][c.k0+i]=tone;
+          // trench (source / drain) contacts in the gaps between gates over each half-row's fin pair; the open gaps show the epi
+          const liAt=tile?new Set([2+c.tile%3, c.n>5?c.n-3:-9]):new Set([1+Math.floor(R()*(c.n-1)), R()<0.4?1+Math.floor(R()*(c.n-1)):-9]);
+          for(let i=0;i<c.n;i++){ const x=GX(c.k0)+PITCH/2+i*PITCH;
             [-1,1].forEach(s=>{
-              const on=tile&&c.tile===0?(s>0?XOR_FRONT:XOR_BACK)[i-1]:R()<0.72;
+              const on=tile&&c.tile===0?(s>0?XOR_FRONT:XOR_BACK)[i]:R()<0.7;
               const liHere=liAt.has(i)&&(s<0||(tile&&c.tile!==0));
-              if(liHere) L.li.push({x,y:5.7,z:zc+s*4.7,sx:2.1,sy:11.4,sz:3.4,c:0xdde2e6});
-              else if(on) L.tc.push({x,y:2.6,z:zc+s*4.7,sx:1.2,sy:5.2,sz:5.2,c:[0xb9c0c6,0xaeb5bc,0xc4cacf][Math.floor(R()*3)]}); }); }
+              if(liHere) L.li.push({x,y:5.25,z:zc+s*4.8,sx:2.0,sy:10.5,sz:3.6,c:0xdde2e6});
+              else if(on) L.tc.push({x,y:3.7,z:zc+s*4.8,sx:1.8,sy:7.4,sz:4.6,c:[0xb9c0c6,0xaeb5bc,0xc4cacf][Math.floor(R()*3)]});
+              else [3.4,6.2].forEach(f=>L.epi.push({x,y:FIN_H+0.05,z:zc+s*f,sx:2.0,sy:1.15,sz:1.15,rx:Math.PI/4,c:0xbfc5cb})); }); }
         });
-        for(let r=0;r<=NR;r++) L.rail.push({x:0,y:0.45,z:ZEND-ROW*r+(r===0?0.3:0),sx:XR-XL+8,sy:0.9,sz:r===0?2.4:1.8});
+        for(let r=0;r<NR+NR2;r++){ const zc=zOf(r), tones=rowTone[r]||{};
+          FZ.forEach(fz=>L.fin.push({x:(XL+XR)/2,y:FIN_Y,z:zc+fz,sx:XR-XL,sy:FIN_H,sz:0.8,c:0xc4cad0}));
+          for(let k=0;k<=NG;k++){ const x=GX(k), c=tones[k]||BOUND;
+            L.gate.push({x,y:GH/2,z:zc,sx:GW,sy:GH,sz:GL,c});
+            [-1,1].forEach(s=>L.spc.push({x:x+s*(GW/2+SPW/2),y:GH/2-0.2,z:zc,sx:SPW,sy:GH-0.4,sz:GL-0.4,c:0xd3d8dd}));
+            L.cap.push({x,y:GH+0.15,z:zc,sx:1.4,sy:0.3,sz:GL-1.5});
+            if(R()<0.22) L.gc.push({x,y:GH+0.55,z:zc+(R()-0.5)*9,sx:1.5,sy:1.1,sz:1.7,c:0xe0e4e8}); }   // gate contacts on the gate tops
+          L.rail.push({x:(XL+XR)/2,y:0.45,z:zc-ROW/2,sx:XR-XL+8,sy:0.9,sz:1.8}); if(r===NR-1||r===NR+NR2-1) L.rail.push({x:(XL+XR)/2,y:0.45,z:zc+ROW/2,sx:XR-XL+8,sy:0.9,sz:1.8}); }
 
-        /* ---- materials: EM greys. The controller's lights are cool (sky-blue hemisphere, cyan rim); these parts
-           render near-greyscale like the reel by desaturating the lit result, and a height term darkens the canyon floors. */
-        function grey(o,ao,sat){ const m=SM(0xa6a6a6,Object.assign({roughness:.62,metalness:.12},o||{}));
+        /* ---- materials: SEM greys. The controller's lights are cool (sky-blue hemisphere, cyan rim); these parts render
+           near-greyscale like the reel by desaturating the lit result; a height term darkens the canyon floors and a rim term
+           brightens grazing edges the way secondary-electron images do. */
+        function grey(o,ao,sat,rim){ const m=SM(0xa6a6a6,Object.assign({roughness:.62,metalness:.12},o||{}));
           m.onBeforeCompile=sh=>{
             if(ao){ sh.vertexShader='varying float vAO;\n'+sh.vertexShader.replace('#include <begin_vertex>',
-                '#include <begin_vertex>\n  vec4 aoW = modelMatrix * instanceMatrix * vec4(transformed,1.0);\n  vAO = clamp(0.42 + aoW.y*0.075, 0.42, 1.0);');
+                '#include <begin_vertex>\n#ifdef USE_INSTANCING\n  vec4 aoW = modelMatrix * instanceMatrix * vec4(transformed,1.0);\n#else\n  vec4 aoW = modelMatrix * vec4(transformed,1.0);\n#endif\n  vAO = clamp(0.55 + aoW.y*0.05, 0.55, 1.0);');
               sh.fragmentShader='varying float vAO;\n'+sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n  diffuseColor.rgb *= vAO;'); }
             sh.fragmentShader=sh.fragmentShader.replace('#include <tonemapping_fragment>',
-              'gl_FragColor.rgb = mix(vec3(dot(gl_FragColor.rgb, vec3(0.299,0.587,0.114))), gl_FragColor.rgb, '+sat.toFixed(2)+');\n#include <tonemapping_fragment>'); };
-          m.customProgramCacheKey=()=>'logictile-grey-'+(ao?1:0)+'-'+sat.toFixed(2);
+              '  float rimT = pow(1.0 - abs(dot(normalize(vNormal), normalize(vViewPosition))), 3.0);\n  gl_FragColor.rgb += rimT * '+rim.toFixed(2)+';\n'+
+              '  gl_FragColor.rgb = mix(vec3(dot(gl_FragColor.rgb, vec3(0.299,0.587,0.114))), gl_FragColor.rgb, '+sat.toFixed(2)+');\n#include <tonemapping_fragment>'); };
+          m.customProgramCacheKey=()=>'logictile-grey-'+(ao?1:0)+'-'+sat.toFixed(2)+'-'+rim.toFixed(2);
           return m; }
-        const GREY=grey({},true,0.12), GREYF=grey({roughness:.8,metalness:.05},true,0.12), GREYN=grey({roughness:.5},false,0.12);
+        const GREY=grey({},true,0.12,0.26), GREYF=grey({roughness:.8,metalness:.05},true,0.12,0.1), GREYN=grey({roughness:.5},false,0.12,0.22);
         // soft neutral fill from the viewer's side (−x, +z) so the broad gate faces read as mid-grey rather than rim-lit cyan
         const fillL=new THREE.DirectionalLight(0xffffff,0.42); fillL.position.set(-7,2.5,3); g.add(fillL);
 
-        // floor: dark grey base under the array, and the flat, slightly darker wiring channel along the array edge
-        const base=new THREE.Mesh(UBOX,grey({color:0x383d43,roughness:.85,metalness:.05},false,0.1));
-        base.scale.set(XR-XL+60,2,ROW*NR+260); base.position.set(0,-1,ZEND-ROW*NR/2+100); g.add(base);   // z −243 … +290
-        const trackTex=tex(8,256,(c,w,h)=>{ c.fillStyle='#e2e2e2'; c.fillRect(0,0,w,h); c.fillStyle='#f6f6f6';
-          for(let y=4;y<h;y+=17) c.fillRect(0,y,w,3); c.fillStyle='#cfcfcf'; c.fillRect(0,0,w,3); c.fillRect(0,h-3,w,3); });
-        const chan=new THREE.Mesh(UBOX,grey({color:0x373c42,map:trackTex,roughness:.9,metalness:.05},false,0.1));
-        chan.scale.set(XR-XL+60,0.6,29); chan.position.set(0,-0.18,ZEND+1.5+14.5); g.add(chan);
+        // floor: dark grey base under the arrays, and the flat, slightly darker wiring channel along the array edge (tracks at 30 nm pitch)
+        const base=new THREE.Mesh(UBOX,grey({color:0x4a5058,roughness:.85,metalness:.05},true,0.1,0.05));
+        base.scale.set(XR-XL+80,2,ROW*(NR+NR2)+330); base.position.set((XL+XR)/2,-1,ZEND-ROW*NR/2+120); g.add(base);
+        const CHW=29, CHZ=ZEND+1.5+CHW/2;
+        const trackTex=tex(64,1024,(c,w,h)=>{ c.fillStyle='#d6d9dc'; c.fillRect(0,0,w,h); const pp=h/CHW*3;   // 3 units = 30 nm pitch
+          c.fillStyle='#f4f5f6'; for(let y=pp*0.5;y<h;y+=pp) c.fillRect(0,y-pp*0.24,w,pp*0.48);
+          c.fillStyle='#b9bdc2'; c.fillRect(0,0,w,pp*0.35); c.fillRect(0,h-pp*0.35,w,pp*0.35);
+          c.fillStyle='#ffffff'; for(let y=pp*0.5;y<h;y+=pp) for(let x=4;x<w;x+=12) if(((x*7+y)|0)%5===0) c.fillRect(x,y-pp*0.12,3,pp*0.24); });   // via-like dots
+        trackTex.wrapS=THREE.RepeatWrapping; trackTex.repeat.set(12,1);
+        const chan=new THREE.Mesh(UBOX,grey({color:0x4f555c,map:trackTex,roughness:.9,metalness:.05},false,0.1,0.05));
+        chan.scale.set(XR-XL+80,0.6,CHW); chan.position.set((XL+XR)/2,-0.18,CHZ); g.add(chan);
 
         inst(UBOX,GREYF,L.rail,g).material.color.set(0x5d636b);
         inst(UBOX,GREYN,L.fin,g);                                     // fins: no canyon darkening, so they read between the gates
         inst(UBOX,GREY,L.gate,g);
         inst(UBOX,GREY,L.spc,g);
         inst(UBOX,GREY,L.tc,g);
+        inst(UBOX,GREY,L.epi,g);
         inst(UBOX,GREY,L.li,g);
-        inst(UBOX,new THREE.MeshBasicMaterial({color:0xc9df62}),L.top,g);
+        inst(UBOX,GREY,L.gc,g);
+        /* gate caps: static SEM grey. The wiring level has already settled its switching gates to grey by its last frame, so this
+           level opens grey too (no green fades in and out across the 7→8 dissolve) */
+        const GOFF=0xbfc5cc; L.cap.forEach(o=>{ o.c=GOFF; }); inst(UBOX,GREY,L.cap,g);
 
         /* ---- the glowing yellow-green outline around the tile ---------------------------------------------------- */
         const oy=GH+0.75, ox0=TX0-1.1, ox1=TX1+1.1, oz0=TZ-ROW/2-0.2, oz1=TZ+ROW/2+0.35, BW=1.5;
-        const bars=(bw,sy,y)=>[{x:0,y,z:oz0,sx:ox1-ox0+bw,sy,sz:bw},{x:0,y,z:oz1,sx:ox1-ox0+bw,sy,sz:bw},
+        const bars=(bw,sy,y)=>[{x:(ox0+ox1)/2,y,z:oz0,sx:ox1-ox0+bw,sy,sz:bw},{x:(ox0+ox1)/2,y,z:oz1,sx:ox1-ox0+bw,sy,sz:bw},
                                {x:ox0,y,z:(oz0+oz1)/2,sx:bw,sy,sz:oz1-oz0-bw},{x:ox1,y,z:(oz0+oz1)/2,sx:bw,sy,sz:oz1-oz0-bw}];
         const oMat=new THREE.MeshBasicMaterial({color:0xd4f06a,transparent:true,fog:false});
         const gMat=new THREE.MeshBasicMaterial({color:0xc8f04a,transparent:true,opacity:.3,blending:THREE.AdditiveBlending,depthWrite:false,fog:false});
         const outline=inst(UBOX,oMat,bars(BW,0.55,oy),g), glow=inst(UBOX,gMat,bars(5.5,0.12,oy-0.1),g);
         glow.renderOrder=2;
+        // a fainter outline on the XOR cell alone (its boundary gates at x −64.3 and −23.5) so the cell stays readable in the
+        // along-fin view once the tile outline has gone; it fades out before the closing pose
+        const xx0=TX0-1.1, xx1=TX0+TN[0]*PITCH+1.1;
+        const xbars=[{x:(xx0+xx1)/2,y:oy,z:oz0,sx:xx1-xx0+BW,sy:0.55,sz:BW},{x:(xx0+xx1)/2,y:oy,z:oz1,sx:xx1-xx0+BW,sy:0.55,sz:BW},
+                     {x:xx0,y:oy,z:(oz0+oz1)/2,sx:BW,sy:0.55,sz:oz1-oz0-BW},{x:xx1,y:oy,z:(oz0+oz1)/2,sx:BW,sy:0.55,sz:oz1-oz0-BW}];
+        const xMat=new THREE.MeshBasicMaterial({color:0xd4f06a,transparent:true,opacity:0,fog:false,depthWrite:false});
+        const xoutline=inst(UBOX,xMat,xbars,g); xoutline.renderOrder=2; xoutline.visible=false;
 
         /* ---- labels -------------------------------------------------------------------------------------------- */
-        const x0=[]; { let x=TX0; TN.forEach(n=>{ x0.push(x); x+=n*PITCH+GAP; }); }   // left end of each tile cell
-        const XG=k=>TX0+PITCH/2+k*PITCH;                        // k-th gate of the first XOR cell
+        const x0=[]; { let k=NL; TN.forEach(n=>{ x0.push(GX(k)); k+=n; }); }   // left end (boundary gate) of each tile cell
         const tags=[
-          {text:'One full-adder tile',sub:'',pos:[4,GH+4,TZ],from:0.03,to:0.35,cls:'bx'},
-          {text:'Wiring channel (array edge)',sub:'',pos:[14,0.4,ZEND+14],from:0.03,to:0.35,cls:'bx'}];
+          {text:'One full-adder tile',sub:'',pos:[(TX0+TX1)/2,GH+4,TZ],from:0.03,to:0.35,cls:'bx'},
+          {text:'Wiring channel (array edge)',sub:'',pos:[18,0.4,CHZ],from:0.03,to:0.35,cls:'bx'}];
         // cell names sit on each cell's channel-side edge; the far cells' tags leave first as the camera heads for the XOR cell
-        TNAME.forEach((t,k)=>tags.push({text:t,sub:'',pos:[x0[k]+TN[k]*PITCH*[0.88,0.4,0.25,0.15][k],GH+0.5,TZ+9],from:0.4,to:[0.64,0.6,0.52,0.48][k],cls:'bx'}));
-        tags.push({text:'Gate',sub:'',pos:[XG(4),GH+2.2,TZ+8.2],from:0.72,to:0.98,cls:'bx'},
-                  {text:'Fin',sub:'',pos:[TX0+7*PITCH,1.8,TZ+6.4],from:0.78,to:0.98,cls:'bx'},     // an open (contact-free) gap, right of centre
-                  {text:'Transistor (gate × fin)',sub:'',pos:[XG(3),3.2,TZ+7.5],from:0.83,to:0.98,cls:'bx'});
+        TNAME.forEach((t,i)=>tags.push({text:t,sub:'',pos:[x0[i]+TN[i]*PITCH*0.5,GH+0.5,TZ-6],from:0.4,to:[0.66,0.62,0.56,0.5][i],cls:'bx'}));
+        // closing tags sit on the XOR cell's edge gate (the transistor level's cut gate); the fins run under it, along the view, and
+        // are hidden by the gates in this along-fin view, so the fin itself is introduced by the transistor level's first frame
+        tags.push({text:'Gate',sub:'',pos:[TX0,GH+1.5,TZ-1],from:0.74,to:0.97,cls:'bx'},
+                  {text:'One transistor (gate over a fin pair)',sub:'',pos:[TX0,4.6,TZ-4.8],from:0.84,to:0.97,cls:'bx'});
 
         return { key:'logictile', mpu:1e-8, bg:0x0a0e14, group:g,
-          keys:[{t:0,pos:[-83,126,140.4],tgt:[-4,0,59.4],fov:45},
-                {t:0.4,pos:[-41.2,29.8,100.2],tgt:[-10,4,63],fov:45},
-                {t:0.7,pos:[-67.1,20.3,76.8],tgt:[-44,4.5,52],fov:45},
-                {t:1,pos:[-49.5,8.7,86.2],tgt:[-47,3.6,56.5],fov:45}],
-          caps:[{t:0,title:'The tile we zoom into',sub:'At the edge of the array, beside a wiring channel · two XOR cells, a majority cell, a buffer'},
-                {t:0.38,title:'One full-adder tile',sub:'Sum = a ⊕ b ⊕ c (two XOR cells) · Carry = majority of a, b, c'},
-                {t:0.68,title:'One logic cell (XOR)',sub:'Gates (across) cross fins (along): every crossing is a transistor'}],
+          keys:[{t:0,pos:[-83,126.3,141.2],tgt:[-4,0,59.4],fov:45},                    // = the wiring level's closing pose (FOV 1.40 µm, el 48°, az −44°)
+                {t:0.4,pos:[-41.9,57,104.7],tgt:[-5,3,52],fov:45},                     // over the tile (FOV ≈ 700 nm, el 40°, az −35°)
+                {t:0.7,pos:[-82.8,21,55.8],tgt:[-50,4,50],fov:45},                     // along the XOR cell's fins
+                {t:1,pos:[-84.3,18,39.5],tgt:[-60.3,3.5,49.5],fov:45}],                // = the transistor level's opening pose rotated 90° (FOV 246.6 nm, el 29.1°, az −112.6°)
+          caps:[{t:0,title:'The tile we zoom into',sub:'At the edge of the array, beside a wiring channel · two XOR cells, a majority cell, a buffer · layout illustrative'},
+                {t:0.38,title:'One full-adder tile',sub:'Sum = a ⊕ b ⊕ c (two XOR cells) · Carry = majority of a, b, c · 26 gates at a 51 nm pitch'},
+                {t:0.68,title:'One logic cell (XOR)',sub:'Gates (across) cross fins (along): each gate over a pair of fins is one transistor'}],
           tags,
           update(t,time){
-            const f=1-Math.max(0,Math.min(1,(t-0.54)/0.1)), p=0.5+0.5*Math.sin(time*2.4);
-            oMat.opacity=f; gMat.opacity=f*(0.22+0.14*p); outline.visible=glow.visible=f>0.01; } };
+            const c01=v=>Math.max(0,Math.min(1,v)), f=1-c01((t-0.54)/0.1), p=0.5+0.5*Math.sin(time*2.4);
+            oMat.opacity=f; gMat.opacity=f*(0.22+0.14*p); outline.visible=glow.visible=f>0.01;
+            const fx=0.35*c01((t-0.56)/0.08)*(1-c01((t-0.8)/0.06));                    // XOR-cell outline: in as the tile outline goes, out by t 0.86
+            xMat.opacity=fx; xoutline.visible=fx>0.01; } };
       })();
     })(THREE,{UBOX,SM,inst,tex,rng,_m,_q,_e,_p,_s,_c}));
 
-    /* ---- 9 · one transistor, cut in half (1 unit = 10 nm) ---------------- */
-    S.push((function(){
-      const g=new THREE.Group();
-      // everything ends at the cut plane z = 0; faces nearer the viewer sit a hair proud to avoid z-fighting
-      const Si=SM(0x9fb0c2,{roughness:.45,metalness:.25}), oxide=SM(0x9d8cc4,{roughness:.6,metalness:.1,transparent:true,opacity:.85});
-      const sub=new THREE.Mesh(UBOX,SM(0x7f8fa1,{roughness:.55,metalness:.2})); sub.scale.set(46,6,40); sub.position.set(0,-3,-20); g.add(sub);
-      const sti=new THREE.Mesh(UBOX,oxide); sti.scale.set(46,2.2,39.9); sti.position.set(0,1.1,-20.05); g.add(sti);
-      const FX=[-7.5,-4.5,-1.5,1.5,4.5,7.5];
-      inst(UBOX,Si,FX.map(x=>({x,y:2.5,z:-19.97,sx:0.7,sy:5,sz:40.06})),g);        // fins (30 nm pitch)
-      const GZ=[0,-5.1,-10.2,-15.3,-20.4,-25.5,-30.6,-35.7];                       // gates (51 nm pitch); the first is cut through
-      const hik=[],gates=[],spc=[],epi=[],ct=[],m0=[];
-      GZ.forEach((z,i)=>{ const half=i===0, zc=half?-0.4:z, len=half?0.8:1.6;
-        FX.forEach(x=>hik.push({x,y:2.6,z:zc+(half?0.01:0),sx:1.0,sy:5.3,sz:len+(half?0.02:0)}));
-        gates.push({x:0,y:4.4,z:zc,sx:20,sy:6.2,sz:len});
-        if(!half) [-1,1].forEach(s=>spc.push({x:0,y:4.4,z:z+s*1.05,sx:20,sy:6.2,sz:0.5}));
-        if(i<GZ.length-1){ const zm=z-2.55; FX.forEach(x=>epi.push({x,y:4.6,z:zm,sx:1.9,sy:1.9,sz:2.6,rz:Math.PI/4}));
-          ct.push({x:0,y:7.6,z:zm,sx:18,sy:2.6,sz:1.6}); } });
-      inst(UBOX,SM(0xb46bd9,{roughness:.4,metalness:.2}),hik,g);                      // high-k dielectric
-      inst(UBOX,SM(0xe3bd55,{roughness:.32,metalness:.35,emissive:0x3a2a08,emissiveIntensity:.7}),gates,g);
-      inst(UBOX,SM(0xdfe5ec,{roughness:.5,metalness:.2}),spc,g);
-      inst(UBOX,SM(0xd98b6a,{roughness:.45,metalness:.25}),epi,g);                    // source / drain epitaxy
-      inst(UBOX,SM(0x7d858f,{roughness:.35,metalness:.85}),ct,g);                     // contacts
-      for(let i=0;i<7;i++) m0.push({x:-9+i*3,y:11.2,z:-19.9,sx:1.4,sy:1.4,sz:39.8});
-      inst(UBOX,SM(0xe0935a,{roughness:.35,metalness:.4}),m0,g);
-      // cut-plane frame
-      const fr=[]; [[0,8.5,24,0.12],[0,-5.9,24,0.12]].forEach(([x,y,sx,sy])=>fr.push({x,y,z:0.06,sx,sy,sz:0.05}));
-      [[-11.9,1.3],[11.9,1.3]].forEach(([x,y])=>fr.push({x,y,z:0.06,sx:0.12,sy:14.4,sz:0.05}));
-      inst(UBOX,new THREE.MeshBasicMaterial({color:0x2fd2f5}),fr,g);
-      return { key:'transistor', mpu:1e-8, bg:0x0a0e14, fog:[60,260], group:g,
-        keys:[{t:0,pos:[-10,18,20],tgt:[0,3.5,-4],fov:45},{t:0.4,pos:[-7,10,13],tgt:[0,4,-1.5],fov:45},
-              {t:0.74,pos:[-3.4,5.6,6.4],tgt:[-1.5,3.2,0],fov:45},{t:1,pos:[-1.62,3.35,1.9],tgt:[-1.5,3.1,0],fov:45}],
-        caps:[{t:0,title:'One transistor, cut in half',sub:'The edge transistor, milled to its centre plane before imaging · a FinFET: the gold gate wraps three sides of a silicon fin · illustrative'},
-              {t:0.72,title:'The channel',sub:'A silicon fin only a few nanometres wide — current flows through it when the gate says so'}],
-        tags:[{text:'Gate',sub:'metal',pos:[-6,7.6,-0.4],from:0.26,to:0.7,cls:'y'},
-              {text:'Fin',sub:'silicon channel',pos:[-4.5,5.1,0],from:0.3,to:0.7,cls:'g'},
-              {text:'Source / drain',sub:'',pos:[4.5,5.8,-2.55],from:0.26,to:0.66,cls:'o'},
-              {text:'Contact',sub:'',pos:[6,9,-2.55],from:0.26,to:0.62,cls:'g'},
-              {text:'High-k dielectric',sub:'~1 nm',pos:[-1.0,5.3,0],from:0.7,to:0.95,cls:'c'}] };
-    })());
+/* ---- 9 · one transistor, cut in half (1 unit = 10 nm) ---------------- */
+    S.push((function(THREE,H){
+      const {UBOX,SM,inst}=H;
+      return (function(){
+        const g=new THREE.Group();
+        const FX=[-6.2,-3.4,3.4,6.2], STI=2.2, FBOT=-STI, FTOP=5.0, GTOP=9.0, LEDGE=0.04;   // STI top = y 0; fin −2.2…5.0; gate top 9.0 (= the tile's GH)
+        // fins taper slightly (8 nm at the base, 6.8 nm at the top); the wrap layers use the same tapered box
+        const TBOX=UBOX.clone(); { const a=TBOX.attributes.position; for(let i=0;i<a.count;i++) if(a.getY(i)>0) a.setX(i,a.getX(i)*0.85); TBOX.computeVertexNormals(); }
+        // ---- substrate and STI oxide, ending at the cut plane ----------------------------------------------------------
+        const Si=SM(0x9fb0c2,{roughness:.45,metalness:.25});
+        const sub=new THREE.Mesh(UBOX,SM(0x7f8fa1,{roughness:.55,metalness:.2})); sub.scale.set(46,6,40); sub.position.set(0,FBOT-3,-20); g.add(sub);
+        const sti=new THREE.Mesh(UBOX,SM(0x9d8cc4,{roughness:.6,metalness:.1,transparent:true,opacity:.85})); sti.scale.set(46,STI,39.98); sti.position.set(0,-STI/2,-20.01); g.add(sti);
+        // ---- fins: 8 nm wide, y −2.2…5.0 (22 nm in the STI, 50 nm exposed), a hair proud of the cut plane ----------------
+        inst(TBOX,Si,FX.map(x=>({x,y:(FBOT+FTOP)/2,z:-20+LEDGE/2,sx:0.8,sy:FTOP-FBOT,sz:40+LEDGE})),g);
+        // ---- gates every 51 nm; the first (z = 0) is cut through and shows the full stack -------------------------------
+        const GZ=[0,-5.1,-10.2,-15.3,-20.4,-25.5,-30.6,-35.7];
+        const il=[],hk=[],wfm=[],hkFloor=[],gates=[],spc=[],epi=[],ct=[],v0=[],m0=[];
+        const wrap=(list,x,zc,len,w,top,z0)=>list.push({x,y:top/2,z:zc+z0/2,sx:w,sy:top,sz:len+z0});
+        GZ.forEach((z,i)=>{ const half=i===0, zc=half?-0.4:z, len=half?0.8:1.6;
+          FX.forEach(x=>{
+            if(half){ wrap(il,x,zc,len,1.0,FTOP+0.1,0.03); wrap(hk,x,zc,len,1.4,FTOP+0.3,0.02); wrap(wfm,x,zc,len,2.0,FTOP+0.6,0.01); }
+            else wrap(hk,x,zc,len,1.2,FTOP+0.2,0.02); });
+          hkFloor.push({x:0,y:0.1,z:zc+(half?0.01:0),sx:20,sy:0.2,sz:len+(half?0.02:0)});                          // high-k lining the STI under the gate
+          if(half) hkFloor.push({x:0,y:0.35,z:zc+0.005,sx:20,sy:0.3,sz:len+0.01,c:0xb08d3c});                       // work-function metal on the floor (half gate only)
+          gates.push({x:0,y:(0.2+GTOP)/2,z:zc,sx:20,sy:GTOP-0.2,sz:len});
+          if(!half) [-1,1].forEach(s=>spc.push({x:0,y:GTOP/2,z:z+s*1.05,sx:20,sy:GTOP,sz:0.5}));
+          if(i<GZ.length-1){ const zm=z-2.55;
+            FX.forEach(x=>epi.push({x,y:FTOP-0.4,z:zm,sx:1.9,sy:1.9,sz:2.6,rz:Math.PI/4}));                          // raised source / drain epi (diamond section, top ≈ y 5.9)
+            ct.push({x:0,y:7.95,z:zm,sx:18,sy:3.3,sz:1.6});                                                         // trench contact over the epi, y 6.3…9.6 (a hair above the gate top)
+            [i%2?-3:-6, i%2?3:6, 0].forEach(x=>v0.push({x,y:10.45,z:zm,sx:1.4,sy:1.7,sz:1.4})); } });                // V0 vias, y 9.6…11.3, up to M0
+        inst(UBOX,SM(0xe9e3f2,{roughness:.6,metalness:.05}),il,g);                                                    // interfacial SiO₂ (~1 nm)
+        const hkM=SM(0xb46bd9,{roughness:.4,metalness:.2}); inst(TBOX,hkM,hk,g); inst(UBOX,hkM,hkFloor,g);          // high-k (HfO₂, ~2 nm)
+        inst(TBOX,SM(0xb08d3c,{roughness:.38,metalness:.4}),wfm,g);                                                   // work-function metal (TiN/TiAl, ~3 nm)
+        inst(UBOX,SM(0xe3bd55,{roughness:.32,metalness:.35,emissive:0x3a2a08,emissiveIntensity:.2}),gates,g);        // gate fill
+        inst(UBOX,SM(0xdfe5ec,{roughness:.5,metalness:.2}),spc,g);                                                    // spacers
+        inst(UBOX,SM(0xd98b6a,{roughness:.45,metalness:.25}),epi,g);                                                  // source / drain epitaxy
+        const ctM=SM(0x7d858f,{roughness:.35,metalness:.42}); inst(UBOX,ctM,ct,g); inst(UBOX,ctM,v0,g);             // contacts and vias
+        for(let i=0;i<7;i++) m0.push({x:-9+i*3,y:12.0,z:-19.9,sx:1.4,sy:1.4,sz:39.8});                                // M0 lines at a 30 nm pitch, y 11.3…12.7
+        inst(UBOX,SM(0xe0935a,{roughness:.35,metalness:.4}),m0,g);
+        // ---- inter-layer dielectric, translucent, cut at z = 0 (a hair behind the metal so the cut face stays crisp) ------
+        const ILDT=13.0;
+        const ild=new THREE.Mesh(UBOX,SM(0x9aa9c0,{roughness:.7,metalness:0,transparent:true,opacity:.16,depthWrite:false}));
+        ild.scale.set(46,ILDT,39.9); ild.position.set(0,ILDT/2,-20.0); ild.renderOrder=3; g.add(ild);
+        // ---- cut-plane frame ---------------------------------------------------------------------------------------------
+        const fr=[], FY0=-8.1, FY1=13.4; [[0,FY1],[0,FY0]].forEach(([x,y])=>fr.push({x,y,z:0.07,sx:24.8,sy:0.12,sz:0.05}));
+        [[-12.4,(FY0+FY1)/2],[12.4,(FY0+FY1)/2]].forEach(([x,y])=>fr.push({x,y,z:0.07,sx:0.12,sy:FY1-FY0,sz:0.05}));
+        inst(UBOX,new THREE.MeshBasicMaterial({color:0x2fd2f5}),fr,g);
+        // keys: opening pose = the logic tile's closing pose rotated 90° (FOV 246.6 nm, el 29.1°, az −22.6°) — pinned by the contract,
+        // so the geometry sits on the same y = 0 ground plane as the tile; near-constant zoom rate to the closing pose on the front
+        // pair's fin at x = −3.4 (FOV 15.9 nm, el 25°, az −25°; pos = tgt + 1.92·[sin −25°·cos 25°, sin 25°, cos −25°·cos 25°] (d 192 Å)) =
+        // the atoms level's opening pose (that level poses relative to its own hub, so only FOV / el / az carry across).
+        return { key:'transistor', mpu:1e-8, bg:0x0a0e14, fog:[60,260], group:g,
+          keys:[{t:0,pos:[-10,18,20],tgt:[0,3.5,-4],fov:45},
+                {t:0.22,pos:[-6.64,9.65,11.29],tgt:[-1,2.3,-2],fov:45},
+                {t:0.48,pos:[-5.42,6.81,6.57],tgt:[-2.5,3.3,0],fov:45},
+                {t:1,pos:[-4.135,3.811,1.576],tgt:[-3.4,3.0,0],fov:45}],
+          caps:[{t:0,title:'One transistor, cut in half',sub:'The XOR cell’s edge gate, milled to its centre plane before imaging · a FinFET: the gate wraps three sides of each silicon fin, two fin pairs under one gate · illustrative'},
+                {t:0.72,title:'The channel',sub:'A silicon fin 8 nm wide — current flows along it, under the gate, when the gate says so'}],
+          // tags sit on parts the camera can actually see, boxed where the part is a bright face: the epi behind the cut gate is hidden
+          // by it from every key, so the source/drain tag sits on the trench contact standing on that epi; the contact-level tags run
+          // early (t < 0.14), while the camera is still high enough to see over the gate and those parts are inside the frame
+          tags:[{text:'M0',sub:'first metal',pos:[6,12.0,0.05],from:0.0,to:0.05,cls:'bx'},
+                {text:'Contact',sub:'V0 via to M0',pos:[-6,10.4,-2.55],from:0.02,to:0.08,cls:'bx'},
+                {text:'Source / drain',sub:'epitaxy under this contact',pos:[4.8,9.5,-2.55],from:0.04,to:0.11,cls:'bx'},
+                {text:'Gate',sub:'metal fill',pos:[-6.5,7.0,0.1],from:0.14,to:0.28,cls:'bx'},
+                {text:'Fin',sub:'silicon channel',pos:[-3.4,3.2,0.1],from:0.2,to:0.6,cls:'bx'},
+                {text:'STI oxide',sub:'',pos:[9.5,-1.1,0.1],from:0.14,to:0.29,cls:'c'},
+                {text:'High-k dielectric',sub:'≈2 nm · EOT ≈ 1 nm',pos:[-4.15,4.3,0.1],from:0.62,to:0.8,cls:'c'},
+                {text:'Work-function metal',sub:'≈3 nm',pos:[-2.55,2.0,0.1],from:0.66,to:0.86,cls:'y'}] };
+      })();
+    })(THREE,{UBOX,SM,inst,tex,rng,_m,_q,_e,_p,_s,_c}));
 
-    /* ---- 10 · silicon atoms, 0.235 nm apart (1 unit = 1 Å) --------------- */
+/* ---- 10 · silicon atoms, 0.235 nm apart (1 unit = 1 Å) --------------- */
     S.push((function(){
       const g=new THREE.Group();
-      const A=5.431, Q=A/4, N=5;                          // lattice constant; nearest neighbour = √3·A/4 = 2.352 Å
-      const T=new THREE.Vector3(0,0,0), V=new THREE.Vector3(-6.5,8,10).normalize();  // cut face turned to the camera
+      const A=5.431, Q=A/4, N=5, NF=38, RN=N*A*0.95, RLAT=190, DEEP=7;   // lattice constant; nearest neighbour = √3·A/4 = 2.352 Å; near ball / far slab (Å)
+      const T=new THREE.Vector3(0,0,0), V=new THREE.Vector3(-1,1,1).normalize();  // the crystal is cut on a (111) plane, which faces the camera's approach
       const keep=p=>p.clone().sub(T).dot(V)<=1.2;       // keeps the hub's four partners
       const fcc=[[0,0,0],[0,.5,.5],[.5,0,.5],[.5,.5,0]];
-      const atomsA=[],atomsB=[];
+      // near field: full spheres and bonds around the hub; far field: a wide slab of the same lattice under the cut face,
+      // as points, so the 15.9 nm opening frame shows a crystal surface rather than a ball floating in black
+      const atomsA=[],atomsB=[],far=[];
       for(let i=-N;i<N;i++) for(let j=-N;j<N;j++) for(let k=-N;k<N;k++) fcc.forEach(f=>{
-        const a=new THREE.Vector3((i+f[0])*A,(j+f[1])*A,(k+f[2])*A); if(a.length()<N*A*0.95 && keep(a)) atomsA.push(a);
-        const b=a.clone().addScalar(Q); if(b.length()<N*A*0.95 && keep(b)) atomsB.push(b); });
+        const a=new THREE.Vector3((i+f[0])*A,(j+f[1])*A,(k+f[2])*A); if(a.length()<RN && keep(a)) atomsA.push(a);
+        const b=a.clone().addScalar(Q); if(b.length()<RN && keep(b)) atomsB.push(b); });
+      const vx=V.x, vy=V.y, vz=V.z, R2=RLAT*RLAT, RN2=RN*RN;          // far slab: plain arithmetic, no per-atom objects
+      for(let i=-NF;i<NF;i++) for(let j=-NF;j<NF;j++) for(let k=-NF;k<NF;k++) for(let f=0;f<4;f++) for(let s2=0;s2<2;s2++){
+        const x=(i+fcc[f][0])*A+s2*Q, y=(j+fcc[f][1])*A+s2*Q, z=(k+fcc[f][2])*A+s2*Q, d2=x*x+y*y+z*z;
+        if(d2<RN2) continue; const h=x*vx+y*vy+z*vz; if(h>1.2||h<-DEEP||d2-h*h>R2) continue; far.push(x,y,z); }
       const key=p=>p.x.toFixed(2)+','+p.y.toFixed(2)+','+p.z.toFixed(2), setB=new Set(atomsB.map(key));
       const DIRS=[[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]].map(d=>new THREE.Vector3(d[0]*Q,d[1]*Q,d[2]*Q));
       const bonds=[]; atomsA.forEach(a=>DIRS.forEach(d=>{ const b=a.clone().add(d); if(setB.has(key(b))) bonds.push([a,b]); }));
       const all=atomsA.concat(atomsB);
-      const sph=new THREE.SphereGeometry(1,14,10);
+      const sph=new THREE.SphereGeometry(1,28,20);
       const atomM=SM(0xaeb9c6,{roughness:.35,metalness:.35});
       inst(sph,atomM,all.map(p=>({x:p.x,y:p.y,z:p.z,sx:0.62,sy:0.62,sz:0.62})),g);
-      const cyl=new THREE.CylinderGeometry(1,1,1,8,1,true), up=new THREE.Vector3(0,1,0);
+      const dot=tex(64,64,(c,w,h)=>{ const gr=c.createRadialGradient(w/2,h/2,0,w/2,h/2,w/2); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(.55,'rgba(210,220,232,1)'); gr.addColorStop(.72,'rgba(120,130,145,1)'); gr.addColorStop(.74,'rgba(0,0,0,0)'); c.fillStyle=gr; c.fillRect(0,0,w,h); });
+      const farG=new THREE.BufferGeometry(); farG.setAttribute('position',new THREE.BufferAttribute(new Float32Array(far),3));
+      g.add(new THREE.Points(farG,new THREE.PointsMaterial({color:0x9aa6b4,size:4.0,sizeAttenuation:true,map:dot,alphaTest:.5,transparent:true})));
+      const cyl=new THREE.CylinderGeometry(1,1,1,14,1,true), up=new THREE.Vector3(0,1,0);
       function bondList(list,rad){ return list.map(([a,b])=>{ const mid=a.clone().add(b).multiplyScalar(0.5), dir=b.clone().sub(a);
         _q.setFromUnitVectors(up,dir.clone().normalize()); _e.setFromQuaternion(_q);
         return {x:mid.x,y:mid.y,z:mid.z,sx:rad,sy:dir.length(),sz:rad,rx:_e.x,ry:_e.y,rz:_e.z}; }); }
-      inst(cyl,SM(0x6e7a88,{roughness:.5,metalness:.3}),bondList(bonds,0.15),g);
+      const bondM=SM(0x6e7a88,{roughness:.5,metalness:.3});
+      inst(cyl,bondM,bondList(bonds,0.2),g);
       // the highlighted atom and its four bonds (tetrahedral)
       const hub=atomsA.reduce((best,a)=>a.distanceTo(T)<best.distanceTo(T)?a:best,atomsA[0]);
       const goldM=SM(0xffd23f,{roughness:.3,metalness:.5,emissive:0x5a4000,emissiveIntensity:.8});
-      const hubM=new THREE.Mesh(sph,goldM); hubM.scale.setScalar(0.8); hubM.position.copy(hub); g.add(hubM);
+      const hubM=new THREE.Mesh(new THREE.SphereGeometry(1,32,24),goldM); hubM.scale.setScalar(0.8); hubM.position.copy(hub); g.add(hubM);
       const hubBonds=DIRS.map(d=>[hub,hub.clone().add(d)]);
-      inst(cyl,goldM,bondList(hubBonds,0.2),g);
+      inst(cyl,goldM,bondList(hubBonds,0.26),g);
       const nb=hub.clone().add(DIRS[0]);
-      const ruler=new THREE.Mesh(UBOX,new THREE.MeshBasicMaterial({color:0x2fd2f5}));
+      const rulerM=new THREE.MeshBasicMaterial({color:0x2fd2f5}), ruler=new THREE.Mesh(UBOX,rulerM);
       const rd=nb.clone().sub(hub), rmid=hub.clone().add(nb).multiplyScalar(0.5).add(new THREE.Vector3(0,1.4,0));
-      ruler.position.copy(rmid); ruler.scale.set(0.05,0.05,rd.length()); ruler.lookAt(rmid.clone().add(rd)); g.add(ruler);
+      ruler.position.copy(rmid); ruler.scale.set(0.12,0.12,rd.length()); ruler.lookAt(rmid.clone().add(rd)); g.add(ruler);
+      [-0.5,0.5].forEach(e=>{ const tk=new THREE.Mesh(UBOX,rulerM); tk.position.copy(rmid).addScaledVector(rd,e); tk.scale.set(0.12,0.7,0.12); g.add(tk); });   // end ticks
       return { key:'atoms', mpu:1e-10, bg:0x0a0e14, fog:[16,60], group:g, hub:[hub.x,hub.y,hub.z],
-        keys:[{t:0,pos:[hub.x-72,hub.y+91,hub.z+86],tgt:[hub.x,hub.y,hub.z],fov:45},
-              {t:0.5,pos:[hub.x-14,hub.y+18,hub.z+19],tgt:[hub.x,hub.y,hub.z],fov:45},
+        keys:[{t:0,pos:[hub.x-74,hub.y+81,hub.z+158],tgt:[hub.x,hub.y,hub.z],fov:45},      // = the transistor's closing pose (15.9 nm, el 25°, az −25°)
+              {t:0.5,pos:[hub.x-11.9,hub.y+13.9,hub.z+23.4],tgt:[hub.x,hub.y,hub.z],fov:45},
               {t:1,pos:[hub.x-6.2,hub.y+7.6,hub.z+9.6],tgt:[hub.x+0.6,hub.y+0.6,hub.z+0.6],fov:45}],
         caps:[{t:0,title:'Atoms 0.235 nm apart',sub:'Silicon’s diamond lattice — every atom bonds to four neighbours'},
               {t:0.72,title:'The bottom of the zoom',sub:'From a 20 m data hall to a 0.235 nm bond — eleven orders of magnitude'}],
-        tags:[{text:'0.235 nm',sub:'Si–Si bond',pos:[rmid.x,rmid.y+0.4,rmid.z],from:0.3,to:1.01,cls:'c'},
+        tags:[{text:'0.235 nm',sub:'Si–Si bond',pos:[rmid.x,rmid.y+0.25,rmid.z],from:0.3,to:1.01,cls:'c'},
               {text:'One silicon atom',sub:'four bonds',pos:[hub.x,hub.y+1.2,hub.z],from:0.55,to:1.01,cls:'y'}] };
     })());
     return S;
@@ -3713,10 +4072,11 @@ window.__PROVENANCE = Object.freeze({
   const DIVE=(function(){
     let S=null, SC=null, CH=null, STOPS=null, rt=null;
     // progress ranges: 0 = the trainer scene closing on the GPU, 1..6 = the micro stages (overlaps = cross-fades)
-    const R=[[0,0.048],[0.036,0.106],[0.094,0.196],[0.184,0.336],[0.324,0.448],[0.436,0.538],[0.526,0.618],[0.606,0.708],[0.696,0.808],[0.796,0.898],[0.886,1]];
+    const R=[[0,0.07],[0.052,0.137],[0.113,0.208],[0.184,0.334],[0.31,0.485],[0.461,0.561],[0.549,0.634],[0.61,0.757],[0.733,0.838],[0.814,0.92],[0.896,1]];
     const camB=new THREE.PerspectiveCamera(45,1,0.1,100), camC=new THREE.PerspectiveCamera(45,1,0.1,100);
     const tB=new THREE.Vector3(), tC=new THREE.Vector3(), _sz=new THREE.Vector2();
-    const s0={from:new THREE.Vector3(),fromT:new THREE.Vector3(),to:new THREE.Vector3(),toT:new THREE.Vector3()};
+    const s0={from:new THREE.Vector3(),fromT:new THREE.Vector3(),to:new THREE.Vector3(),toT:new THREE.Vector3(),hs:1};
+    const LAND_DIR=new THREE.Vector3(0.383,0.643,0.663);   // az +30°, el 40°: the direction the package level opens from
     const quadM=new THREE.MeshBasicMaterial({transparent:true,depthTest:false,depthWrite:false,fog:false});
     const qScene=new THREE.Scene(), qCam=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
     qScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),quadM));
@@ -3734,7 +4094,8 @@ window.__PROVENANCE = Object.freeze({
         const r=new THREE.DirectionalLight(0x36c2ff,0.5); r.position.set(-6,4,-5); sc.add(r);
         sc.add(s.group); return sc; });
       CH=[{q:0,title:'Into the GPU',sub:'Zooming into one Blackwell GPU on the compute tray you just opened'}];
-      S.forEach((s,i)=>{ const r=R[i+1]; s.caps.forEach(c=>CH.push({q:c.t===0?r[0]+0.015:r[0]+c.t*(r[1]-r[0]),title:c.title,sub:c.sub})); });
+      S.forEach((s,i)=>{ const r=R[i+1], ov=Math.max(0.015,R[i][1]-r[0]);            // ov: the dissolve into this level
+        s.caps.forEach(c=>CH.push({q:c.t===0?r[0]+ov:r[0]+c.t*(r[1]-r[0]),title:c.title,sub:c.sub})); });
       STOPS=CH.map(c=>c.q).concat([1]);
       S.forEach((s,i)=>(s.tags||[]).forEach(t=>{ const el=document.createElement('div'); el.className='htag '+(t.cls||'');
         el.innerHTML='<b>'+t.text+'</b>'+(t.sub?'<span class="sub">'+t.sub+'</span>':''); el.setAttribute('aria-hidden','true'); app.appendChild(el);
@@ -3744,40 +4105,70 @@ window.__PROVENANCE = Object.freeze({
 
     function pose(i,t,cam,tgt){ // places the stage camera; returns the field of view in metres
       if(i===0){ const e=smooth(t); cam.position.lerpVectors(s0.from,s0.to,e); tgt.lerpVectors(s0.fromT,s0.toT,e); cam.lookAt(tgt);
-        return cam.position.distanceTo(tgt)*TAN*M_PER_UNIT; }
+        return cam.position.distanceTo(tgt)*TAN*M_PER_UNIT/s0.hs; }        // the opened tray is drawn at its hero scale
       const s=S[i-1], K=s.keys;
       if(!s._cp){ s._cp=new THREE.CatmullRomCurve3(K.map(k=>new THREE.Vector3().fromArray(k.pos)),false,'centripetal');
         s._ct=new THREE.CatmullRomCurve3(K.map(k=>new THREE.Vector3().fromArray(k.tgt)),false,'centripetal'); }
       let j=0; while(j<K.length-2 && t>K[j+1].t) j++;
-      const lt=clamp01((t-K[j].t)/(K[j+1].t-K[j].t)), tt=0.45*lt+0.55*smooth(lt), u=(j+tt)/(K.length-1);
+      const lt=clamp01((t-K[j].t)/(K[j+1].t-K[j].t));
+      const settle=(i===S.length && j===K.length-2), tt=settle? 0.45*lt+0.55*smooth(lt) : 0.8*lt+0.2*smooth(lt), u=(j+tt)/(K.length-1);
       s._cp.getPoint(u,cam.position); s._ct.getPoint(u,tgt); cam.lookAt(tgt);
       const d=cam.position.distanceTo(tgt);
       cam.fov=K[j].fov+(K[j+1].fov-K[j].fov)*tt; cam.aspect=camera.aspect; cam.near=Math.max(1e-4,d*0.01); cam.far=d*40;
       cam.updateProjectionMatrix();
-      const sc=SC[i-1]; sc.fog.near=d*0.8; sc.fog.far=d*2.8;
+      const sc=SC[i-1], fk=s.fogK||[0.8,2.8]; sc.fog.near=d*fk[0]; sc.fog.far=d*fk[1];
       if(s.update) s.update(t,nowT,cam);
       return d*2*Math.tan(cam.fov*Math.PI/360)*s.mpu;
     }
+    const _kA=new THREE.Vector3(), _kB=new THREE.Vector3(), _pa=new THREE.Vector3(), _ta=new THREE.Vector3(), _pb=new THREE.Vector3(), _tb=new THREE.Vector3();
+    function refit(cam,tgt,i){                 // near/far and fog follow the converged distance (the trainer scene keeps its own planes)
+      if(i>0){ const d=cam.position.distanceTo(tgt), s=S[i-1], fk=s.fogK||[0.8,2.8]; cam.near=Math.max(1e-4,d*0.01); cam.far=d*40; SC[i-1].fog.near=d*fk[0]; SC[i-1].fog.far=d*fk[1]; }
+      cam.updateProjectionMatrix(); }
     function draw(i,cam,target){ renderer.setRenderTarget(target); renderer.render(i===0?scene:SC[i-1],cam); renderer.setRenderTarget(null); }
     function ensureRT(){ renderer.getDrawingBufferSize(_sz);
-      if(!rt){ rt=new THREE.WebGLRenderTarget(_sz.x,_sz.y,{minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,format:THREE.RGBAFormat,stencilBuffer:true});
+      if(!rt){ const o={minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,format:THREE.RGBAFormat,stencilBuffer:true};
+        rt=(renderer.capabilities.isWebGL2&&THREE.WebGLMultisampleRenderTarget)? new THREE.WebGLMultisampleRenderTarget(_sz.x,_sz.y,o) : new THREE.WebGLRenderTarget(_sz.x,_sz.y,o);
         quadM.map=rt.texture; quadM.needsUpdate=true; }
       else if(rt.width!==_sz.x||rt.height!==_sz.y) rt.setSize(_sz.x,_sz.y); }
 
+    function snapshot(){                        // the level in view, drawn once into the cross-fade target
+      ensureRT(); const q=st.q; let A=-1,B=-1;
+      for(let i=0;i<R.length;i++) if(q>=R[i][0]-1e-6 && q<=R[i][1]+1e-6){ if(A<0) A=i; else if(B<0) B=i; }
+      if(A<0) A=q<=0?0:R.length-1;
+      const dom=(B>=0 && smooth((q-R[B][0])/(R[A][1]-R[B][0]))>=0.5)? B : A;
+      const cam=dom===0?camera:camB; pose(dom,clamp01((q-R[dom][0])/(R[dom][1]-R[dom][0])),cam,tB); draw(dom,cam,rt);
+    }
+    function overlay(dt){                       // after the finale: the last silicon frame dissolves over the hall
+      const f=st.fade; if(!f) return;
+      f.t+=dt; const a=1-smooth(f.t/f.dur);
+      if(a<=0.002){ st.fade=null; return; }
+      quadM.opacity=a; const ac=renderer.autoClear; renderer.autoClear=false; renderer.render(qScene,qCam); renderer.autoClear=ac;
+    }
     function render(dt){
       advance(dt); if(!st.on) return false;
       const q=st.q; let A=-1,B=-1;
       for(let i=0;i<R.length;i++) if(q>=R[i][0]-1e-6 && q<=R[i][1]+1e-6){ if(A<0) A=i; else if(B<0) B=i; }
       if(A<0) A=q<=0?0:R.length-1;
       const camA=A===0?camera:camB;
-      const mA=pose(A,clamp01((q-R[A][0])/(R[A][1]-R[A][0])),camA,tB);
+      let mA=pose(A,clamp01((q-R[A][0])/(R[A][1]-R[A][0])),camA,tB);
       let alpha=0, mB=mA;
-      if(B>=0){ alpha=smooth((q-R[B][0])/(R[A][1]-R[B][0])); mB=pose(B,clamp01((q-R[B][0])/(R[B][1]-R[B][0])),camC,tC); }
+      if(B>=0){ alpha=smooth((q-R[B][0])/(R[A][1]-R[B][0])); mB=pose(B,clamp01((q-R[B][0])/(R[B][1]-R[B][0])),camC,tC);
+        if(Math.abs(Math.log10(mB/mA))<=1.5){                              // a zoom, not the reel's scale cut: converge the two cameras
+          const sA=A===0? M_PER_UNIT/s0.hs : S[A-1].mpu, sB=S[B-1].mpu, k=sB/sA;
+          const kA=S[A-1]&&S[A-1].keys, tA1=A===0? s0.toT : _kA.fromArray(kA[kA.length-1].tgt), tB0=_kB.fromArray(S[B-1].keys[0].tgt);
+          _pa.copy(camC.position).sub(tB0).multiplyScalar(k).add(tA1); _ta.copy(tC).sub(tB0).multiplyScalar(k).add(tA1);   // B's pose in A's scene
+          _pb.copy(camA.position).sub(tA1).divideScalar(k).add(tB0); _tb.copy(tB).sub(tA1).divideScalar(k).add(tB0);       // A's pose in B's scene
+          const fA=camA.fov, fB=camC.fov, f=fA+(fB-fA)*alpha;
+          camA.position.lerp(_pa,alpha); tB.lerp(_ta,alpha); camA.lookAt(tB); camA.fov=f; refit(camA,tB,A);
+          camC.position.lerpVectors(_pb,camC.position,alpha); tC.lerpVectors(_tb,tC,alpha); camC.lookAt(tC); camC.fov=f; refit(camC,tC,B);
+          mA=camA.position.distanceTo(tB)*2*Math.tan(f*Math.PI/360)*sA; mB=camC.position.distanceTo(tC)*2*Math.tan(f*Math.PI/360)*sB;
+        } }
       if(B<0||alpha<=0.001) draw(A,camA,null);
       else if(alpha>=0.999) draw(B,camC,null);
       else { ensureRT(); draw(B,camC,rt); draw(A,camA,null); quadM.opacity=alpha;
         const ac=renderer.autoClear; renderer.autoClear=false; renderer.render(qScene,qCam); renderer.autoClear=ac; }
-      st.fovM=Math.exp(Math.log(mA)+(Math.log(mB)-Math.log(mA))*alpha);
+      const jump=Math.abs(Math.log10(mB/mA))>1.5;                                   // a scale cut (the reel's), not a zoom: the ruler snaps
+      st.fovM=jump? (alpha<0.5?mA:mB) : Math.exp(Math.log(mA)+(Math.log(mB)-Math.log(mA))*alpha);
       const dom=(B>=0&&alpha>=0.5)?{i:B,cam:camC,q0:R[B][0],q1:R[B][1]}:{i:A,cam:camA,q0:R[A][0],q1:R[A][1]};
       ui(dom);
       return true;
@@ -3799,7 +4190,7 @@ window.__PROVENANCE = Object.freeze({
       });
     }
 
-    const SPEED=0.032, HOLD=1.1;
+    const SPEED=0.032, HOLD=1.2, CREEP=0.12;
     function advance(dt){
       if(!st.on) return;
       if(st.rewind){ st.qT=Math.max(0,st.qT-dt*0.55); if(REDUCED||(st.qT<=0&&st.q<0.003)){ exit(); return; } }
@@ -3807,8 +4198,10 @@ window.__PROVENANCE = Object.freeze({
         const stop=STOPS[st.ai];
         if(REDUCED){ st.hold+=dt; if(st.hold>2.8){ st.hold=0; st.qT=stop; if(st.ai<STOPS.length-1) st.ai++; else { finale(); return; } } }
         else if(st.qT<stop){ st.qT=Math.min(stop,st.qT+SPEED*dt); st.hold=0; }
-        else if(Math.abs(st.q-stop)<0.006){ st.hold+=dt; if(st.hold>(st.ai<STOPS.length-1?HOLD:HOLD*2.2)){ st.hold=0;
-          if(st.ai<STOPS.length-1) st.ai++; else { finale(); return; } } }
+        else {                                        // at a caption: dwell, creeping on so the zoom never freezes
+          if(st.q>=stop-0.004){ st.hold+=dt; st.qT=Math.min(st.ai<STOPS.length-1?STOPS[st.ai+1]:1,st.qT+SPEED*CREEP*dt); }
+          if(st.hold>(st.ai<STOPS.length-1?HOLD:HOLD*2.2)){ st.hold=0;
+            if(st.ai<STOPS.length-1) st.ai++; else { finale(); return; } } }
       }
       if(REDUCED) st.q=st.qT;
       else { st.q+=(st.qT-st.q)*(1-Math.exp(-dt*(st.rewind?6:3.2))); if(Math.abs(st.qT-st.q)<1e-5) st.q=st.qT; }
@@ -3821,7 +4214,7 @@ window.__PROVENANCE = Object.freeze({
       const gpu=gpuComp(); if(!gpu) return;
       if(active!==gpu) openComponent(gpu);
       hideRideNext();
-      st.pending={auto:!!opts.auto, hold:opts.auto?2.6:0.5, t:0, shown:false};
+      st.pending={auto:!!opts.auto, hold:opts.auto?1.4:0.5, t:0, shown:false};
     }
     function tickPending(dt){
       const p=st.pending; if(!p) return;
@@ -3836,11 +4229,12 @@ window.__PROVENANCE = Object.freeze({
     function start(auto){
       build();
       const gpu=gpuComp(), pr=gpu._peris.find(x=>x.def.id==='gpu');
-      new THREE.Box3().setFromObject(pr?pr.g:gpu).getCenter(s0.toT);
+      const pkg=pr&&pr.g.children[0]; new THREE.Box3().setFromObject(pkg||(pr?pr.g:gpu)).getCenter(s0.toT);   // one package, not the pair
+      s0.hs=gpu._heroScale||1;
       s0.from.copy(camera.position); s0.fromT.copy(target);
-      const dir=s0.from.clone().sub(s0.toT).normalize(); dir.y=Math.max(dir.y,0.62); dir.normalize();
-      s0.to.copy(s0.toT).addScaledVector(dir,0.2/(TAN*M_PER_UNIT));                // lands at a 20 cm field of view
-      Object.assign(st,{on:true,q:0,qT:0,auto:!!auto,ai:1,hold:0,rewind:false,ci:-1,acc:0,wacc:0});
+      s0.to.copy(s0.toT).addScaledVector(LAND_DIR,0.2*s0.hs/(TAN*M_PER_UNIT));      // lands at a 20 cm field of view, seen at the hero scale
+      camK=0.10;
+      Object.assign(st,{on:true,q:0,qT:0,auto:!!auto,ai:1,hold:0,rewind:false,ci:-1,acc:0,wacc:0,fade:null});
       curChapter=-1;                                                                // the hall ride re-captions itself next time
       capSkipEl.textContent='Back to the rack ›';
       rotPref=autoRotate; document.body.classList.add('dive-on'); endCarry(); setRotate(false); dragging=false; pinchD=0; hideRideNext();
@@ -3857,7 +4251,8 @@ window.__PROVENANCE = Object.freeze({
     }
     function stopAuto(){ st.auto=false; st.rewind=false; }
     function finale(){                    // the reel's last frame: all the way back out to the data hall
-      exit(); enterHall(0.32); finaleOn=true; curChapter=-1; stepLatch=true;
+      if(!REDUCED){ try{ snapshot(); st.fade={t:0,dur:1.4}; }catch(e){ st.fade=null; } }   // dissolve, not a cut
+      exit(); enterHall(HALL_VIEW_P,true); finaleOn=true; curChapter=-1; stepLatch=true;
     }
     function step(dir){ stopAuto(); if(!STOPS) return;
       if(dir>0 && st.qT>=0.999 && st.q>0.99){ finale(); return; }
@@ -3872,8 +4267,9 @@ window.__PROVENANCE = Object.freeze({
       st.qT=Math.min(1,st.qT);
     }
     function back(){ if(!st.on) return; st.auto=false; if(REDUCED) exit(); else st.rewind=true; }
-    return { on:()=>st.on, pending:()=>!!st.pending, enter, exit, back, step, delta, stopAuto, render, tickPending,
+    return { on:()=>st.on, pending:()=>!!st.pending, enter, exit, back, step, delta, stopAuto, render, overlay, tickPending,
       cancelPending(){ st.pending=null; }, go(q){ stopAuto(); st.qT=clamp01(q); }, fovM:()=>st.fovM, finale,
+      fadeMix:()=>st.fade?{a:1-smooth(st.fade.t/st.fade.dur),m:st.fovM}:null,   // the finale dissolve, for the ruler
       chapters:()=>(CH||[]).map(c=>({q:c.q,title:c.title})),
       prebuild:build, seek(q){ stopAuto(); st.q=st.qT=clamp01(q); },   // deterministic placement (captures, tests)
       state:()=>({on:st.on,q:st.q,qT:st.qT,auto:st.auto,ci:st.ci,pending:!!st.pending,fovM:st.fovM,stops:STOPS&&STOPS.slice()}) };
@@ -4417,7 +4813,8 @@ window.__PROVENANCE = Object.freeze({
     m>=1e-3?(m*1e3).toFixed(2)+' mm':m>=1e-4?Math.round(m*1e6)+' µm':m>=1e-6?(m*1e6).toFixed(1)+' µm':m>=1e-7?Math.round(m*1e9)+' nm':(m*1e9).toFixed(2)+' nm'; }
   let fovLast=-1;
   function updateFov(){
-    const m=DIVE.on()? DIVE.fovM() : 2*camera.position.distanceTo(introOn?introLook:target)*Math.tan(camera.fov*Math.PI/360)*M_PER_UNIT;
+    let m=DIVE.on()? DIVE.fovM() : 2*camera.position.distanceTo(introOn?introLook:target)*Math.tan(camera.fov*Math.PI/360)*M_PER_UNIT;
+    const fx=DIVE.fadeMix(); if(fx&&fx.m>0&&m>0) m=Math.exp(Math.log(fx.m)+(Math.log(m)-Math.log(fx.m))*(1-fx.a));   // slides up the ruler with the dissolve
     if(!(m>0) || Math.abs(m-fovLast)/m<0.004) return; fovLast=m;
     fovVal.textContent='≈ '+fmtLen(m);
     fovMk.style.top=(clamp01((FOV_TOP-Math.log10(m))/(FOV_TOP-FOV_BOT))*100)+'%';
@@ -4446,7 +4843,7 @@ window.__PROVENANCE = Object.freeze({
     const frozen=introOn||DIVE.on();
     renderer.shadowMap.autoUpdate=!frozen;
     if(frozen && (shadowDirty || animating)){ renderer.shadowMap.needsUpdate=true; shadowDirty=false; }
-    if(!(DIVE.on() && DIVE.render(dt))) renderer.render(scene,camera);
+    if(!(DIVE.on() && DIVE.render(dt))){ renderer.render(scene,camera); DIVE.overlay(dt); }
     drawWatermark();   // composited into the WebGL output, so it travels with any capture
     updateFov();
     if(D)LS('P5-done');
