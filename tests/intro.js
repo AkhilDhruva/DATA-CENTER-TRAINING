@@ -247,7 +247,7 @@ async function assertTrainerHome(page, label) {
   check('trainer chrome returns after the dive', await page.waitForFunction(() => { const cs = getComputedStyle(document.getElementById('card'));
     return !document.body.classList.contains('dive-on') && cs.visibility === 'visible' && parseFloat(cs.opacity) > 0.9; }, null, { timeout: 8000 }).then(() => true, () => false));
   // scrolling deeper at the closest orbit keeps going into the silicon; scrolling back up comes back out
-  await page.mouse.move(640, 400);
+  await page.mouse.move(420, 600);   // open canvas, clear of the explorer, controls dock and inspector
   for (let i = 0; i < 4; i++) { await page.mouse.wheel(0, 500); await page.waitForTimeout(250); }
   await waitRide(page, () => window.__ride.dive().on, null, 30000).then(() => {}, () => {});
   check('scrolling deeper on the GPU node enters the dive', await page.evaluate(() => window.__ride.dive().on));
@@ -276,12 +276,13 @@ async function assertTrainerHome(page, label) {
   console.log('\n== Reduced motion ==');
   page = await boot(browser, 1536, 900, { reduced: true });
   await page.keyboard.press('ArrowDown');
-  await settle(page, 300);
+  await waitRide(page, () => window.__ride.st().pT === 0.18, null, 10000);
+  await settle(page, 2500);    // at least one rendered frame, even on software GL
   s = await st(page);
   check('chapters cut instead of fly (pC === pT)', s.pT === 0.18 && s.pC === s.pT, s);
   await page.mouse.move(768, 450);
   await page.mouse.wheel(0, 150);
-  await settle(page, 300);
+  await settle(page, 2500);
   s = await st(page);
   check('a scroll step jumps a whole chapter', s.pT === 0.36 && s.pC === 0.36, s);
   await page.keyboard.press('End'); await settle(page, 3500);
@@ -289,7 +290,7 @@ async function assertTrainerHome(page, label) {
   await page.waitForFunction(() => Math.max(...window.__ride.st().allT) >= 1, null, { timeout: 20000 });
   await page.evaluate(() => document.querySelector('#cardBody [data-dive]').click());
   await waitRide(page, () => window.__ride.dive().on, null, 20000);
-  await page.keyboard.press('ArrowDown'); await settle(page, 400);
+  await page.keyboard.press('ArrowDown'); await settle(page, 2500);
   const rd = await page.evaluate(() => window.__ride.dive());
   check('reduced motion: the dive cuts level to level', rd.q === rd.qT && rd.q > 0.07, rd);
   check('hint animation is off', await page.evaluate(() => getComputedStyle(document.querySelector('.mouse'), '::after').animationName === 'none'));
