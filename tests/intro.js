@@ -180,8 +180,10 @@ async function assertTrainerHome(page, label) {
   await page.mouse.wheel(0, 300); await settle(page, 400);
   const r1 = (await st(page)).goalR;
   check('trainer: scroll down dollies in', r1 < r0 - 1, [r0, r1]);
-  for (let i = 0; i < 12; i++) { await page.mouse.wheel(0, -500); await page.waitForTimeout(120); }
-  await settle(page, 800);
+  for (let i = 0; i < 8; i++) { await page.mouse.wheel(0, -500); await page.waitForTimeout(60); }
+  await settle(page, 800);                        // zoom-out momentum stops at the full-rack view…
+  for (let i = 0; i < 3; i++) { await page.mouse.wheel(0, -500); await page.waitForTimeout(60); }   // …a deliberate second scroll flies out
+  await waitRide(page, () => window.__ride.st().on, null, 20000).then(() => {}, () => {});
   s = await st(page);
   check('trainer: pulling back past the full rack returns to the hall', s.on && s.hall, s);
   await page.click('#btnSkipIntro');
