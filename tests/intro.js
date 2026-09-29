@@ -53,7 +53,7 @@ const st = (p) => p.evaluate(() => window.__ride.st());
 const settle = (p, ms) => p.waitForTimeout(ms || 1500);
 const shown = (p, id) => p.evaluate((id) => { const el = document.getElementById(id); const cs = getComputedStyle(el);
   return cs.display !== 'none' && cs.visibility !== 'hidden' && parseFloat(cs.opacity) > 0.5; }, id);
-const waitRide = (p, pred, arg, ms) => p.waitForFunction(pred, arg, { timeout: ms || 30000 });
+const waitRide = (p, pred, arg, ms) => p.waitForFunction(pred, arg, { timeout: Math.max(ms || 0, 90000), polling: 250 });   // software GL can be very slow
 
 async function assertTrainerHome(page, label) {
   const s = await st(page);
