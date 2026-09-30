@@ -10,7 +10,7 @@
     Title      : Interactive 42U AI Data Center Rack
     Programme  : Rack to Runtime — Vendor & Deployment Training
     Created    : 2026-07-04
-    Build      : 2026-07-28
+    Build      : 2026-09-29
     Licence    : Proprietary — All Rights Reserved. See /LICENSE.
 
     Copyright (c) 2026 Akhil Gaddam. All rights reserved.
