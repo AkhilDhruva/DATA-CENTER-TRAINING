@@ -8,6 +8,8 @@ A self-contained, browser-based **interactive 3D server rack** built for technic
 
 **▶ Live demo:** https://data-center-training.vercel.app
 
+**▶ Video of the full ride:** [`video/data-hall-ride-1440p.mp4`](video/data-hall-ride-1440p.mp4) — hall → rack → GPU → silicon → atom → back to the hall; 2560 × 1440, 24 fps, 94 s, 92 MB (download to watch).
+
 ## What it shows
 - **The data-hall ride (opening sequence)** — *"Want to learn what's inside a data center rack? Start here and zoom — you're in for a ride."* The app opens on a God's-eye view of a full AI data hall (8 rows × 16 racks, hot/cold-aisle containment, perforated cold-aisle tiles, yellow fiber raceway, grey power busway with tap-offs, red fire-suppression mains, CRAH units). Scroll, swipe or press ↓ and the camera flies down the rows, drops into the cold aisle, locks onto **Rack C-08**, and the rest of the hall sinks away until one rack stands alone — landing on the trainer's own view with no cut. **Start the ride** plays it hands-free and carries on into the GPU-node dissection. A live **Field of view** ruler (log scale, ≈ 20 m → ≈ 2 m) tracks the zoom the whole way, powers-of-ten style. Scroll back up past the full rack (or use **Data hall**) to fly back out. Reduced-motion users get chapter cuts instead of a flight; `?intro=0` (or `#rack`) opens straight on the trainer.
 - A 42U rack built to **EIA-310-D** dimensions (1U = 1.75 in / 44.45 mm; 42U = 73.5 in / 1867 mm; 19-in / 482.6 mm mounting).
